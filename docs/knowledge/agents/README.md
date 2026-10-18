@@ -128,7 +128,9 @@ Trade-offs:
 - Merge conflicts are possible if you and the agent edit the same file. Keeping the agent's files
   in their own folder avoids most of them.
 - A public repo exposes everything committed. Keep personal notes in a private repo.
-- *Unverified:* whether commit attribution lines or pushes to workflow files behave differently.
+- Pushes that add or change `.github/workflows/` files work from a cloud session, and commit
+  trailers (co-author and session lines) come through as written (checked in a real run on
+  2026-10-18).
 
 ## Connecting an Obsidian vault
 
@@ -151,6 +153,8 @@ Constraints:
   browser-only session or a phone.
 - Anything connected gets read and write access to the vault. Keep history (Git, or Obsidian Sync)
   before letting an agent edit notes.
-- *Unverified* since 2026-10-17: whether an official connector now exists, whether the plugins
-  above are still maintained and still need `mcp-remote`, and whether the web chat gained a
-  local-file bridge.
+- obsidian-claude-code-mcp still needs `mcp-remote` for Claude Desktop, because it serves the
+  older HTTP-with-SSE transport, and its last commit was on 2025-06-23 (checked 2026-10-18). Treat
+  it as unmaintained and check for a fork before relying on it.
+- *Unverified* since 2026-10-17: whether an official connector now exists, and whether the web
+  chat gained a local-file bridge.
