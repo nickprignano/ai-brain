@@ -1,0 +1,4 @@
+# Experts study: people the KB follows, scored with the method in experts.md.
+# Schema: schema/experts.schema.json. Use the same id for the same person across the family.
+reviewed: '2026-10-18'
+experts: []

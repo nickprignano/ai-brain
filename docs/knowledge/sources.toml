@@ -1,0 +1,67 @@
+# Sources the KB curator watches. See docs/knowledge/curation.md.
+# Add a source by appending a table below; no code change needed.
+#
+# kinds:
+#   github_releases  new releases of a repo
+#   github_commits   new commits on a repo's default branch (for repos that rarely tag releases);
+#                    add path = "..." to watch only one file or folder
+#   github_org_repos new or recently pushed repos in an org
+#   github_user_repos the same for a person's account (user = "..."); add keywords to narrow it
+#   github_issues    issues and PRs opened or updated in a repo
+#   github_search    new repositories matching a search query (prior art)
+#   feed             RSS/Atom feed, optionally filtered by keywords
+#   zendesk          a Zendesk help center's recently updated articles
+#
+# Blog feeds are added only after a curator run confirms they work (curation.md).
+
+# --- Anthropic ---------------------------------------------------------------
+
+[[source]]
+name = "Claude Code: releases"
+kind = "github_releases"
+repo = "anthropics/claude-code"
+kb_page = "agents/README.md"
+
+[[source]]
+name = "Anthropic Python SDK: releases"
+kind = "github_releases"
+repo = "anthropics/anthropic-sdk-python"
+# SDK releases are where new API features (parameters, tools, betas) usually show up first.
+kb_page = "claude-api/README.md"
+
+[[source]]
+name = "Anthropic cookbook: commits"
+kind = "github_commits"
+repo = "anthropics/anthropic-cookbook"
+kb_page = "learning/README.md"
+
+[[source]]
+name = "Anthropic courses: commits"
+kind = "github_commits"
+repo = "anthropics/courses"
+kb_page = "learning/README.md"
+
+# --- Model Context Protocol --------------------------------------------------
+
+[[source]]
+name = "MCP specification: commits"
+kind = "github_commits"
+repo = "modelcontextprotocol/modelcontextprotocol"
+kb_page = "agents/README.md"
+
+# --- Sibling knowledge bases (family.yaml) -----------------------------------
+# Two sources per sibling: new decisions, and every other KB change.
+
+[[source]]
+name = "Sibling KB: Nerdio HCL kit decisions"
+kind = "github_commits"
+repo = "nickprignano/nerdio-hcl"
+path = "docs/knowledge/decisions"
+kb_page = "curation.md"
+
+[[source]]
+name = "Sibling KB: Nerdio HCL kit"
+kind = "github_commits"
+repo = "nickprignano/nerdio-hcl"
+path = "docs/knowledge"
+kb_page = "curation.md"

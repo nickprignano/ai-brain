@@ -1,0 +1,7 @@
+# Upstream asks for Anthropic (API, SDKs, Claude Code, MCP): the source of truth for the tables in
+# anthropic/upstream-contributions.md. Regenerate with `python3 scripts/kb/build.py`.
+# Schema: ../schema/upstream.schema.json.
+
+feature_gaps: []
+api_asks: []
+docs_packaging: []
