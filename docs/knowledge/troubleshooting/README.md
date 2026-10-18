@@ -14,6 +14,8 @@ Errors we've hit, what caused them and what fixed them. The table is generated f
 <!-- BEGIN GENERATED: known-errors (edit the YAML, then run scripts/kb/build.py) -->
 | Symptom | Cause | Fix | Source |
 |---|---|---|---|
+| GitHub REST API calls fail from a Cloudflare Worker but work from a browser or curl | GitHub requires a User-Agent header, and fetch() in a Worker doesn't send one | Set a User-Agent header naming your app on every request | [README.md](../platforms/README.md#calling-githubs-api-from-cloudflare-workers) |
+| `disallowed_useragent` from Google sign-in inside an Android app | Google OAuth blocks sign-in in embedded WebViews | Wrap the web app as a Trusted Web Activity, or install it as a PWA from Chrome | [README.md](../platforms/README.md#google-sign-in-inside-android-app-wrappers) |
 <!-- END GENERATED: known-errors -->
 
 ## Adding an entry

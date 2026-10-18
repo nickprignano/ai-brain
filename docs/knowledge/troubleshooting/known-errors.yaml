@@ -2,4 +2,18 @@
 # Regenerate the page with `python3 scripts/kb/build.py`. Schema: ../schema/known-errors.schema.json
 # `source` is a KB path (relative to docs/knowledge/) or an https URL.
 
-errors: []
+errors:
+- id: github-api-missing-user-agent
+  symptom: GitHub REST API calls fail from a Cloudflare Worker but work from a browser or curl
+  cause: GitHub requires a User-Agent header, and fetch() in a Worker doesn't send one
+  fix: Set a User-Agent header naming your app on every request
+  source: platforms/README.md#calling-githubs-api-from-cloudflare-workers
+  status: verified
+  added: '2026-10-17'
+- id: google-oauth-disallowed-useragent
+  symptom: '`disallowed_useragent` from Google sign-in inside an Android app'
+  cause: Google OAuth blocks sign-in in embedded WebViews
+  fix: Wrap the web app as a Trusted Web Activity, or install it as a PWA from Chrome
+  source: platforms/README.md#google-sign-in-inside-android-app-wrappers
+  status: verified
+  added: '2026-10-17'
