@@ -1,8 +1,9 @@
-# 2ndbrain: a capture skill for a two-layer second brain
+# 2ndbrain: capture and sync for a two-layer second brain
 
 A Claude skill that captures what a chat or code session produced into a **public hub KB** (this
 repo's format) or a **private layer** (a personal notes vault), and refuses anything that's unsafe
-for the public side. v1 does capture only. The skill itself is [SKILL.md](SKILL.md).
+for the public side. It also syncs family projects through the hub. The skill itself is
+[SKILL.md](SKILL.md).
 
 ## Why two layers
 
@@ -50,17 +51,38 @@ decisions are offered when a thread produced them; root-cause analyses and proce
 user asked for troubleshooting or steps; disagreements only when the user asks. The full table is in
 [SKILL.md](SKILL.md#triggers).
 
+## Sync: the hub as the channel between projects
+
+Claude projects can't read each other's chats, so a family project learns what changed elsewhere
+from the hub. At the start of work in a family project (or on "2ndbrain sync"), the skill reads
+the hub's public `directives.yaml`, `decisions/` and `family.yaml`, and reports:
+
+- the directives in scope for this project, quoted exactly, with any pause;
+- the decisions added or changed since the last sync, flagging family-format ones not yet adopted;
+- whether this project's format version matches the hub's.
+
+On request it writes a **handoff block**: one self-contained Markdown block, dated and pinned to
+a hub commit, that a person pastes into another project. It's built only from public hub files,
+so it never carries chat content, private-layer material or secrets.
+
+Sync only reads. It writes nothing to any repo; adoption PRs it points to go through the normal
+flow with the user's yes. Directives follow
+[decision 0008](../../docs/knowledge/decisions/0008-family-format-maintainer-directives-and-pause-switch.md)
+(proposed) and never override the guardrails or the user's own word.
+
 ## Install
 
-1. Copy [SKILL.md](SKILL.md) into a new skill in your Claude account (or your project's
-   `.claude/skills/2ndbrain/`).
-2. Fill in the settings block: your hub repo, your private repo, its capture-rules file, and
-   `private_layer`.
+1. Copy [SKILL.md](SKILL.md) into a new skill in your Claude account. It's meant to work in every
+   session, so an account skill fits better than a project one. Inside a KB repo it sits alongside
+   that repo's `2ndbrain-kb` skill (`.claude/skills/2ndbrain-kb/`), which covers working on the KB
+   itself.
+2. Fill in the settings block: your hub repo, your private repo, its capture-rules file,
+   `private_layer`, and the two sync settings.
 3. Give your sessions push access to both repos, or use it from a plain chat, where it drafts notes
    for you to file.
 4. Turn off any older capture skill that covers the same triggers, so only one fires.
 
 ## Not in v1
 
-Searching or answering from either layer, the private layer's roll-up and patterns, directives back
-down to the hub, and staleness reviews.
+Searching or answering from either layer, the private layer's roll-up and patterns, writing
+directives (sync only reads them), and staleness reviews.
