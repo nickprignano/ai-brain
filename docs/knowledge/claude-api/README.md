@@ -86,9 +86,12 @@ Checked against Anthropic's Foundry page and Microsoft's quota page (updated 202
 - **Rate-limit headers:** Foundry doesn't send Anthropic's `anthropic-ratelimit-*` headers; use
   Azure Monitor.
 - **Keyless sign-in:** turn on Entra ID for the resource and use a token provider for the scope
-  `https://ai.azure.com/.default` with `AnthropicFoundry`. The identity needs Foundry User
-  (formerly Azure AI User) or Cognitive Services User; without one, calls return 403.
-  *Unverified:* which of the two is narrower for inference only.
+  `https://ai.azure.com/.default` with `AnthropicFoundry`. Anthropic's page names Foundry User
+  (formerly Azure AI User) or Cognitive Services User; without one, calls return 403. Use
+  Foundry User on the Foundry resource: Microsoft's Foundry RBAC page calls it the
+  least-privilege role and advises against roles starting with "Cognitive Services" for Foundry
+  ([Foundry RBAC](https://learn.microsoft.com/en-us/azure/foundry/concepts/rbac-foundry), checked
+  2026-10-18).
 - **Claude Code on Foundry:** its `opus`, `sonnet` and `haiku` aliases point at Opus 4.6,
   Sonnet 4.5 and Haiku 4.5 there. Set `ANTHROPIC_DEFAULT_OPUS_MODEL` and its siblings to full IDs.
 

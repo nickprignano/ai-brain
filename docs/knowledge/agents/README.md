@@ -45,9 +45,10 @@ Change effort first, then the model, one step at a time.
   of text you supply.
 - On Opus 5.5, Sonnet 5.5 and Haiku 5.5, thinking can't be turned off; lower the effort instead.
 - Switch at a task boundary, not mid-task. Prompt caches are per model, so a model switch makes
-  the next request re-read the whole conversation at full input price. *Unverified:* whether
-  an effort change in Claude Code rebuilds the cache too (on the API, changing the top-level
-  effort does).
+  the next request re-read the whole conversation at full input price. Changing effort keeps
+  the cache on Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.1 with an API key or a Claude
+  subscription, but rebuilds it on other models, on Bedrock and Google Cloud, and through the
+  Claude apps gateway, so effort is the cheap lever mid-session on the current models.
 
 ### Start a fresh session
 
@@ -98,8 +99,12 @@ thread with that summary instead of carrying on.
   compaction for the same job; and a proxy sees every request and credential and rewrites
   prompts, so a quality drop would be hard to see. A project may trial it in local Claude Code or
   in its own app as a fit-for-purpose choice: pin the version, turn the update check off, and
-  compare tokens per task and the `/usage` cache share with and without it. *Unverified:* whether
-  routing a subscription-signed-in Claude Code session through a local proxy is supported.
+  compare tokens per task and the `/usage` cache share with and without it. Claude Code supports a
+  proxy set by `ANTHROPIC_BASE_URL` alone: the claude.ai login stays the credential, so the
+  plan's limits still apply, as long as the proxy forwards the OAuth capability in the
+  `anthropic-beta` header. A proxy that strips the cache markers bills the whole history as
+  uncached input on every turn, so check the `/usage` cache line first. *Unverified:* whether
+  Headroom forwards both.
 
 ### Check it's working
 
