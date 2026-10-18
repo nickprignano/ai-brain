@@ -1,0 +1,15 @@
+# The knowledge base family: sibling KBs that share this KB's format and know about each other.
+# Schema: schema/family.schema.json, the same in every KB. How it works:
+# curation.md#staying-aligned-with-the-family. Add a sibling's repo once it's known, then add
+# its two sources in sources.toml.
+
+format_version: 1
+projects:
+- id: my-kb
+  name: My KB
+  self: true
+  kb_path: docs/knowledge
+  role: member
+  focus: What this knowledge base covers
+  owns: [This project's own topics]
+  format_version: 1

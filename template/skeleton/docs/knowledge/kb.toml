@@ -1,0 +1,30 @@
+# This KB's identity: the only settings that differ between KBs that share the family scripts.
+# build.py writes llms.txt and orders topics from it; sources.py sends user_agent to the APIs it calls.
+# Change these for your KB. Keep topic_order in step with the topic list in schema/page.schema.json.
+
+name = "my-kb"
+title = "project knowledge base"
+tagline = "A living knowledge base of findings, gotchas and decisions for this project."
+user_agent = "my-kb-curator"
+topic_order = ["overview", "getting-started", "troubleshooting", "roadmap", "curation"]
+
+# Structured data files listed in llms.txt, in order. A file that doesn't exist is skipped.
+[[data]]
+name = "Known errors"
+path = "troubleshooting/known-errors.yaml"
+text = "symptom, cause, fix and source for errors hit in this project"
+
+[[data]]
+name = "Field reports"
+path = "field-reports.yaml"
+text = "what worked or broke when someone followed the KB"
+
+[[data]]
+name = "Experts study"
+path = "experts.yaml"
+text = "people the KB follows, with scores, evidence and the feeds watched"
+
+[[data]]
+name = "Family"
+path = "family.yaml"
+text = "the sibling knowledge bases and the format version each follows"

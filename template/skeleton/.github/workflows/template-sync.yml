@@ -1,0 +1,65 @@
+# Keeps this template in step with ai-brain, the knowledge base that owns the 2ndbrain format.
+# Weekly, it checks out ai-brain (public, no token needed), runs its exporter into this repo, runs
+# the checks on the result, and opens a pull request here if anything changed. ai-brain never
+# writes to this repo.
+name: template-sync
+
+on:
+  schedule:
+    - cron: "0 6 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: template-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    if: vars.KB_PAUSED != 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: template
+      - uses: actions/checkout@v4
+        with:
+          repository: nickprignano/ai-brain
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the KB requirements
+        run: pip install -r source/scripts/kb/requirements.txt
+      - name: Export
+        run: python3 source/scripts/kb/export_template.py template
+      - name: Check the export
+        working-directory: template
+        run: |
+          python3 scripts/kb/validate.py
+          python3 scripts/kb/build.py --check
+          python3 -m unittest discover -s scripts/kb
+      - name: Open a pull request if anything changed
+        working-directory: template
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          find . -name __pycache__ -type d -prune -exec rm -rf {} +
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Already in step with the source."
+            exit 0
+          fi
+          sha=$(git -C ../source rev-parse --short HEAD)
+          branch="template-sync/$sha"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -A
+          git commit -m "Sync the template with its source at $sha"
+          git push -u origin "$branch"
+          gh pr create --title "Sync the template with its source at $sha" \
+            --body "Exported from the source knowledge base at commit $sha by the template-sync workflow. The export's validate, build and unit-test checks passed in that run. Pull requests opened by this workflow's token don't start other workflows; close and reopen this PR to run the full CI before merging."

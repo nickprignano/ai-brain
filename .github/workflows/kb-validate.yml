@@ -13,6 +13,11 @@ on:
       - llms.txt
       - .github/ISSUE_TEMPLATE/**
       - .github/workflows/kb-*.yml
+      - docs/2ndbrain/**
+      - docs/guardrails.md
+      - .claude/skills/**
+      - template/**
+      - AGENTS.md
   push:
     branches: [main]
     paths:

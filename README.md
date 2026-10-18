@@ -35,6 +35,18 @@ This repo is public. Nothing in it identifies a real person's account, an employ
 a private project, and secrets never pass through it or through chat. Every change goes through a
 reviewed pull request. The full rules are in [docs/guardrails.md](docs/guardrails.md).
 
+## Start your own
+
+The system this repo runs on is specified in [docs/2ndbrain/SPEC.md](docs/2ndbrain/SPEC.md), and
+agents follow the [2ndbrain skill](.claude/skills/2ndbrain/SKILL.md). This repo is the working
+prototype. Two template repositories carry it to anyone who wants one:
+
+- [2ndbrain-public](https://github.com/nickprignano/2ndbrain-public): the machinery and an empty
+  knowledge base, generated from this repo by `scripts/kb/export_template.py` following
+  [template/manifest.toml](template/manifest.toml).
+- [2ndbrain-private](https://github.com/nickprignano/2ndbrain-private): a private wisdom layer that
+  sits above your public KBs. The maintainer keeps one too. Its contents stay private by design.
+
 ## Where the idea came from
 
 The project second brain started as a work prototype for a complex enterprise migration

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import tomllib
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -11,7 +12,17 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
-USER_AGENT = "ai-brain-kb-curator"
+def _user_agent() -> str:
+    """From this KB's kb.toml, so every KB sharing these scripts identifies itself."""
+    kb_toml = os.path.join(os.path.dirname(__file__), "..", "..", "docs", "knowledge", "kb.toml")
+    try:
+        with open(kb_toml, "rb") as f:
+            return tomllib.load(f).get("user_agent", "kb-curator")
+    except OSError:
+        return "kb-curator"
+
+
+USER_AGENT = _user_agent()
 GITHUB_API = "https://api.github.com"
 
 

@@ -99,6 +99,8 @@ def check_data() -> None:
         (kblib.FAMILY, "family.schema.json"),
     ]
     for path, schema_name in files:
+        if path == kblib.UPSTREAM and not path.exists():  # optional: not every KB tracks upstream asks
+            continue
         data = kblib.load_yaml(path)
         check_schema(schema(schema_name), data, path, "data")
         if not isinstance(data, dict):

@@ -1,7 +1,7 @@
 # ai-brain: AI research knowledge base
 
-> A living knowledge base of findings, gotchas and decisions about the Claude API, agents and
-> AI tooling, shared by a family of sibling knowledge bases that use the same format.
+> A living knowledge base of findings, gotchas and decisions about the Claude API, agents and AI
+> tooling, shared by a family of sibling knowledge bases that use the same format.
 
 The knowledge base is in docs/knowledge/. Every page starts with YAML front matter (title, summary,
 topic, status, last_reviewed) validated against docs/knowledge/schema/. Pages with status `plan`

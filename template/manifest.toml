@@ -1,0 +1,131 @@
+# What goes into the 2ndbrain-public template, and how. Read by scripts/kb/export_template.py.
+# The export copies `include`, overlays `skeleton`, applies `replace` (each one must match, so a
+# changed source line fails the export instead of drifting), runs build.py in the output, and
+# refuses to finish if any file still contains a `forbid` string.
+
+skeleton = "template/skeleton"
+
+include = [
+  ".gitignore",
+  "LICENSE",
+  "AGENTS.md",
+  "CLAUDE.md",
+  ".claude/skills/2ndbrain/SKILL.md",
+  ".github/ISSUE_TEMPLATE/*.yml",
+  ".github/workflows/kb-*.yml",
+  ".github/workflows/secrets.yml",
+  "docs/guardrails.md",
+  "docs/2ndbrain/SPEC.md",
+  "docs/knowledge/curation.md",
+  "docs/knowledge/experts.md",
+  "docs/knowledge/decisions/template.md",
+  "docs/knowledge/schema/decision.schema.json",
+  "docs/knowledge/schema/experts.schema.json",
+  "docs/knowledge/schema/family.schema.json",
+  "docs/knowledge/schema/field-reports.schema.json",
+  "docs/knowledge/schema/known-errors.schema.json",
+  "docs/knowledge/schema/page.schema.json",
+  "scripts/kb/*.py",
+  "scripts/kb/requirements.txt",
+]
+
+# Files matched above that stay here: the exporter itself needs this repo's manifest.
+exclude = ["scripts/kb/export_template.py"]
+
+# Strings that mean this KB's own content leaked into the template.
+forbid = ["ai-brain", "claude-api", "Claude API"]
+# Hand-written skeleton files that credit the source repo by name.
+forbid_exempt = ["README.md", "NOTICE", ".github/workflows/template-sync.yml"]
+
+[[replace]]
+file = ".github/ISSUE_TEMPLATE/kb-feedback.yml"
+find = "for example claude-api/README.md"
+replace = "for example getting-started/README.md"
+
+[[replace]]
+file = ".github/ISSUE_TEMPLATE/kb-feedback.yml"
+find = "placeholder: claude-api/README.md"
+replace = "placeholder: getting-started/README.md"
+
+[[replace]]
+file = ".github/ISSUE_TEMPLATE/kb-known-error.yml"
+find = "placeholder: claude-api/README.md"
+replace = "placeholder: getting-started/README.md"
+
+[[replace]]
+file = ".github/ISSUE_TEMPLATE/kb-source.yml"
+find = "public content on the Claude API, agents or AI tooling the knowledge base"
+replace = "public content on this knowledge base's topics the knowledge base"
+
+[[replace]]
+file = "docs/guardrails.md"
+find = """ The Claude API is the one paid service the KB's
+topic depends on ([decision 0003](knowledge/decisions/0003-claude-api-as-model-provider.md)), and the
+KB's own tooling doesn't call it."""
+replace = " The KB's own tooling calls no paid service."
+
+[[replace]]
+file = "docs/knowledge/curation.md"
+find = """- Anthropic's Claude Code and Python SDK releases, and the Anthropic cookbook and courses repos
+- The Model Context Protocol specification
+"""
+replace = """- The 2ndbrain-public template, for changes to the shared machinery
+"""
+
+[[replace]]
+file = "docs/knowledge/curation.md"
+find = """This KB is the hub: it owns the AI knowledge the others use. nerdio-hcl is the format's reference
+implementation. """
+replace = ""
+
+[[replace]]
+file = "docs/knowledge/experts.md"
+find = "people on the Claude API, agents and AI tooling the KB follows"
+replace = "people on this KB's topics the KB follows"
+
+[[replace]]
+file = "docs/knowledge/experts.md"
+find = "who write about building with the Claude API, agents and AI tooling."
+replace = "who write about this KB's topics."
+
+[[replace]]
+file = "docs/knowledge/experts.md"
+find = """- Anthropic's own channels: docs, cookbook and course authors, and people Anthropic features
+- Speakers at AI engineering conferences and meetups
+- GitHub: maintainers of tools and MCP servers people use, and the KB's prior-art searches"""
+replace = """- The vendors' own channels: docs, sample and course authors, and people they feature
+- Speakers at conferences and meetups on the topic
+- GitHub: maintainers of tools people use, and the KB's prior-art searches"""
+
+[[replace]]
+file = "docs/knowledge/experts.md"
+find = "Anthropic staff often know the product best"
+replace = "Vendor staff often know the product best"
+
+[[replace]]
+file = "docs/knowledge/schema/page.schema.json"
+find = """"topic": {"enum": ["overview", "claude-api", "agents", "prompting", "evals", "privacy-and-safety", "platforms", "learning", "roadmap", "troubleshooting", "curation"]}"""
+replace = """"topic": {"enum": ["overview", "getting-started", "troubleshooting", "roadmap", "curation"]}"""
+
+[[replace]]
+file = "docs/knowledge/schema/experts.schema.json"
+find = """"independent", "anthropic", "other-vendor""""
+replace = """"independent", "vendor-staff", "other-vendor""""
+
+[[replace]]
+file = "scripts/kb/test_kb.py"
+find = "claude-api/README.md"
+replace = "getting-started/README.md"
+count = 5
+
+[[replace]]
+file = "scripts/kb/test_kb.py"
+find = "learning/README.md"
+replace = "roadmap/README.md"
+
+[[replace]]
+file = "AGENTS.md"
+find = """ The template export is defined in
+[template/manifest.toml](template/manifest.toml): if you change a file it copies or replaces, run
+the unit tests, which export the template and check it."""
+replace = ""

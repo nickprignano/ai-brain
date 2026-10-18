@@ -1,0 +1,22 @@
+2ndbrain-public
+Copyright 2026 Nick Prignano and the 2ndbrain contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Generated from ai-brain
+-----------------------
+
+Everything here is exported from ai-brain (https://github.com/nickprignano/ai-brain), Copyright
+2026 Nick Prignano and the ai-brain contributors, licensed under the Apache License, Version 2.0,
+with its content removed and an empty knowledge base skeleton added.
+
+ai-brain's knowledge base tooling (scripts/kb/, docs/knowledge/schema/, .github/workflows/kb-*.yml
+and .github/ISSUE_TEMPLATE/) is in turn adapted from nerdio-hcl
+(https://github.com/nickprignano/nerdio-hcl), Copyright 2026 Nick Prignano and the nerdio-hcl
+contributors, licensed under the Apache License, Version 2.0.
+
+Third-party components
+----------------------
+
+This repository does not include, vendor or redistribute any third-party code or binaries.
+The workflows run Gitleaks (MIT license) from its published container image.

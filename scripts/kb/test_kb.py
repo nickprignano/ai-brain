@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -237,6 +238,37 @@ class FamilyTests(unittest.TestCase):
         self.assertEqual(len(validate.errors), 1)
         self.assertIn("kb/decisions", validate.errors[0])
         validate.errors.clear()
+
+
+class ExportTests(unittest.TestCase):
+    """The 2ndbrain-public export builds, validates and passes its own tests. Skipped in the template."""
+
+    def exporter(self):
+        try:
+            import export_template
+        except ImportError:
+            self.skipTest("no exporter here")
+        if not export_template.MANIFEST.exists():
+            self.skipTest("no template manifest here")
+        return export_template
+
+    def test_export_is_clean(self):
+        export_template = self.exporter()
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out)
+        export_template.export(out)
+        for cmd in (["scripts/kb/validate.py"], ["scripts/kb/build.py", "--check"],
+                    ["-m", "unittest", "discover", "-s", "scripts/kb"]):
+            r = subprocess.run([sys.executable, *cmd], cwd=out, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, f"{' '.join(cmd)} failed in the export:\n{r.stdout}{r.stderr}")
+
+    def test_replace_that_no_longer_matches_fails(self):
+        export_template = self.exporter()
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out)
+        (out / "a.md").write_text("hello")
+        with self.assertRaises(export_template.ExportError):
+            export_template.apply_replacements({"replace": [{"file": "a.md", "find": "gone", "replace": "x"}]}, out)
 
 
 class AnchorTests(unittest.TestCase):
