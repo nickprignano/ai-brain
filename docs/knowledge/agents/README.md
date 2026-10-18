@@ -139,9 +139,10 @@ Trade-offs:
 
 ## A capture skill for a two-layer second brain
 
-[2ndbrain](../../../skills/2ndbrain/README.md) is a Claude skill that captures lessons and
-decisions from any session into this KB (by PR, after a public-safety check) or into a private
-notes repo, and refuses secrets and work material. Its sync mode reads this KB's directives and
+[2ndbrain](../../../skills/2ndbrain/README.md) is a Claude skill that closes out a thread: it
+reviews what the thread produced, proposes captures in one batch, and writes the approved ones to
+the project's own KB or this KB (by PR, after a public-safety check) or to a private notes repo. It
+refuses secrets and customer or tenant specifics. Its sync mode reads this KB's directives and
 decisions at the start of work in a family project, and can write a handoff block to paste into
 another project, since projects can't read each other's chats. One skill, not one per repo: two skills with
 overlapping triggers both fire on "lessons learned", so the older one gets turned off when this
