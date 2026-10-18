@@ -86,6 +86,21 @@ thread with that summary instead of carrying on.
 - In Claude chat: put related questions in one message, refer back instead of restating, and put
   documents you reuse in project knowledge, where they're cached.
 
+### Tools considered
+
+- **Headroom** ([repo](https://github.com/chopratejas/headroom), Apache-2.0, free; a paid
+  offering exists for organizations). A local proxy, library or MCP server that compresses tool
+  output, logs, files and history before they reach the model, and claims 15 to 20% fewer tokens
+  for coding agents. It runs locally, but fetches a model from Hugging Face and checks PyPI for
+  updates (`HEADROOM_UPDATE_CHECK=off`). Not part of the convention (checked 2026-10-18, release
+  0.41.0): it can't sit in front of Claude chat or cloud sessions, which is where most of the
+  family's work runs; Claude Code already defers MCP tools and supports subagents, hooks and
+  compaction for the same job; and a proxy sees every request and credential and rewrites
+  prompts, so a quality drop would be hard to see. A project may trial it in local Claude Code or
+  in its own app as a fit-for-purpose choice: pin the version, turn the update check off, and
+  compare tokens per task and the `/usage` cache share with and without it. *Unverified:* whether
+  routing a subscription-signed-in Claude Code session through a local proxy is supported.
+
 ### Check it's working
 
 - Claude Code `/usage`: session tokens and cost, a prompt-cache line (share of input served from
