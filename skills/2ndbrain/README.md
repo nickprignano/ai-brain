@@ -72,8 +72,10 @@ flow with the user's yes. Directives follow
 
 ## Install
 
-1. Copy [SKILL.md](SKILL.md) into a new skill in your Claude account (or your project's
-   `.claude/skills/2ndbrain/`).
+1. Copy [SKILL.md](SKILL.md) into a new skill in your Claude account. It's meant to work in every
+   session, so an account skill fits better than a project one. Inside a KB repo it sits alongside
+   that repo's `2ndbrain-kb` skill (`.claude/skills/2ndbrain-kb/`), which covers working on the KB
+   itself.
 2. Fill in the settings block: your hub repo, your private repo, its capture-rules file,
    `private_layer`, and the two sync settings.
 3. Give your sessions push access to both repos, or use it from a plain chat, where it drafts notes
