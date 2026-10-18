@@ -39,6 +39,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0003. The Claude API is the model provider, with a separate workspace per app](docs/knowledge/decisions/0003-claude-api-as-model-provider.md): proposed
 - [0004. This KB is the family's source of truth for Claude API topics](docs/knowledge/decisions/0004-source-of-truth-for-claude-api-topics.md): proposed
 - [0005. Family format: per-page review windows and revisit dates on decisions](docs/knowledge/decisions/0005-family-format-review-windows-and-revisit-dates.md): proposed
+- [0006. One model-selection convention, piloted on the family, with per-project overrides](docs/knowledge/decisions/0006-model-selection-convention.md): proposed
 
 ## Related knowledge bases
 
