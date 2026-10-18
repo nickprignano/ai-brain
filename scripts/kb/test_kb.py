@@ -188,7 +188,7 @@ class FreshnessTests(TempData):
         sections = freshness.collect(90, date(2027, 6, 1))
         self.assertTrue(any("claude-api/README.md" in i for i in sections["Reported broken or outdated"]))
         self.assertTrue(sections["Stale"])
-        self.assertFalse(any("claude-api/README.md" in i for i in sections["Stale"]))  # plan pages skip
+        self.assertFalse(any("learning/README.md" in i for i in sections["Stale"]))  # plan pages skip
 
 
 class BuildTests(unittest.TestCase):

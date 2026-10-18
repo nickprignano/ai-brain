@@ -22,12 +22,12 @@ belongs to instead of starting a new file.
 | Page | What's in it | Status |
 |---|---|---|
 | [anthropic/upstream-contributions.md](anthropic/upstream-contributions.md) | Gaps, API asks and doc fixes we could raise with Anthropic, with evidence | verified |
-| [claude-api/](claude-api/README.md) | Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks | plan |
-| [agents/](agents/README.md) | Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act | plan |
+| [claude-api/](claude-api/README.md) | Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks | partial |
+| [agents/](agents/README.md) | Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act | partial |
 | [prompting/](prompting/README.md) | System prompts, audience-specific prompts and structured output that held up in real apps | plan |
 | [evals/](evals/README.md) | Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks | plan |
 | [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs and building AI features for kids | plan |
-| [platforms/](platforms/README.md) | Hosting AI apps: serverless workers, databases, sign-in inside app wrappers, calling GitHub's API | plan |
+| [platforms/](platforms/README.md) | Hosting AI apps: serverless workers, databases, sign-in inside app wrappers, calling GitHub's API | verified |
 | [learning/](learning/README.md) | Courses, docs, cookbooks and people worth following to learn how to build with AI | plan |
 | [troubleshooting/](troubleshooting/README.md) | Errors hit with the Claude API, SDKs, agents and AI tooling: symptom, cause, fix and source | verified |
 | [curation.md](curation.md) | How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment | verified |
