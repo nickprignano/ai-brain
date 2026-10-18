@@ -40,6 +40,8 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0004. This KB is the family's source of truth for Claude API topics](docs/knowledge/decisions/0004-source-of-truth-for-claude-api-topics.md): proposed
 - [0005. Family format: per-page review windows and revisit dates on decisions](docs/knowledge/decisions/0005-family-format-review-windows-and-revisit-dates.md): proposed
 - [0006. One convention for using Claude models, piloted on the family, with per-project overrides](docs/knowledge/decisions/0006-model-selection-convention.md): proposed
+- [0007. Family format: this KB is the source of truth for the format, and templates are generated from it](docs/knowledge/decisions/0007-family-format-ai-brain-as-format-source.md): proposed
+- [0008. Family format: maintainer directives and a pause switch](docs/knowledge/decisions/0008-family-format-maintainer-directives-and-pause-switch.md): proposed
 
 ## Related knowledge bases
 
