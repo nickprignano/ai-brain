@@ -14,7 +14,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [Upstream asks for Anthropic](docs/knowledge/anthropic/upstream-contributions.md): Gaps, API asks and doc fixes we could raise with Anthropic, with evidence (status: verified)
 - [Claude API](docs/knowledge/claude-api/README.md): Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks (status: partial)
 - [Agents and Claude Code](docs/knowledge/agents/README.md): Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act (status: partial)
-- [Prompting](docs/knowledge/prompting/README.md): System prompts, audience-specific prompts and structured output that held up in real apps (status: plan)
+- [Prompting](docs/knowledge/prompting/README.md): System prompts, audience-specific prompts and structured output that held up in real apps (status: partial)
 - [Evals and testing](docs/knowledge/evals/README.md): Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks (status: plan)
 - [Privacy and safety](docs/knowledge/privacy-and-safety/README.md): Keys and secrets, prompt injection, local-only designs and building AI features for kids (status: plan)
 - [Platforms for AI apps](docs/knowledge/platforms/README.md): Hosting AI apps: serverless workers, databases, sign-in inside app wrappers, calling GitHub's API (status: verified)

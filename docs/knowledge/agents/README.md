@@ -148,6 +148,19 @@ overlapping triggers both fire on "lessons learned", so the older one gets turne
 one is installed. A setting, `private_layer`, decides whether public text may say the private
 layer exists; its contents stay private either way.
 
+## Skills that learn from use
+
+A skill can't rewrite its own files. In a claude.ai Project or cloud session, the synced skill
+files on disk are a read-only cache, and a saved skill proposal replaces the whole `SKILL.md`
+(checked 2026-10-18). So a skill that is meant to improve over time, such as one holding a
+writing-style profile, keeps its learned state inside `SKILL.md` and ends its learning step by
+proposing the complete updated file for the user to save. Two things make that work:
+
+- Gate every change on the user's yes, item by item, with the evidence for each, so a bad
+  inference never lands silently.
+- Bump a revision number and keep sample counts in the file, so the next session can tell how
+  much the learned state rests on.
+
 ## Connecting an Obsidian vault
 
 An Obsidian vault is just a folder of Markdown on your disk, so the web chat has no path to it.
