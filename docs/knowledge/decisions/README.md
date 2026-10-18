@@ -14,4 +14,5 @@ the family numbers its own decisions; refer to a sibling's as `<project> 0012`, 
 | [0003](0003-claude-api-as-model-provider.md) | The Claude API is the model provider, with a separate workspace per app | Proposed |
 | [0004](0004-source-of-truth-for-claude-api-topics.md) | This KB is the family's source of truth for Claude API topics | Proposed |
 | [0005](0005-family-format-review-windows-and-revisit-dates.md) | Family format: per-page review windows and revisit dates on decisions | Proposed |
+| [0006](0006-model-selection-convention.md) | One model-selection convention, piloted on the family, with per-project overrides | Proposed |
 <!-- END GENERATED: decision-index -->
