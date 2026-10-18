@@ -1,5 +1,5 @@
 ---
-name: 2ndbrain
+name: 2ndbrain-kb
 description: Use when working in a repo that keeps a 2ndbrain knowledge base under docs/knowledge/: adding facts or decisions, working a digest or freshness issue, aligning with sibling KBs, or acting on a directive.
 ---
 

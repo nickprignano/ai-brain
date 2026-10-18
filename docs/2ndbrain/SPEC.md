@@ -5,7 +5,7 @@ decided and why, what broke and how it was fixed. It's written so that people, t
 can all read it, and kept current by small, token-free automation. This page specifies the system:
 the layers, the format, the loops that keep a KB current, how sibling KBs stay aligned, and the
 optional private layer above them. Agents working in a 2ndbrain repo follow the
-[2ndbrain skill](../../.claude/skills/2ndbrain/SKILL.md), which is this spec turned into steps.
+[2ndbrain-kb skill](../../.claude/skills/2ndbrain-kb/SKILL.md), which is this spec turned into steps.
 
 Status: version 1 of the family format, in use by four project KBs. Parts marked **(proposed)** are
 written up as decisions but not yet accepted or built.
