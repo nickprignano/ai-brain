@@ -31,5 +31,5 @@ the KB closest to a topic is its source of truth, and this KB's topic is AI tool
 
 ## More Information
 
-A cross-project decision: to be recorded in [nerdio-hcl](https://github.com/nickprignano/nerdio-hcl/blob/main/docs/knowledge/decisions/README.md) too, with an
-"Also recorded in" link both ways, once this is accepted.
+Also recorded in [nerdio-hcl 0021](https://github.com/nickprignano/nerdio-hcl/blob/main/docs/knowledge/decisions/0021-knowledge-base-family.md),
+which names this KB the family's hub for AI knowledge.
