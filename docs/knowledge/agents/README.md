@@ -137,6 +137,15 @@ Trade-offs:
   trailers (co-author and session lines) come through as written (checked in a real run on
   2026-10-18).
 
+## A capture skill for a two-layer second brain
+
+[2ndbrain](../../../skills/2ndbrain/README.md) is a Claude skill that captures lessons and
+decisions from any session into this KB (by PR, after a public-safety check) or into a private
+notes repo, and refuses secrets and work material. One skill, not one per repo: two skills with
+overlapping triggers both fire on "lessons learned", so the older one gets turned off when this
+one is installed. A setting, `private_layer`, decides whether public text may say the private
+layer exists; its contents stay private either way.
+
 ## Connecting an Obsidian vault
 
 An Obsidian vault is just a folder of Markdown on your disk, so the web chat has no path to it.
