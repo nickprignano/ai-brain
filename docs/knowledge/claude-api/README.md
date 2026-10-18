@@ -27,9 +27,12 @@ workspace share all three, so keys alone don't stop one app from using up the ot
 
 - Have each app read its own environment variable for the key (for example
   `APPNAME_ANTHROPIC_API_KEY`), so a key can't be shared by accident.
-- *Unverified:* this was a recommendation made while setting up a second app, not tested end to
-  end. Re-check the Console docs on whether cost reports can now be grouped by key, and on
-  per-workspace limits.
+- Checked against Anthropic's [workspaces](https://platform.claude.com/docs/en/build-with-claude/workspaces)
+  and [Usage and Cost API](https://platform.claude.com/docs/en/build-with-claude/usage-cost-api)
+  docs on 2026-10-18: spend limits and rate limits are set per workspace (never per key), can't be
+  set on the Default Workspace, and can't exceed the organization's. Token usage can be filtered
+  and grouped by API key, but the cost report groups by workspace, so a workspace per app is still
+  the way to see and cap each app's spend. Prompt caches are also per workspace.
 
 ## Choosing a model
 
