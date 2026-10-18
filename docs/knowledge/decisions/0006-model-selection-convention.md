@@ -4,7 +4,7 @@ date: 2026-10-18
 decision-makers: [maintainer]
 ---
 
-# 0006. One model-selection convention, piloted on the family, with per-project overrides
+# 0006. One convention for using Claude models, piloted on the family, with per-project overrides
 
 ## Context and Problem Statement
 
@@ -34,6 +34,11 @@ defaults (model IDs, prices, Foundry availability and quota) are on the
 [Claude API page](../claude-api/README.md#choosing-a-model), checked against Anthropic's and
 Microsoft's docs on 2026-10-18.
 
+The weight is on Layer 1, working inside Claude: every project follows it, and changing it for one
+project takes an override decision. Layers 2 and 3 (apps that call a model, and the Foundry and
+other paths) are suggested starting points. Each project picks the models its own code uses to fit
+its purpose and records that choice in its own KB; those layers aren't mandates.
+
 Three rules hold in every layer:
 
 - **Effort before model.** Change `effort` first, then the model. Lower effort on a stronger
@@ -44,7 +49,7 @@ Three rules hold in every layer:
 - **Keyless and least-privilege.** Apps sign in with a managed identity: workload identity
   federation to the Claude API, Entra ID to Foundry. No API key is stored, shown or pasted.
 
-### Layer 1: Claude project sessions
+### Layer 1: inside Claude (the convention)
 
 | Role | Default | Why |
 |---|---|---|
@@ -62,12 +67,18 @@ Bump a thread up one step at a time, effort first:
 
 Move a thread down to Sonnet 5.5 at `low` for doc edits, link fixes, triage and lookups.
 
+How to work within those defaults (when to start a fresh session, how to keep context and
+tokens down, and what to check) is the standing convention on the
+[agents page](../agents/README.md#working-inside-claude-model-effort-context-and-fresh-sessions).
+
 The user sets the defaults in each project's instructions (one line, for example "Start threads
 on claude-opus-5-5 at medium effort"), because a Claude session changes its model or effort only
 when the user asks for it. Inside a repo, `.claude/settings.json` (`model`, `effortLevel`) pins
 Claude Code sessions for that repo.
 
-### Layer 2: apps that call the Claude API
+### Layer 2: apps that call the Claude API (suggested defaults)
+
+A starting point for a project's own choice, not a rule; each project decides what fits.
 
 | Kind of job | Default | Why |
 |---|---|---|
@@ -94,7 +105,7 @@ Handle `stop_reason: "refusal"` everywhere. On the Claude API, turn on server-si
 (`fallbacks: "default"`); Foundry doesn't support them, so use the SDK's client-side fallback
 there.
 
-### Layer 3: Microsoft Foundry and other paths
+### Layer 3: Microsoft Foundry and other paths (suggested fallback rules)
 
 The primary provider is a per-app choice in config, and fallbacks follow these rules:
 
@@ -137,23 +148,25 @@ tokens), `stop_reason` and latency, to the logs it already has. No new tool. Fro
   breaking the cache.
 - **p95 latency** for chat jobs.
 
-For project sessions, the measure is the bump rate: the share of threads that had to move up a
-model or effort, or needed the user to redo work. Anthropic's Console reports spend per workspace.
+For project sessions, the measures are the bump rate (the share of threads that had to move up a
+model or effort, or needed the user to redo work), sessions restarted because quality slipped,
+and the prompt-cache share Claude Code's `/usage` reports. Anthropic's Console reports spend per workspace.
 
 ### Pilot, overrides and promotion
 
 - **Pilot:** the four family projects (AI, Nerdio, AVD and Liquidware) from 2026-10-18 to
   2026-11-30.
-- **Overrides:** a project that needs a different model for a kind of job writes a decision in
-  its own KB titled "Model override: (job)" with the model, effort, the measure that justified it
-  and a revisit date, and sets its config to match. The default here doesn't change for one
-  project.
+- **Overrides:** a project that needs to work differently inside Claude writes a decision in
+  its own KB titled "Model override: (role)" with the model, effort, the measure that justified it
+  and a revisit date, and puts the line in its project instructions. The default here doesn't
+  change for one project. App models need no override: the project's own decision records them.
 - **Reporting:** each project files its pilot numbers as a knowledge base feedback issue on this
   repo against the Claude API page, so results land in [field-reports.yaml](../field-reports.yaml)
   in one place. The maintainer's private notes read from there; nothing private flows back.
-- **Success:** in at least three of the four projects, every app logs usage per task; the app
-  failure rate is under 2% of tasks; jobs moved to a smaller model keep their eval pass rate at
-  the same or lower cost per task; and fewer than one thread in five needs a bump.
+- **Success:** in at least three of the four projects, fewer than one thread in five needs a bump,
+  sessions restarted because quality slipped are counted and falling, and the cache share in
+  `/usage` stays high. Where a project has an app, it logs usage per task and its failure rate is
+  under 2% of tasks.
 - **Promotion:** at the review on 2026-12-01, if the success measures hold, the maintainer marks
   this decision accepted for every current and future Claude project, and the Layer 1 line goes
   into each project's instructions. If they don't, this record is revised with what the numbers
@@ -161,11 +174,12 @@ model or effort, or needed the user to redo work. Anthropic's Console reports sp
 
 ### Consequences
 
-- Good, because every project starts from the same defaults and changes them with evidence.
+- Good, because every project works inside Claude the same way and changes it with evidence.
+- Good, because app models stay fit for each project's purpose.
 - Good, because the measures come from data each app already gets back from the API.
 - Bad, because Sonnet in the project chat may misroute more than Opus would; the bump rate
   shows it, and the fix is one line in the project instructions.
-- Bad, because apps gain three config values each.
+- Bad, because an app that follows the suggestion gains three config values.
 - Neutral, because prices and IDs change; the facts live on one page with a review date, and
   this record changes only when a default does.
 
