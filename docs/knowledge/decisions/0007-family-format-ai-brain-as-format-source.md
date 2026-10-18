@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-10-18
 decision-makers: [maintainer]
 ---
@@ -38,7 +38,7 @@ from a working KB can't drift from it.
   `format_version`.
 - **Changing the format.** A "Family format: ..." decision is written here first. Each sibling then
   adopts it by PR, and `format_version` goes up here once every sibling has merged it.
-- **Templates.** `template/manifest.yaml` and `scripts/kb/export_template.py` build a clean copy
+- **Templates.** `template/manifest.toml` and `scripts/kb/export_template.py` build a clean copy
   of the machinery (scripts, schemas, workflows, issue forms, guardrails, the 2ndbrain spec and
   skill) with an empty KB skeleton and none of this KB's content. A public template repository,
   `2ndbrain-public`, pulls that export weekly with its own token and opens a PR in itself. This

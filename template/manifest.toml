@@ -21,6 +21,7 @@ include = [
   "docs/knowledge/experts.md",
   "docs/knowledge/decisions/template.md",
   "docs/knowledge/schema/decision.schema.json",
+  "docs/knowledge/schema/directive.schema.json",
   "docs/knowledge/schema/experts.schema.json",
   "docs/knowledge/schema/family.schema.json",
   "docs/knowledge/schema/field-reports.schema.json",
