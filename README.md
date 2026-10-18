@@ -38,7 +38,7 @@ reviewed pull request. The full rules are in [docs/guardrails.md](docs/guardrail
 ## Start your own
 
 The system this repo runs on is specified in [docs/2ndbrain/SPEC.md](docs/2ndbrain/SPEC.md), and
-agents follow the [2ndbrain skill](.claude/skills/2ndbrain/SKILL.md). This repo is the working
+agents follow the [2ndbrain-kb skill](.claude/skills/2ndbrain-kb/SKILL.md). This repo is the working
 prototype. Two template repositories carry it to anyone who wants one:
 
 - [2ndbrain-public](https://github.com/nickprignano/2ndbrain-public): the machinery and an empty

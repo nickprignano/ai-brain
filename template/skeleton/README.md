@@ -7,7 +7,7 @@ files. The tooling runs on GitHub Actions with the built-in token: no LLM calls,
 paid services.
 
 The full system is in [docs/2ndbrain/SPEC.md](docs/2ndbrain/SPEC.md). Agents follow the
-[2ndbrain skill](.claude/skills/2ndbrain/SKILL.md).
+[2ndbrain-kb skill](.claude/skills/2ndbrain-kb/SKILL.md).
 
 ## Start your own
 

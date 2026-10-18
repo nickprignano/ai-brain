@@ -16,6 +16,7 @@ on:
       - docs/2ndbrain/**
       - docs/guardrails.md
       - .claude/skills/**
+      - skills/**
       - template/**
       - AGENTS.md
   push:
