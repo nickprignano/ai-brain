@@ -132,9 +132,10 @@ is a config change and a new client class, not new app logic.
 
 Least privilege on each path: on the Claude API, one federation rule per app that matches the
 identity's exact object ID, with only the `workspace:inference` scope, in the app's own workspace
-([0003](0003-claude-api-as-model-provider.md)). On Foundry, the app's managed identity gets one of
-the roles Anthropic's docs name (Foundry User or Cognitive Services User) on the Foundry resource
-only, and key-based (local) auth is turned off on the resource.
+([0003](0003-claude-api-as-model-provider.md)). On Foundry, the app's managed identity gets Foundry
+User on the Foundry resource only (Microsoft calls it the least-privilege role and advises against
+the Cognitive Services roles for Foundry), and key-based (local) auth is turned off on the
+resource.
 
 ### Measuring whether the choice is right
 
@@ -192,9 +193,8 @@ Sources, checked 2026-10-18: Anthropic's
 and [Claude Code model configuration](https://code.claude.com/docs/en/model-config), and
 Microsoft's [Claude quotas and limits in Foundry](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models-quotas-limits).
 
-*Unverified:* which of the two Foundry roles is the narrower one for inference only, and whether
-a project chat's own model can be set from project settings rather than through its
-instructions. Re-check both during the pilot.
+*Unverified:* whether a project chat's own model can be set from project settings rather than
+through its instructions. Re-check during the pilot.
 
 A cross-project decision: recorded here as the source of truth
 ([0004](0004-source-of-truth-for-claude-api-topics.md)), with "Also recorded in" pointers in each
