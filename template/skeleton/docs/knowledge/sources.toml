@@ -1,0 +1,25 @@
+# Sources the KB curator watches. See docs/knowledge/curation.md.
+# Add a source by appending a table below; no code change needed.
+#
+# kinds:
+#   github_releases  new releases of a repo
+#   github_commits   new commits on a repo's default branch (for repos that rarely tag releases);
+#                    add path = "..." to watch only one file or folder
+#   github_org_repos new or recently pushed repos in an org
+#   github_user_repos the same for a person's account (user = "..."); add keywords to narrow it
+#   github_issues    issues and PRs opened or updated in a repo
+#   github_search    new repositories matching a search query (prior art)
+#   feed             RSS/Atom feed, optionally filtered by keywords
+#   zendesk          a Zendesk help center's recently updated articles
+#
+# Blog feeds are added only after a curator run confirms they work (curation.md).
+
+
+# --- The template this KB was made from ----------------------------------------
+# The weekly digest tells you when the shared machinery changes. Adopt a change by PR.
+
+[[source]]
+name = "2ndbrain-public: template changes"
+kind = "github_commits"
+repo = "nickprignano/2ndbrain-public"
+kb_page = "curation.md"

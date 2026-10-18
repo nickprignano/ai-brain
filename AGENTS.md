@@ -14,6 +14,11 @@ Read [docs/guardrails.md](docs/guardrails.md) before changing anything. These ar
   file. When a fact belongs to a sibling KB's topic ([family.yaml](docs/knowledge/family.yaml)),
   link to their page instead of copying it.
 
+The whole system is in [docs/2ndbrain/SPEC.md](docs/2ndbrain/SPEC.md), and the step-by-step
+version is the [2ndbrain skill](.claude/skills/2ndbrain/SKILL.md). The template export is defined in
+[template/manifest.toml](template/manifest.toml): if you change a file it copies or replaces, run
+the unit tests, which export the template and check it.
+
 ## Checks to run
 
 ```bash

@@ -6,6 +6,7 @@ Needs PyYAML (and jsonschema for validate.py): pip install -r scripts/kb/require
 from __future__ import annotations
 
 import re
+import tomllib
 from pathlib import Path
 
 import yaml
@@ -22,6 +23,7 @@ FIELD_REPORTS = KB_DIR / "field-reports.yaml"
 EXPERTS = KB_DIR / "experts.yaml"
 SOURCES = KB_DIR / "sources.toml"
 FAMILY = KB_DIR / "family.yaml"
+KB_TOML = KB_DIR / "kb.toml"
 
 # The experts study (experts.md): five scores of 0-3, plus pass/fail gates.
 TRACK_AT = 10
@@ -32,6 +34,12 @@ NOT_PAGES = {"decisions/README.md", "decisions/template.md"}
 
 FRONT_MATTER = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 DECISION_FILE = re.compile(r"^\d{4}-[a-z0-9-]+\.md$")
+
+
+def kb_config() -> dict:
+    """This KB's identity from kb.toml: name, title, tagline, user agent, topic order, data files."""
+    with KB_TOML.open("rb") as f:
+        return tomllib.load(f)
 
 
 def rel(path: Path) -> str:

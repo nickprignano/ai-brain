@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import textwrap
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -27,8 +28,7 @@ BLOCK = re.compile(
     r"(<!-- BEGIN GENERATED: (?P<name>[\w-]+)[^>]*-->\n)(?P<body>.*?)(<!-- END GENERATED: (?P=name) -->)",
     re.S,
 )
-TOPIC_ORDER = ["overview", "claude-api", "agents", "prompting", "evals", "privacy-and-safety", "platforms",
-               "learning", "troubleshooting", "roadmap", "curation"]
+TOPIC_ORDER = kblib.kb_config()["topic_order"]
 
 
 def cell(text: str) -> str:
@@ -180,11 +180,11 @@ def render_family() -> str:
 
 
 def render_llms_txt() -> str:
+    cfg = kblib.kb_config()
     lines = [
-        "# ai-brain: AI research knowledge base",
+        f"# {cfg['name']}: {cfg['title']}",
         "",
-        "> A living knowledge base of findings, gotchas and decisions about the Claude API, agents and",
-        "> AI tooling, shared by a family of sibling knowledge bases that use the same format.",
+        *textwrap.wrap(cfg["tagline"], width=100, initial_indent="> ", subsequent_indent="> "),
         "",
         "The knowledge base is in docs/knowledge/. Every page starts with YAML front matter (title, summary,",
         "topic, status, last_reviewed) validated against docs/knowledge/schema/. Pages with status `plan`",
@@ -196,15 +196,11 @@ def render_llms_txt() -> str:
     ]
     for p, fm in pages():
         lines.append(f"- [{fm['title']}](docs/knowledge/{rel(p)}): {fm['summary']} (status: {fm['status']})")
+    lines += ["", "## Structured data", ""]
+    for d in cfg.get("data", []):
+        if (KB_DIR / d["path"]).is_file():
+            lines.append(f"- [{d['name']}](docs/knowledge/{d['path']}): {d['text']}")
     lines += [
-        "",
-        "## Structured data",
-        "",
-        "- [Known errors](docs/knowledge/troubleshooting/known-errors.yaml): symptom, cause, fix and source for errors hit with the Claude API and AI tooling",
-        "- [Upstream asks](docs/knowledge/anthropic/upstream.yaml): gaps and asks for Anthropic's API, SDKs and tools, with evidence and status",
-        "- [Field reports](docs/knowledge/field-reports.yaml): what worked or broke when someone followed the KB",
-        "- [Experts study](docs/knowledge/experts.yaml): people the KB follows, with scores, evidence and the feeds watched",
-        "- [Family](docs/knowledge/family.yaml): the sibling knowledge bases and the format version each follows",
         "- [Schemas](docs/knowledge/schema/page.schema.json): JSON Schemas for page front matter and the YAML files above",
         "",
         "## Decisions",
@@ -250,6 +246,8 @@ def targets() -> dict[Path, str]:
         },
     }
     for path, renderers in jobs.items():
+        if not path.exists():  # optional pages, such as upstream asks, that a KB may not have
+            continue
         out[path] = fill_blocks(path.read_text(encoding="utf-8"), renderers)
     out[kblib.LLMS_TXT] = render_llms_txt()
     return out
