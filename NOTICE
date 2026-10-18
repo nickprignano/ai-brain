@@ -1,0 +1,22 @@
+ai-brain
+Copyright 2026 Nick Prignano and the ai-brain contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Portions adapted from nerdio-hcl
+--------------------------------
+
+The knowledge base tooling in scripts/kb/, docs/knowledge/schema/, .github/workflows/kb-*.yml and
+.github/ISSUE_TEMPLATE/ is adapted from nerdio-hcl (https://github.com/nickprignano/nerdio-hcl),
+Copyright 2026 Nick Prignano and the nerdio-hcl contributors, licensed under the Apache License,
+Version 2.0. Changes: topics and examples for this knowledge base, a family.yaml of sibling
+knowledge bases, and checks that use it.
+
+Third-party components
+----------------------
+
+This repository does not include, vendor or redistribute any third-party code or binaries.
+The workflows run Gitleaks (MIT license) from its published container image.
+
+Claude and Anthropic are trademarks of their owner. This project is not affiliated with or
+endorsed by Anthropic.
