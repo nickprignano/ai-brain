@@ -17,7 +17,8 @@ Public KBs change by pull request only. The skill has three modes:
 
 - **Closeout:** at the end of a thread, review what it produced, propose captures with their
   routes, get one yes, write them, and list what's still open.
-- **Capture:** the routing and writing that closeout uses, also available on its own.
+- **Capture:** the routing and writing that closeout uses, also available on its own ("2ndbrain",
+  "capture this", "/2ndbrain"), with the same triggers per type.
 - **Sync:** at the start of work in a family project, report what changed in the hub, or write a
   handoff block for another project. Sync is separate from closeout and never runs inside it.
 
@@ -52,7 +53,8 @@ sync_default_days: 14                  # look-back when there's no record of a l
    - **Decisions:** choices made, or an open question the user needed judgment on (and goals,
      when it was about a lasting aim).
    - **Root causes:** only if the user asked for troubleshooting.
-   - **Procedures:** only if the user asked for steps they take part in.
+   - **Procedures:** only if the user asked for steps they take part in. Include a "Who does
+     what" table and a backout plan.
    - **Patterns:** only if the same lesson already shows up in two or more KBs, and only if the
      private layer's rules define a pattern note.
    - **Disagreements:** only if the user asked for one. Never on your own initiative.
