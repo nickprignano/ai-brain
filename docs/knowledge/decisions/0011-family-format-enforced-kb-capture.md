@@ -59,10 +59,15 @@ catches work done outside Claude or a hook that was skipped. None of them calls 
 
 ### Pilot
 
-- **Where, in parallel:** the AVD repos (the AVD KB, its swarm and its landing zone) and the
-  Nerdio HCL kit. AVD tests repos without a KB of their own; nerdio-hcl tests the hook and the
-  check against a mature KB and CI. Anything that needs testing first is tested in this KB's own
-  repos.
+- **Where, in parallel:** the AVD repos (the AVD KB, its swarm and its landing zone), the Nerdio
+  HCL kit and the Liquidware repo. AVD tests repos without a KB of their own; nerdio-hcl tests the
+  hook and the check against a mature KB and CI; Liquidware tests a project that starts with no
+  KB. Anything that needs testing first is tested in this KB's own repos.
+- **Liquidware until its KB exists.** It sets up its own KB with the family's new-KB steps. Until
+  then it runs as a repo without a KB: its PR check passes with a `KB: <link>` to the lesson in
+  the sibling KB that owns the topic (the AVD KB or this one), or with `no-kb` and a reason. Its
+  demo on 2026-11-04 must not depend on the hook or the check, so its hook warns instead of
+  blocking until after the demo.
 - **Warn before block in the reference repo.** In nerdio-hcl the Stop hook only warns (a message
   to the session, no block) until the AVD pilot shows it behaves; its PR check runs for real from
   the start. The mode is one setting, `capture_hook = "warn"` or `"block"`, in each repo's
@@ -110,4 +115,4 @@ Follows from the owner's question about what enforces capture, answered in the p
 their dev projects (2026-10-19). Related: guardrail 7 in [guardrails.md](../../guardrails.md), the 2ndbrain skill's
 closeout, [0006](0006-model-selection-convention.md) for the same pilot-then-promote pattern, and
 [0010](0010-family-format-upstream-sources.md) for the next format version. To be recorded in the
-AVD KB and the Nerdio HCL kit when each project adopts the pilot.
+AVD KB, the Nerdio HCL kit and the Liquidware KB when each project adopts the pilot.
