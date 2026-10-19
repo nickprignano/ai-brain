@@ -39,13 +39,12 @@ reviewed pull request. The full rules are in [docs/guardrails.md](docs/guardrail
 
 The system this repo runs on is specified in [docs/2ndbrain/SPEC.md](docs/2ndbrain/SPEC.md), and
 agents follow the [2ndbrain-kb skill](.claude/skills/2ndbrain-kb/SKILL.md). This repo is the working
-prototype. Two template repositories carry it to anyone who wants one:
-
-- [2ndbrain-public](https://github.com/nickprignano/2ndbrain-public): the machinery and an empty
-  knowledge base, generated from this repo by `scripts/kb/export_template.py` following
-  [template/manifest.toml](template/manifest.toml).
-- [2ndbrain-private](https://github.com/nickprignano/2ndbrain-private): a private wisdom layer that
-  sits above your public KBs. The maintainer keeps one too. Its contents stay private by design.
+prototype. One template repository, [2ndbrain](https://github.com/nickprignano/2ndbrain), carries
+it to anyone who wants one: the machinery, an empty knowledge base and an empty private wisdom layer
+that sits above your public KBs, generated from this repo by `scripts/kb/export_template.py`
+following [template/manifest.toml](template/manifest.toml). You pick public or private at setup,
+and private is the default. The maintainer keeps a private layer too; its contents stay private by
+design.
 
 To add a project to this family, follow [docs/2ndbrain/new-family-kb.md](docs/2ndbrain/new-family-kb.md):
 it has the steps and a prompt to paste into the new project's chat.

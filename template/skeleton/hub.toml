@@ -1,0 +1,12 @@
+# Settings for this private layer. Edit these after you make your copy.
+
+# The public hub knowledge base this layer reads from and sends directives to.
+hub_repo = "<owner>/<hub-repo>"
+hub_kb_path = "docs/knowledge"
+
+# Words that must never appear in a directive: this repo's name, private repo names, people.
+# outbox_check.py refuses a directive containing any of them (case-insensitive).
+private_names = ["<this-repo-name>"]
+
+# kb-* workflows a directive may pause.
+pausable = ["all", "kb-curator", "kb-freshness", "kb-feedback", "kb-prior-art"]

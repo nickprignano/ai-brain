@@ -1,0 +1,25 @@
+name: privacy
+
+# Keeps the private layer out of public repos (scripts/privacy_check.py). A public repo fails if it
+# has notes/, outbox/ or hub.toml, unless it is the template itself, which fails only if the layer
+# holds a real note or directive. Runs in every copy, private or public.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: >-
+          python3 scripts/privacy_check.py --ci
+          --private "${{ github.event.repository.private }}"
+          --template "${{ github.event.repository.is_template || github.repository == 'nickprignano/2ndbrain' }}"

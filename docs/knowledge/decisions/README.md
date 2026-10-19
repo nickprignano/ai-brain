@@ -21,4 +21,5 @@ the family numbers its own decisions; refer to a sibling's as `<project> 0012`, 
 | [0010](0010-family-format-upstream-sources.md) | Family format: link to upstream sources of truth, check against them, and give back | Proposed |
 | [0011](0011-family-format-enforced-kb-capture.md) | Family format: enforce knowledge capture with a Stop hook, a PR check and a thread closeout | Accepted |
 | [0012](0012-family-format-handoff-issues.md) | Family format: handoffs between Claude projects go through a `handoff` issue in the receiving repo | Accepted |
+| [0013](0013-one-2ndbrain-template-private-by-default.md) | One 2ndbrain template, set up as public or private, private by default | Accepted |
 <!-- END GENERATED: decision-index -->

@@ -1,7 +1,7 @@
 # Keeps this template in step with ai-brain, the knowledge base that owns the 2ndbrain format.
 # Weekly, it checks out ai-brain (public, no token needed), runs its exporter into this repo, runs
 # the checks on the result, and opens a pull request here if anything changed. ai-brain never
-# writes to this repo.
+# writes to this repo. It runs only in the template repo itself; setup.py removes it from copies.
 name: template-sync
 
 on:
@@ -20,7 +20,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    if: vars.KB_PAUSED != 'true'
+    if: github.repository == 'nickprignano/2ndbrain' && vars.KB_PAUSED != 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,6 +43,7 @@ jobs:
           python3 scripts/kb/validate.py
           python3 scripts/kb/build.py --check
           python3 -m unittest discover -s scripts/kb
+          python3 -m unittest discover -s scripts
       - name: Open a pull request if anything changed
         working-directory: template
         env:
