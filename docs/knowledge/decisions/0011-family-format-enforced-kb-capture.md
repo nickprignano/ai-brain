@@ -41,7 +41,7 @@ catches work done outside Claude or a hook that was skipped. None of them calls 
 - A `Stop` hook runs a small family script, `scripts/kb/capture_check.py`, that uses only git: it
   compares the working tree and branch with the merge base on the default branch.
 - If files outside `docs/knowledge/` changed and nothing under `docs/knowledge/` did, it returns a
-  block with a reason: write the lesson on its topic page, or say in one line why there's none.
+  block (or, in warn mode, a message) with a reason: write the lesson on its topic page, or say in one line why there's none.
 - It blocks once per stop. When the hook input says a stop hook is already active, it lets the
   session end, so it can never loop. The cost is one more Claude turn, not a model call of its own.
 - Generated files (`llms.txt`, generated blocks) and lockfiles don't count as code changes.
@@ -59,11 +59,20 @@ catches work done outside Claude or a hook that was skipped. None of them calls 
 
 ### Pilot
 
-- **Where:** the AVD repos first (the AVD KB, its swarm and its landing zone), where most real-run
-  lessons happen. Anything that needs testing before that is tested in this KB's own repos first.
+- **Where, in parallel:** the AVD repos (the AVD KB, its swarm and its landing zone) and the
+  Nerdio HCL kit. AVD tests repos without a KB of their own; nerdio-hcl tests the hook and the
+  check against a mature KB and CI. Anything that needs testing first is tested in this KB's own
+  repos.
+- **Warn before block in the reference repo.** In nerdio-hcl the Stop hook only warns (a message
+  to the session, no block) until the AVD pilot shows it behaves; its PR check runs for real from
+  the start. The mode is one setting, `capture_hook = "warn"` or `"block"`, in each repo's
+  `kb.toml`, or in `.claude/kb-capture.toml` for a repo without a KB.
+- **Order:** this KB builds and tests `capture_check.py` and the `kb-capture` job once this
+  decision is accepted; each pilot project then installs them from this KB's export and adds the
+  hook, the check and the closeout rule in its own PR.
 - **When:** to 2026-11-30, reviewed on 2026-12-01, the same window as decision 0006.
 - **What's measured:** PRs merged, how many carried a KB change, how many used `no-kb`, and how
-  often the hook blocked. Results go in `field-reports.yaml`.
+  often the hook blocked or warned, per repo. Results go in `field-reports.yaml`.
 - **Then:** if it holds up, it joins the family format in the next version bump after the review.
   It is not part of format version 2, which carries 0005, 0007, 0008, AVD 0009 and 0010.
 
@@ -84,4 +93,4 @@ Follows from the owner's question about what enforces capture, answered in the p
 2026-10-19. Related: guardrail 7 in [guardrails.md](../../guardrails.md), the 2ndbrain skill's
 closeout, [0006](0006-model-selection-convention.md) for the pilot window, and
 [0010](0010-family-format-upstream-sources.md) for the next format version. To be recorded in the
-AVD KB once the AVD project adopts the pilot.
+AVD KB and the Nerdio HCL kit when each project adopts the pilot.
