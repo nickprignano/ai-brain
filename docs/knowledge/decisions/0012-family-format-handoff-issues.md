@@ -54,7 +54,7 @@ the family-wide signal; a handoff issue is the container that carries the work.
 
 - **A handoff is live only when the owner added the `handoff` label by hand,** when opening the
   issue or later. Every other handoff issue is a proposal: it carries `handoff-proposed` and waits.
-  The issue template applies `handoff-proposed`, never `handoff`, because GitHub applies template
+  The issue template applies `handoff-proposed`, never `handoff`, because GitHub can apply template
   labels for whoever opens the issue, a stranger on a public repo included.
 - **Projects never add `handoff` themselves.** Claude projects act on GitHub as the owner's own
   account, so GitHub can't tell the owner's label from a project's. This is a rule Claude keeps,
