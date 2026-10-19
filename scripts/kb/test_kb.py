@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import auto_merge  # noqa: E402
 import build  # noqa: E402
 import capture_check  # noqa: E402
 import feedback  # noqa: E402
@@ -431,6 +432,68 @@ class CaptureTests(unittest.TestCase):
         (root / "docs" / "knowledge" / "kb.toml").write_text('capture_hook = "nonsense"\n')
         cfg = capture_check.load_config(root)
         self.assertEqual((cfg["has_kb"], cfg["mode"]), (True, "block"))
+
+
+class AutoMergeTests(unittest.TestCase):
+    """Decision 0013: which pull requests turn on auto-merge."""
+
+    CFG = {"on": True, "paths": ["docs/**", "README.md", "llms.txt"], "deny": []}
+    REPO = {"repo": {"full_name": "me/kb", "default_branch": "main"}, "ref": "main"}
+
+    def pr(self, **kw):
+        pr = {"user": {"login": "Me"}, "head": self.REPO, "base": self.REPO, "draft": False,
+              "labels": [], "changed_files": 2}
+        pr.update(kw)
+        return pr
+
+    def check(self, files, pr=None, cfg=None, env=None):
+        return auto_merge.verdict(pr or self.pr(changed_files=len(files)), files, "me",
+                                  cfg or self.CFG, env or {})
+
+    def test_kb_only_pr_is_eligible(self):
+        ok, msg = self.check(["docs/knowledge/agents/README.md", "llms.txt"])
+        self.assertTrue(ok, msg)
+
+    def test_any_path_outside_the_set_blocks(self):
+        self.assertFalse(self.check(["docs/knowledge/a.md", "app/main.go"])[0])
+
+    def test_hard_deny_beats_the_configured_paths(self):
+        wide = {"on": True, "paths": ["*"], "deny": []}
+        for f in ["docs/knowledge/decisions/0013-x.md", "docs/knowledge/directives.yaml",
+                  "docs/knowledge/kb.toml", ".github/workflows/kb-auto-merge.yml", "scripts/kb/x.py",
+                  "docs/guardrails.md", "docs/2ndbrain/SPEC.md", "AGENTS.md", "infra/main.bicep",
+                  "docs/knowledge/schema/page.schema.json", ".claude/settings.json", "deploy.ps1",
+                  "docs/CLAUDE.md", "docs/knowledge/AGENTS.md", "docs/CODEOWNERS", "docs/index.html",
+                  "docs/knowledge/x/.claude/skills/s/SKILL.md", "docs/knowledge/.github/workflows/x.yml",
+                  "docs/knowledge/Deploy.PS1", "docs/Main.Bicep", "docs/knowledge/a.psd1"]:
+            self.assertFalse(self.check([f], cfg=wide)[0], f)
+
+    def test_off_paused_draft_held_fork_or_stranger_blocks(self):
+        files = ["docs/knowledge/a.md"]
+        self.assertFalse(self.check(files, cfg={**self.CFG, "on": False})[0])
+        self.assertFalse(self.check(files, env={"KB_PAUSED": "true"})[0])
+        self.assertFalse(self.check(files, pr=self.pr(changed_files=1, draft=True))[0])
+        self.assertFalse(self.check(files, pr=self.pr(changed_files=1, labels=[{"name": "no-auto-merge"}]))[0])
+        self.assertFalse(self.check(files, pr=self.pr(changed_files=1, head={"repo": {"full_name": "x/kb"}}))[0])
+        self.assertFalse(self.check(files, pr=self.pr(changed_files=1, user={"login": "stranger"}))[0])
+        other_base = {"repo": self.REPO["repo"], "ref": "release"}
+        self.assertFalse(self.check(files, pr=self.pr(changed_files=1, base=other_base))[0])
+
+    def test_repo_deny_list(self):
+        cfg = {**self.CFG, "deny": ["docs/knowledge/prompting/library/*"]}
+        self.assertFalse(self.check(["docs/knowledge/prompting/library/x.md"], cfg=cfg)[0])
+
+    def test_incomplete_file_list_blocks(self):
+        self.assertFalse(self.check(["docs/knowledge/a.md"], pr=self.pr(changed_files=3001))[0])
+        self.assertFalse(self.check([], pr=self.pr(changed_files=0))[0])
+
+    def test_config_defaults_off(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        self.assertEqual(auto_merge.load_config(root), {"on": False, "paths": auto_merge.DEFAULT_PATHS, "deny": []})
+        (root / ".claude").mkdir()
+        (root / ".claude" / "kb-capture.toml").write_text('auto_merge = "on"\nauto_merge_paths = ["docs/*.md"]\n')
+        self.assertEqual(auto_merge.load_config(root), {"on": True, "paths": ["docs/*.md"], "deny": []})
 
 
 class AnchorTests(unittest.TestCase):

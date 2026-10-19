@@ -12,6 +12,8 @@ sources:
   - https://lobehub.com/mcp/administrativetrick-obsidian-mcp
   - https://pypi.org/project/obsidian-mnemo/
   - https://www.verdent.ai/guides/obsidian-mcp-server
+  - https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request
+  - https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows
 ---
 
 # Agents and Claude Code
@@ -197,6 +199,29 @@ Trade-offs:
 - Pushes that add or change `.github/workflows/` files work from a cloud session, and commit
   trailers (co-author and session lines) come through as written (checked in a real run on
   2026-10-18).
+
+## Letting agent PRs merge themselves
+
+When agents open most of the PRs, the owner's merge click becomes the bottleneck. GitHub's
+auto-merge can take the low-risk ones, if the class is decided by a workflow, not by the agent that
+wrote the change. The family's version is [decision 0013](../decisions/0013-family-format-auto-merge-low-risk-prs.md).
+What matters when building one (from GitHub's docs, 2026-10-19):
+
+- **Judge from the base branch.** A `pull_request` workflow runs the PR's own copy of the workflow,
+  so a PR could rewrite its own gate. `pull_request_target` runs the base branch's copy with a
+  write token; that's safe only if it never checks out or runs the PR's code. Read the changed
+  files from the API instead (`pulls/{n}/files`, up to 3,000 files; fail closed above that).
+- **Count renames twice.** The files API gives `previous_filename` for a rename; moving a file out
+  of a denied path must count as touching it.
+- **Auto-merge survives pushes** from anyone with write access. A later push that adds a risky file
+  doesn't turn it off by itself, so the gate must re-run on every push and be a required check, or
+  the PR can merge on the new head before the gate turns auto-merge off.
+- **A required check that never reports blocks the PR forever.** Workflows with a `paths` filter
+  can't be required checks unless every PR matches the filter.
+- **Merges made with `GITHUB_TOKEN` don't trigger other workflows,** including `push` workflows on
+  the default branch.
+- **The agent is often the owner's account.** GitHub can't tell them apart, so "agents never arm
+  auto-merge by hand" is a rule the agent keeps, not something GitHub enforces.
 
 ## A capture skill for a two-layer second brain
 

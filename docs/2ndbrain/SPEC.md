@@ -73,6 +73,14 @@ does the same unless it carries the `no-kb` label and a reason. A repo without i
 lesson in the KB it feeds instead. Threads also run the capture closeout before they're resolved.
 Both checks use only git; `capture_hook` in `kb.toml` sets the hook to block, warn or off.
 
+**GitHub work conventions (decision 0013).** Fewer, larger PRs the owner can skim; everything
+that isn't low-risk waits for the owner's batch review (the `finisher-loop` skill builds the
+batch and acts on the owner's replies from chat); and low-risk PRs merge themselves (opt-in). With `auto_merge = "on"` in `kb.toml`,
+the `kb-auto-merge` workflow turns on GitHub's auto-merge for an owner's PR whose every changed file
+is in `auto_merge_paths` (by default the KB) and none in a fixed deny list (decisions, directives,
+schemas, workflows, scripts, agent settings, guardrails and code). The owner turns on "Allow
+auto-merge" and requires the `auto-merge`, `validate`, `gitleaks` and `kb-capture` checks.
+
 Experts
 are chosen by a fixed method: four gates (original, recent, feed, identity) and five scores from 0
 to 3. A total of 10 or more is tracked, 6 or more goes on the watch list.
