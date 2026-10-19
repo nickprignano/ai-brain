@@ -47,7 +47,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 
 - [Nerdio HCL kit](https://github.com/nickprignano/nerdio-hcl/tree/main/docs/knowledge): Nerdio Manager on Azure Virtual Desktop, deployed with Terraform and Packer. Source of truth for: Nerdio Manager; the nerdio/nme provider; this kit's Terraform and Packer
 - AVD (repo not linked yet): Azure Virtual Desktop itself. Source of truth for: Azure Virtual Desktop platform; FSLogix; session host images in general
-- Liquidware (repo not linked yet): Liquidware products on virtual desktops. Source of truth for: Liquidware products
+- [Liquidware](https://github.com/nickprignano/avd-liquidware/tree/main/docs/knowledge): Liquidware products on virtual desktops. Source of truth for: Liquidware products
 - Private layer (repo not linked yet): The maintainer's private wisdom layer. It reads the family through this hub and sends directives here as pull requests; its contents stay private. Source of truth for: Directives to the family; through docs/knowledge/directives.yaml
 
 ## Optional
