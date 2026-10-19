@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-10-18
 decision-makers: [maintainer]
 ---
@@ -31,8 +31,8 @@ repo.
   Each entry has an `id`, the `directive` (at most 280 characters), a `scope` (`all` or family
   ids), an optional `pause` list of `kb-*` workflow names, an optional `until` date and an `opened`
   date. There's no field for reasons: a directive carries only the instruction.
-- **Owner-only.** CODEOWNERS covers the file, and `validate.py` fails a change to it that the repo
-  owner didn't author. At most five directives may be active at once.
+- **Owner-only.** CODEOWNERS covers the file, and `kb-validate` fails a pull request that changes it unless the
+  repo owner opened it. At most five directives may be active at once.
 - **Fan-out.** Every automated `kb-*` workflow (curator, freshness, feedback, prior-art) in every KB
   starts by reading this file from the public repo, and skips when a pause covers it.
   `kb-validate` and the secret scan always run. A daily `kb-directives` workflow in each sibling
@@ -56,5 +56,6 @@ repo.
 ## More Information
 
 Ships in the same `format_version` bump as [0005](0005-family-format-review-windows-and-revisit-dates.md)
-and [0007](0007-family-format-ai-brain-as-format-source.md), so the family changes version once. Not
-built until accepted.
+and [0007](0007-family-format-ai-brain-as-format-source.md), so the family changes version once.
+Accepted by the maintainer on 2026-10-18. Built here in `scripts/kb/directives.py`, the gate job in
+each automated `kb-*` workflow, and `kb-directives.yml`.

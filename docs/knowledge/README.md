@@ -40,9 +40,10 @@ belongs to instead of starting a new file.
 <!-- BEGIN GENERATED: family (from family.yaml; run scripts/kb/build.py) -->
 | Knowledge base | Role | Focus | Source of truth for |
 |---|---|---|---|
-| [Nerdio HCL kit](https://github.com/nickprignano/nerdio-hcl/tree/main/docs/knowledge) | reference | Nerdio Manager on Azure Virtual Desktop, deployed with Terraform and Packer | Nerdio Manager; the nerdio/nme provider; this kit's Terraform and Packer |
+| [Nerdio HCL kit](https://github.com/nickprignano/nerdio-hcl/tree/main/docs/knowledge) | member | Nerdio Manager on Azure Virtual Desktop, deployed with Terraform and Packer | Nerdio Manager; the nerdio/nme provider; this kit's Terraform and Packer |
 | AVD (repo not linked yet) | member | Azure Virtual Desktop itself | Azure Virtual Desktop platform; FSLogix; session host images in general |
 | Liquidware (repo not linked yet) | member | Liquidware products on virtual desktops | Liquidware products |
+| Private layer (repo not linked yet) | observer | The maintainer's private wisdom layer. It reads the family through this hub and sends directives here as pull requests; its contents stay private | Directives to the family; through docs/knowledge/directives.yaml |
 <!-- END GENERATED: family -->
 
 When a fact belongs to a sibling's topic, link to their page instead of copying it. When we learn

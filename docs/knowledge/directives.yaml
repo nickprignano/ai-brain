@@ -1,0 +1,16 @@
+# Maintainer directives to every KB in the family (decision 0008). Owner-only: CODEOWNERS covers this
+# file, and kb-validate fails a pull request that changes it unless the repo owner opened it.
+# Schema: schema/directive.schema.json. At most five active at once. Each entry carries the
+# instruction only:
+#
+#   - id: d-20261018-1
+#     directive: Pause the weekly digest until further notice.
+#     scope: [all]              # or family ids from family.yaml
+#     pause: [kb-curator]       # optional: all, kb-curator, kb-freshness, kb-feedback, kb-prior-art
+#     until: 2026-11-01         # optional: last day it applies
+#     opened: 2026-10-18
+#
+# Every automated kb-* workflow in the family reads this file first and skips when a pause covers it.
+# A KB_PAUSED repository variable set to true pauses one repo's kb-* workflows at once.
+
+directives: []
