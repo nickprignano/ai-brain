@@ -71,8 +71,20 @@ the family-wide signal; a handoff issue is the container that carries the work.
 - The receiving project checks the Waits on links itself, read-only. It starts when every PR is
   merged and every issue is closed as completed. A PR closed without merging, or an issue closed
   as not planned, blocks the handoff: the receiver comments once for the owner and waits.
-- A daily routine in each project lists its repos' open `handoff` issues. The owner can also say
-  "work the handoffs" in the project at any time.
+- **Session-start ceremony.** Every Claude Code session in a receiving repo starts by listing
+  that repo's open handoff issues. A `SessionStart` hook in `.claude/settings.json` runs
+  `scripts/kb/handoffs.py session-start`, which prints the live ones and the proposed ones
+  waiting for the owner, with the pickup rules, into the session's context. It lists only issues
+  the owner's account opened (`HANDOFF_OWNER` names the owner when an organization owns the
+  repo), counts the rest without showing them, and prints titles quoted on one line, so a
+  stranger's issue never reaches the session's context. It marks an issue picked up when the
+  owner's account commented "Picked up", and says so when it couldn't read that. It doesn't read
+  label events, so who applied `handoff` is still the rule in section 2, not a check. It uses the
+  session's GitHub token if one is set and stops after 15 seconds; on any failure it prints a
+  one-line reminder to check by hand, and it never fails the session. The script is stdlib-only,
+  so a repo without a KB copies that one file and the hook entry.
+- A daily routine in each project lists its repos' open `handoff` issues, for days no session
+  opens the repo. The owner can also say "work the handoffs" in the project at any time.
 - If a handoff is still waiting, the routine comments once with what it's waiting on and says
   nothing more until that list changes. A run that finds nothing new ends without a message.
 - One project works a handoff at a time. Just before starting, it re-reads the comments, and if
@@ -123,7 +135,8 @@ the family-wide signal; a handoff issue is the container that carries the work.
   comment-once rule depends on the routine reading its own earlier comments. If the cost shows,
   a scheduled Action that only flags repos with open `handoff` issues can gate it at no model
   cost.
-- Neutral, because every receiving repo adds the template, two labels and one `AGENTS.md` line.
+- Neutral, because every receiving repo adds the template, two labels, the `SessionStart` hook
+  and one `AGENTS.md` line.
 
 ## More Information
 
@@ -156,3 +169,5 @@ as landed work.
 
 Built here in `.github/ISSUE_TEMPLATE/handoff.md`, the labels in
 `kb-freshness`, and the `AGENTS.md` line; the routine is set up per project when it adopts this.
+Amended on 2026-10-19 at the owner's request ("handoff checking should be a session start
+ceremony"): the `SessionStart` hook and `scripts/kb/handoffs.py`, both in the template export.
