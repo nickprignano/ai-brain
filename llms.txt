@@ -60,7 +60,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0013. One 2ndbrain template, set up as public or private, private by default](docs/knowledge/decisions/0013-one-2ndbrain-template-private-by-default.md): accepted
 - [0014. Family format: GitHub work conventions, with low-risk pull requests merging themselves on green](docs/knowledge/decisions/0014-family-format-auto-merge-low-risk-prs.md): proposed
 - [0015. A personal swarm on the 2ndbrain, built from the roles that already run](docs/knowledge/decisions/0015-personal-swarm-on-the-2ndbrain.md): proposed
-- [0016. Secrets: one password manager as the master copy, keys only in each service's own secret store](docs/knowledge/decisions/0016-secrets-handling.md): proposed
+- [0016. Secrets: one password manager as the master copy, keys only in each service's own secret store](docs/knowledge/decisions/0016-secrets-handling.md): accepted
 
 ## Related knowledge bases
 
