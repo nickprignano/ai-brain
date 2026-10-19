@@ -19,5 +19,5 @@ the family numbers its own decisions; refer to a sibling's as `<project> 0012`, 
 | [0008](0008-family-format-maintainer-directives-and-pause-switch.md) | Family format: maintainer directives and a pause switch | Accepted |
 | [0009](0009-second-model-family.md) | Claude stays primary; Grok is the one second model family, for named jobs only | Proposed |
 | [0010](0010-family-format-upstream-sources.md) | Family format: link to upstream sources of truth, check against them, and give back | Proposed |
-| [0011](0011-family-format-enforced-kb-capture.md) | Family format: enforce knowledge capture with a Stop hook, a PR check and a thread closeout | Proposed |
+| [0011](0011-family-format-enforced-kb-capture.md) | Family format: enforce knowledge capture with a Stop hook, a PR check and a thread closeout | Accepted |
 <!-- END GENERATED: decision-index -->

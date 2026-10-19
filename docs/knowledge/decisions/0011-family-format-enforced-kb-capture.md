@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-10-19
 decision-makers: [maintainer]
 ---
@@ -112,7 +112,7 @@ catches work done outside Claude or a hook that was skipped. None of them calls 
   still merge past a red check. The closeout rule and branch protection cover what they can.
 - Bad, because a strict check pushes people to write filler. The pilot counts `no-kb` use so the
   rule can loosen if it does.
-- Neutral, because nothing is built until the owner accepts this decision.
+- Neutral, because the build follows in its own PR after this one merges.
 
 ## More Information
 
@@ -123,3 +123,4 @@ closeout, [0006](0006-model-selection-convention.md) for the same pilot-then-pro
 [0010](0010-family-format-upstream-sources.md) for the next format version. To be recorded in the
 AVD KB, the Nerdio HCL kit and the Liquidware KB when each project adopts the pilot; those
 copies and each KB's `family.yaml` row are the standing record of what each project runs.
+Accepted by the owner on 2026-10-19.
