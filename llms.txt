@@ -18,6 +18,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [Prompt library](docs/knowledge/prompting/library/README.md): Reusable, generalized prompts for the work and research we do: paste one, fill its placeholders, run it (status: verified)
 - [Prompt: Adopt a hub decision in a sibling project](docs/knowledge/prompting/library/adopt-family-decision.md): Asks a sibling project to record a hub decision as its own copy, install the machinery from the hub's export and pilot it (status: verified)
 - [Prompt: Apply red-team findings in another project](docs/knowledge/prompting/library/apply-red-team-fixes.md): Hands a red-team findings file to the project that owns the design, to fix, accept or dispute each finding through pull requests (status: verified)
+- [Prompt: Finisher loop](docs/knowledge/prompting/library/finisher-loop.md): Has Claude sweep open PRs, handoffs and threads across the owner's repos and post one numbered list of what waits on them, answerable from chat (status: verified)
 - [Prompt: Draft a handoff issue for another project](docs/knowledge/prompting/library/handoff-issue.md): Has the sending project turn an ask into a decision-0012 handoff issue in the receiving repo, waiting for the owner's label (status: verified)
 - [Prompt: Survey a tool landscape for the KB](docs/knowledge/prompting/library/landscape-survey.md): Has Claude survey open-source and vendor tools in an area, check licences and dates, red team the result and add it to the KB (status: verified)
 - [Prompt: Standing instructions for a Claude project](docs/knowledge/prompting/library/project-instructions.md): Project-instruction lines the owner pastes into a new Claude project: model, red team, closeout, handoffs and guardrails (status: verified)
@@ -57,6 +58,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0011. Family format: enforce knowledge capture with a Stop hook, a PR check and a thread closeout](docs/knowledge/decisions/0011-family-format-enforced-kb-capture.md): accepted
 - [0012. Family format: handoffs between Claude projects go through a `handoff` issue in the receiving repo](docs/knowledge/decisions/0012-family-format-handoff-issues.md): accepted
 - [0013. One 2ndbrain template, set up as public or private, private by default](docs/knowledge/decisions/0013-one-2ndbrain-template-private-by-default.md): accepted
+- [0014. Family format: GitHub work conventions, with low-risk pull requests merging themselves on green](docs/knowledge/decisions/0014-family-format-auto-merge-low-risk-prs.md): proposed
 
 ## Related knowledge bases
 

@@ -13,6 +13,7 @@ include = [
   "CLAUDE.md",
   ".claude/settings.json",
   ".claude/skills/2ndbrain-kb/SKILL.md",
+  ".claude/skills/finisher-loop/SKILL.md",
   "skills/2ndbrain/*.md",
   ".github/ISSUE_TEMPLATE/*.yml",
   ".github/ISSUE_TEMPLATE/handoff.md",

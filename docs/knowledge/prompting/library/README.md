@@ -25,6 +25,7 @@ only as a close earlier version, or not yet. `status` keeps its usual meaning: t
 |---|---|---|
 | [Prompt: Adopt a hub decision in a sibling project](adopt-family-decision.md) | Asks a sibling project to record a hub decision as its own copy, install the machinery from the hub's export and pilot it | verified |
 | [Prompt: Apply red-team findings in another project](apply-red-team-fixes.md) | Hands a red-team findings file to the project that owns the design, to fix, accept or dispute each finding through pull requests | verified |
+| [Prompt: Finisher loop](finisher-loop.md) | Has Claude sweep open PRs, handoffs and threads across the owner's repos and post one numbered list of what waits on them, answerable from chat | verified |
 | [Prompt: Draft a handoff issue for another project](handoff-issue.md) | Has the sending project turn an ask into a decision-0012 handoff issue in the receiving repo, waiting for the owner's label | verified |
 | [Prompt: Survey a tool landscape for the KB](landscape-survey.md) | Has Claude survey open-source and vendor tools in an area, check licences and dates, red team the result and add it to the KB | verified |
 | [Prompt: Standing instructions for a Claude project](project-instructions.md) | Project-instruction lines the owner pastes into a new Claude project: model, red team, closeout, handoffs and guardrails | verified |

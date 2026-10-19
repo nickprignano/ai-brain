@@ -6,19 +6,9 @@ name: kb-validate
 # in secrets.yml.
 
 on:
+  # Every PR, with no paths filter, so it can be a required check (decision 0014): a required
+  # check that never reports would hold a PR forever.
   pull_request:
-    paths:
-      - docs/knowledge/**
-      - scripts/kb/**
-      - llms.txt
-      - .github/ISSUE_TEMPLATE/**
-      - .github/workflows/kb-*.yml
-      - docs/2ndbrain/**
-      - docs/guardrails.md
-      - .claude/skills/**
-      - skills/**
-      - template/**
-      - AGENTS.md
   push:
     branches: [main]
     paths:

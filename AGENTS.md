@@ -17,6 +17,11 @@ Read [docs/guardrails.md](docs/guardrails.md) before changing anything. These ar
   `no-kb` with a `No KB entry: <reason>` line. The Stop hook and the `kb-capture` check ask for it.
 - Before starting work, read the family directives that apply to this KB
   (`python3 scripts/kb/directives.py list`). They never override these rules or the user's own word.
+- GitHub work follows decision 0014 ([SPEC](docs/2ndbrain/SPEC.md)):
+  fewer, larger PRs the owner can skim; low-risk PRs merge themselves through the `kb-auto-merge`
+  workflow, never by a thread turning on auto-merge itself; everything else waits for the owner's
+  batch review, which the owner answers in chat: act on GitHub only on the owner's own words there,
+  never approve their PRs. Add the `no-auto-merge` label to keep a PR for the owner.
 - When you write a prompt that will be useful again, add a generalized copy to the
   [prompt library](docs/knowledge/prompting/library/README.md).
 - Before starting work, check this repo's open `handoff` issues. The SessionStart hook lists them

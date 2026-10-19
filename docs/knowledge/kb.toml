@@ -13,6 +13,12 @@ topic_order = ["overview", "claude-api", "agents", "prompting", "evals", "privac
 capture_hook = "block"
 capture_ignore = []
 
+# Decision 0014: "on" lets kb-auto-merge turn on GitHub's auto-merge for a PR from the owner whose
+# every changed file matches auto_merge_paths. Decisions, workflows, scripts, settings and code never
+# qualify, whatever this says. The owner also flips "Allow auto-merge" and the required checks.
+auto_merge = "off"  # turned on by its own PR once the repo settings in decision 0014 are in place
+auto_merge_paths = ["docs/**", "README.md", "llms.txt"]
+
 # Structured data files listed in llms.txt, in order. A file that doesn't exist is skipped.
 [[data]]
 name = "Known errors"
