@@ -6,6 +6,7 @@ Generated:
   - the list in docs/knowledge/decisions/README.md (from decision records)
   - the tables in troubleshooting/README.md, anthropic/upstream-contributions.md and experts.md (from YAML)
   - the "Related knowledge bases" table in docs/knowledge/README.md (from family.yaml)
+  - a folder's table of its own pages, in any README.md with a folder-index block (from front matter)
   - llms.txt at the repo root (from all of the above)
 
     python3 scripts/kb/build.py           # rewrite files
@@ -71,11 +72,22 @@ def link_from(page_dir: Path, target: str) -> str:
 def render_kb_index() -> str:
     rows = []
     for p, fm in pages():
-        if rel(p) == "README.md":
+        if rel(p) == "README.md" or rel(p).count("/") > 1:  # deeper pages are in their folder's index
             continue
         target = rel(p).removesuffix("README.md") or rel(p)
         rows.append([f"[{target}]({rel(p)})", fm["summary"], fm["status"]])
     rows.append(["[decisions/](decisions/README.md)", "Decision records (MADR): what was decided and why", ""])
+    return table(["Page", "What's in it", "Status"], rows)
+
+
+def render_folder_index(folder: Path) -> str:
+    """The pages in one folder and the READMEs of its subfolders, for a folder with many small pages."""
+    rows = []
+    for p, fm in sorted(pages(), key=lambda x: rel(x[0])):
+        if p.parent == folder and p.name != "README.md":
+            rows.append([f"[{fm['title']}]({p.name})", fm["summary"], fm["status"]])
+        elif p.parent.parent == folder and p.name == "README.md":
+            rows.append([f"[{p.parent.name}/]({p.parent.name}/README.md)", fm["summary"], fm["status"]])
     return table(["Page", "What's in it", "Status"], rows)
 
 
@@ -245,6 +257,9 @@ def targets() -> dict[Path, str]:
             s: (lambda s=s: render_upstream(s)) for s in ("feature_gaps", "api_asks", "docs_packaging")
         },
     }
+    for readme in sorted(KB_DIR.rglob("README.md")):
+        if "BEGIN GENERATED: folder-index" in readme.read_text(encoding="utf-8"):
+            jobs.setdefault(readme, {})["folder-index"] = lambda d=readme.parent: render_folder_index(d)
     for path, renderers in jobs.items():
         if not path.exists():  # optional pages, such as upstream asks, that a KB may not have
             continue

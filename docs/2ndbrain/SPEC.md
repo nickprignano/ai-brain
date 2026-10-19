@@ -42,7 +42,8 @@ Open, common formats only:
   field reports, the experts study, the family and directives. The Markdown tables
   are generated from them.
 - **Generated blocks:** sit between `BEGIN GENERATED` and `END GENERATED` comments. You edit the
-  source, never the output.
+  source, never the output. A folder of many small pages, such as a prompt library, lists them in
+  its README with a `folder-index` block; the main index lists only the folder.
 - **[`llms.txt`](https://llmstxt.org):** generated at the repo root, so LLMs and agents find
   everything.
 - **Identity:** `docs/knowledge/kb.toml` holds the only settings that differ between KBs: name,

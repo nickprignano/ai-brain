@@ -3,12 +3,15 @@ title: "Prompting"
 summary: "System prompts, audience-specific prompts and structured output that held up in real apps"
 topic: prompting
 status: partial
-last_reviewed: 2026-10-18
+last_reviewed: 2026-10-19
 ---
 
 # Prompting
 
 Prompts that held up in real use: system prompts, prompts tuned for an audience (for example by age), and structured output. Write the lesson, not the private prompt.
+
+Reusable prompts for the family's own work (handoffs, red teams, research, closeouts) are in the
+[prompt library](library/README.md), one generalized prompt per page.
 
 ## Rewriting text into a person's own voice
 

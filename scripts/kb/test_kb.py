@@ -198,6 +198,16 @@ class BuildTests(unittest.TestCase):
         stale = [p for p, c in build.targets().items() if p.read_text(encoding="utf-8") != c]
         self.assertEqual(stale, [], "run python3 scripts/kb/build.py")
 
+    def test_folder_index(self):
+        fm = {"title": "T", "summary": "S", "status": "plan"}
+        lib = kblib.KB_DIR / "topic" / "library"
+        fake = [(kblib.KB_DIR / "topic" / "README.md", fm), (lib / "README.md", fm), (lib / "one.md", fm)]
+        with mock.patch.object(build, "pages", return_value=fake):
+            self.assertNotIn("library", build.render_kb_index())
+            self.assertIn("[library/](library/README.md)", build.render_folder_index(lib.parent))
+            self.assertIn("[T](one.md)", build.render_folder_index(lib))
+            self.assertNotIn("README", build.render_folder_index(lib))
+
     def test_link_from(self):
         page_dir = kblib.KB_DIR / "troubleshooting"
         self.assertEqual(build.link_from(page_dir, "agents/README.md#x"), "../agents/README.md#x")
