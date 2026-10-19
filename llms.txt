@@ -45,7 +45,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0009. Claude stays primary; Grok is the one second model family, for named jobs only](docs/knowledge/decisions/0009-second-model-family.md): proposed
 - [0010. Family format: link to upstream sources of truth, check against them, and give back](docs/knowledge/decisions/0010-family-format-upstream-sources.md): proposed
 - [0011. Family format: enforce knowledge capture with a Stop hook, a PR check and a thread closeout](docs/knowledge/decisions/0011-family-format-enforced-kb-capture.md): accepted
-- [0012. Family format: handoffs between Claude projects go through a `handoff` issue in the receiving repo](docs/knowledge/decisions/0012-family-format-handoff-issues.md): proposed
+- [0012. Family format: handoffs between Claude projects go through a `handoff` issue in the receiving repo](docs/knowledge/decisions/0012-family-format-handoff-issues.md): accepted
 
 ## Related knowledge bases
 

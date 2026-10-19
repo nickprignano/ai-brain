@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-10-19
 decision-makers: [maintainer]
 ---
@@ -143,7 +143,7 @@ Options not chosen:
 - **A custom cross-project bot:** it would need a credential that writes to every repo and a
   service to run. Not now; revisit if handoffs outgrow issues.
 
-First use, if accepted: the 0011 rollout's next step ("build merged, install from the export")
+Accepted by the owner on 2026-10-19 (merged in #28, confirmed in the project). First use: the 0011 rollout's next step ("build merged, install from the export")
 becomes a handoff issue in each pilot repo: the AVD KB, its swarm and its landing zone, the Nerdio
 HCL kit and the Liquidware KB.
 
