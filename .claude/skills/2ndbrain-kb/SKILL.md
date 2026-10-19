@@ -27,10 +27,13 @@ The full system is in [docs/2ndbrain/SPEC.md](../../../docs/2ndbrain/SPEC.md). T
 | A fact, gotcha or fix | A bullet on the matching topic page, with the versions it applies to. Mark anything you haven't confirmed as *unverified* |
 | An error with a known cause | An entry in `troubleshooting/known-errors.yaml`, not the Markdown table |
 | A choice that shapes the work | A new MADR record in `decisions/`, copied from `template.md`, with status `proposed` until the maintainer says yes |
+| Something upstream documents (vendor docs, a product or SDK repo) | A link to the upstream page, not a paraphrase. Write down only what upstream doesn't say: a gap, a contradiction from a real run, or how documented pieces combine |
+| A gap or docs error upstream should fix | An entry in the KB's `upstream.yaml` with its evidence, and a draft reviewed in a PR. A person files it upstream; no agent opens issues or PRs outside the family's repos |
 | Something a sibling KB owns | A link to their page. If they need what you learned, open an issue or PR on their repo with the evidence |
 | A new topic | A new page only when nothing existing fits. Give it front matter like the others |
 
-When you change or re-check a page, update `last_reviewed`, and `status` if it changed.
+When you change or re-check a page, update `last_reviewed`, and `status` if it changed. A page is
+`verified` only when its claims about documented behavior link the source they were checked against.
 
 ## Working the issues
 
