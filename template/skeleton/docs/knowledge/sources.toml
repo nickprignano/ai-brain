@@ -19,7 +19,7 @@
 # The weekly digest tells you when the shared machinery changes. Adopt a change by PR.
 
 [[source]]
-name = "2ndbrain-public: template changes"
+name = "2ndbrain: template changes"
 kind = "github_commits"
-repo = "nickprignano/2ndbrain-public"
+repo = "nickprignano/2ndbrain"
 kb_page = "curation.md"

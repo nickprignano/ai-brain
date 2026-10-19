@@ -1,0 +1,53 @@
+name: rollup
+
+# Weekly: read the public hub named in hub.toml and open an issue here listing what's new.
+# On the first Monday of the month it also lists this repo's notes that are due for review.
+# Uses only this repo's GITHUB_TOKEN. It reads the hub (public) and writes issues here, nowhere else.
+# It runs only in a private repo with hub_repo set, so the template and public copies skip it.
+
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  rollup:
+    runs-on: ubuntu-latest
+    if: vars.KB_PAUSED != 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check this repo is private and set up
+        id: ready
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(gh api "repos/${{ github.repository }}" --jq .private)" != "true" ]; then
+            echo "::notice::Skipped: the roll-up runs only in a private repo."
+          elif grep -q '^hub_repo = "<' hub.toml; then
+            echo "::notice::Skipped: set hub_repo in hub.toml first."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.ready.outputs.run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write the roll-up
+        if: steps.ready.outputs.run == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          monthly=""
+          if [ "$(date -u +%d)" -le 7 ]; then monthly="--monthly"; fi
+          python3 scripts/rollup.py $monthly > rollup.md
+      - name: Open the issue
+        if: steps.ready.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create rollup --color 5319e7 --description "Weekly roll-up from the hub" 2>/dev/null || true
+          gh issue create --title "Roll-up $(date -u +%F)" --label rollup --body-file rollup.md

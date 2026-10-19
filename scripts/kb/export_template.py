@@ -1,11 +1,11 @@
-"""Export this KB's machinery as the 2ndbrain-public template, following template/manifest.toml.
+"""Export this KB's machinery as the 2ndbrain template, following template/manifest.toml.
 
     python3 scripts/kb/export_template.py OUT_DIR
 
 Copies the manifest's `include` paths, overlays the skeleton, applies each `replace` (one that no
 longer matches fails the export, so a changed source line can't drift silently), regenerates the
 skeleton's indexes and llms.txt with the exported build.py, and fails if any file still contains a
-`forbid` string. The template repo runs this on a checkout of this repo and opens a PR in itself.
+`forbid` string or the private layer (notes/, outbox/) holds anything but its empty templates. The template repo runs this on a checkout of this repo and opens a PR in itself.
 """
 
 from __future__ import annotations
@@ -74,6 +74,19 @@ def check_forbidden(manifest: dict, out: Path) -> None:
         raise ExportError("content leaked into the template:\n  " + "\n  ".join(hits))
 
 
+def check_private_layer_empty(out: Path) -> None:
+    """The template's private layer ships empty: only `_template.md` files and the capture rules,
+    index (with no entries) and instructions. Anything else would be someone's note."""
+    notes, outbox = out / "notes", out / "outbox"
+    hits = [p for p in sorted(notes.glob("*/**/*")) if p.is_file() and p.name != "_template.md"]
+    hits += [p for p in sorted(outbox.glob("*")) if p.is_file() and p.name != "README.md"]
+    index = notes / "index.md"
+    if index.exists() and any(line.lstrip().startswith(("- ", "* ")) for line in index.read_text().splitlines()):
+        hits.append(index)
+    if hits:
+        raise ExportError("the private layer must ship empty:\n  " + "\n  ".join(p.relative_to(out).as_posix() for p in hits))
+
+
 def build(out: Path) -> None:
     result = subprocess.run([sys.executable, "scripts/kb/build.py"], cwd=out, capture_output=True, text=True)
     if result.returncode != 0:
@@ -96,6 +109,7 @@ def export(out: Path, manifest: dict | None = None) -> None:
     for cache in out.rglob("__pycache__"):
         shutil.rmtree(cache)
     check_forbidden(manifest, out)
+    check_private_layer_empty(out)
 
 
 def main() -> int:

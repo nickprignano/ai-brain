@@ -330,7 +330,7 @@ class DirectiveTests(unittest.TestCase):
 
 
 class ExportTests(unittest.TestCase):
-    """The 2ndbrain-public export builds, validates and passes its own tests. Skipped in the template."""
+    """The 2ndbrain export builds, validates and passes its own tests. Skipped in the template."""
 
     def exporter(self):
         try:
@@ -347,9 +347,21 @@ class ExportTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, out)
         export_template.export(out)
         for cmd in (["scripts/kb/validate.py"], ["scripts/kb/build.py", "--check"],
-                    ["-m", "unittest", "discover", "-s", "scripts/kb"]):
+                    ["-m", "unittest", "discover", "-s", "scripts/kb"],
+                    ["-m", "unittest", "discover", "-s", "scripts"]):
             r = subprocess.run([sys.executable, *cmd], cwd=out, capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, f"{' '.join(cmd)} failed in the export:\n{r.stdout}{r.stderr}")
+
+    def test_a_note_in_the_private_layer_fails(self):
+        export_template = self.exporter()
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out)
+        (out / "notes" / "lessons").mkdir(parents=True)
+        (out / "notes" / "lessons" / "_template.md").write_text("x")
+        export_template.check_private_layer_empty(out)
+        (out / "notes" / "lessons" / "a-lesson.md").write_text("x")
+        with self.assertRaises(export_template.ExportError):
+            export_template.check_private_layer_empty(out)
 
     def test_replace_that_no_longer_matches_fails(self):
         export_template = self.exporter()
