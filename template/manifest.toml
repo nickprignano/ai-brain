@@ -10,6 +10,7 @@ include = [
   "LICENSE",
   "AGENTS.md",
   "CLAUDE.md",
+  ".claude/settings.json",
   ".claude/skills/2ndbrain-kb/SKILL.md",
   "skills/2ndbrain/*.md",
   ".github/ISSUE_TEMPLATE/*.yml",

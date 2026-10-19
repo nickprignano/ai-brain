@@ -8,6 +8,11 @@ tagline = "A living knowledge base of findings, gotchas and decisions for this p
 user_agent = "my-kb-curator"
 topic_order = ["overview", "getting-started", "troubleshooting", "roadmap", "curation"]
 
+# Decision 0011: what the Stop hook does when code changed without a KB entry ("block", "warn" or
+# "off"). The kb-capture PR check runs either way. capture_ignore lists more paths that aren't code.
+capture_hook = "block"
+capture_ignore = []
+
 # Structured data files listed in llms.txt, in order. A file that doesn't exist is skipped.
 [[data]]
 name = "Known errors"

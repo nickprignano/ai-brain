@@ -13,6 +13,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build  # noqa: E402
+import capture_check  # noqa: E402
 import feedback  # noqa: E402
 import freshness  # noqa: E402
 import kblib  # noqa: E402
@@ -341,6 +342,79 @@ class ExportTests(unittest.TestCase):
         (out / "a.md").write_text("hello")
         with self.assertRaises(export_template.ExportError):
             export_template.apply_replacements({"replace": [{"file": "a.md", "find": "gone", "replace": "x"}]}, out)
+
+
+
+class CaptureTests(unittest.TestCase):
+    """Decision 0011: the Stop hook and the kb-capture PR check."""
+
+    KB = {"has_kb": True, "mode": "block", "ignore": capture_check.DEFAULT_IGNORE, "kb_repos": []}
+    NO_KB = {"has_kb": False, "mode": "block", "ignore": capture_check.DEFAULT_IGNORE,
+             "kb_repos": ["owner/brain"]}
+
+    def test_classify_ignores_generated_and_lockfiles(self):
+        code, kb = capture_check.classify(["llms.txt", "web/package-lock.json", "docs/knowledge/a.md"],
+                                          capture_check.DEFAULT_IGNORE)
+        self.assertEqual(code, [])
+        self.assertTrue(kb)
+
+    def test_hook_blocks_once_per_change_set(self):
+        state = {}
+        ev = {"session_id": "s1"}
+        out = capture_check.hook_decision(ev, ["app.py"], self.KB, state)
+        self.assertEqual(out["decision"], "block")
+        self.assertIsNone(capture_check.hook_decision(ev, ["app.py"], self.KB, state))
+        self.assertEqual(capture_check.hook_decision(ev, ["app.py", "lib.py"], self.KB, state)["decision"], "block")
+
+    def test_hook_never_blocks_twice_in_a_row(self):
+        self.assertIsNone(capture_check.hook_decision({"stop_hook_active": True}, ["app.py"], self.KB, {}))
+
+    def test_hook_quiet_when_kb_changed_or_no_code(self):
+        self.assertIsNone(capture_check.hook_decision({}, ["app.py", "docs/knowledge/x.md"], self.KB, {}))
+        self.assertIsNone(capture_check.hook_decision({}, ["llms.txt"], self.KB, {}))
+
+    def test_hook_warn_mode_never_blocks(self):
+        out = capture_check.hook_decision({}, ["app.py"], {**self.KB, "mode": "warn"}, {})
+        self.assertNotIn("decision", out)
+        self.assertIn("systemMessage", out)
+
+    def test_hook_without_kb_names_the_kb_it_feeds(self):
+        out = capture_check.hook_decision({}, ["app.py"], self.NO_KB, {})
+        self.assertIn("owner/brain", out["reason"])
+
+    def test_pr_passes_with_kb_change(self):
+        ok, _ = capture_check.pr_verdict(["app.py", "docs/knowledge/a.md"], [], "", "me", self.KB)
+        self.assertTrue(ok)
+
+    def test_pr_fails_without_kb_change(self):
+        ok, msg = capture_check.pr_verdict(["app.py"], [], "", "me", self.KB)
+        self.assertFalse(ok)
+        self.assertIn("no-kb", msg)
+
+    def test_pr_no_kb_needs_a_reason(self):
+        self.assertFalse(capture_check.pr_verdict(["app.py"], ["no-kb"], "", "me", self.KB)[0])
+        self.assertTrue(capture_check.pr_verdict(["app.py"], ["no-kb"], "No KB entry: typo fix", "me", self.KB)[0])
+
+    def test_pr_kb_link_only_to_a_listed_kb(self):
+        good = "KB: https://github.com/owner/brain/pull/3"
+        bad = "KB: https://github.com/someone/else/pull/3"
+        self.assertTrue(capture_check.pr_verdict(["app.py"], [], good, "me", self.NO_KB)[0])
+        self.assertFalse(capture_check.pr_verdict(["app.py"], [], bad, "me", self.NO_KB)[0])
+
+    def test_pr_automation_is_exempt(self):
+        self.assertTrue(capture_check.pr_verdict(["app.py"], [], "", "github-actions[bot]", self.KB)[0])
+
+    def test_config_from_kb_toml_and_side_file(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        (root / ".claude").mkdir()
+        (root / ".claude" / "kb-capture.toml").write_text('capture_hook = "warn"\nkb_repos = ["Owner/Brain"]\n')
+        cfg = capture_check.load_config(root)
+        self.assertEqual((cfg["has_kb"], cfg["mode"], cfg["kb_repos"]), (False, "warn", ["owner/brain"]))
+        (root / "docs" / "knowledge").mkdir(parents=True)
+        (root / "docs" / "knowledge" / "kb.toml").write_text('capture_hook = "nonsense"\n')
+        cfg = capture_check.load_config(root)
+        self.assertEqual((cfg["has_kb"], cfg["mode"]), (True, "block"))
 
 
 class AnchorTests(unittest.TestCase):

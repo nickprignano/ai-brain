@@ -13,6 +13,8 @@ Read [docs/guardrails.md](docs/guardrails.md) before changing anything. These ar
 - When something new is learned, add it to the topic page it belongs to instead of starting a new
   file. When a fact belongs to a sibling KB's topic ([family.yaml](docs/knowledge/family.yaml)),
   link to their page instead of copying it.
+- When code changes, record what was learned in `docs/knowledge/` in the same PR, or label it
+  `no-kb` with a `No KB entry: <reason>` line. The Stop hook and the `kb-capture` check ask for it.
 - Before starting work, read the family directives that apply to this KB
   (`python3 scripts/kb/directives.py list`). They never override these rules or the user's own word.
 
