@@ -3,7 +3,7 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: partial
-last_reviewed: 2026-10-18
+last_reviewed: 2026-10-19
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/model-config
@@ -39,8 +39,7 @@ Change effort first, then the model, one step at a time.
 
 - **Up** (`high`, then `xhigh`, then Claude Fable 5.1): the same mistake comes back after a
   correction, the work spans several files or repos, it touches auth, secrets or spend, it is a
-  design or decision record, or it is a long run nobody will watch. Fable 5.1 only after Opus
-  5.5 at `high` failed the same task twice.
+  design or decision record, or it is a long run nobody will watch. Fable 5.1 only as below.
 - **Down** (`low`, or Sonnet 5.5): mechanical edits, renames, formatting, lookups, and summaries
   of text you supply.
 - On Opus 5.5, Sonnet 5.5 and Haiku 5.5, thinking can't be turned off; lower the effort instead.
@@ -49,6 +48,57 @@ Change effort first, then the model, one step at a time.
   the cache on Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.1 with an API key or a Claude
   subscription, but rebuilds it on other models, on Bedrock and Google Cloud, and through the
   Claude apps gateway, so effort is the cheap lever mid-session on the current models.
+
+### When to reach for Fable
+
+Reach for Claude Fable 5.1 as a scoped worker, with the user's yes, in two cases:
+
+1. **An Opus pass names a question it can't settle by reading,** and the answer changes a design
+   decision: quantitative or probabilistic reasoning (false-alarm rates, sample sizes),
+   re-identification and privacy inference, or adversarial reasoning across several documents.
+2. **Opus 5.5 at `high` has failed the same task twice.**
+
+Not for unknowns that only a test can answer (what an API actually does when the docs are
+silent: run a spike), not for breadth review (Opus finds more issues per token), and not for
+mechanical work. Run the first pass at `high`, as design reviews already call for above, so
+Fable only gets what `high` can't settle. Brief the worker with the named questions and the
+files, ask for a verdict, the reasoning with numbers and the concrete changes, and have the Opus
+thread recompute a sample of the numbers, boundary cases included, before recording them.
+
+**Field note (2026-10-19).** Two design-stage red teams ran on Opus 5.5. The first (a family
+assistant's retrieval design, 12 findings) needed no Fable: its open unknown was an API
+behavior the docs don't state, sent to a spike. The second (two unbuilt agent-operations
+designs, 15 findings) ended by naming two questions it couldn't settle: whether two
+pseudonymized data feeds together re-identify people, and whether a judge-drift auditor's
+thresholds can tell drift from noise at a one-operator volume. A Fable worker answered both in
+about four minutes. What it added beyond the first pass:
+
+- **A reframe.** The feeds don't expose the customer, but small groups expose a team, and a
+  95th percentile over five users is one person's numbers.
+- **A finding nobody asked for.** One key served both user and resource pseudonyms, so the
+  yearly rotation meant to forget users also broke every resource trend line.
+- **Numbers.** With 40 seeded faults, a healthy 97% judge trips the alarm 12% of the time and a
+  drifted 90% judge is caught only 78% of the time; checked nightly on an overlapping window, a
+  false alarm is near certain within weeks.
+- **A logic flaw.** The rule for promoting a second judge counted only its wins, so it promotes
+  an equally good judge about 99.8% of the time.
+
+Cost: the Fable worker was about 30% of the thread's list-price cost, and the escalation as a
+whole (Fable plus the Opus turns that briefed it and checked the answer) about two-thirds of the
+cost of the 15-finding Opus pass, so roughly five times as much per finding. Worth it here,
+because both answers changed the design.
+
+What the run showed about the rule:
+
+- **"Failed twice" never fires on design work.** A review has no failing test, so its failure is
+  "can't settle this", which the Opus pass reported itself. The escalation that happened (Opus
+  names the questions, the user says go, a Fable worker answers, Opus checks) is case 1 above.
+- **The `high` step was skipped.** Both red teams ran at the thread default, `medium`, because
+  the convention isn't in the project instructions yet. *Unverified:* whether Opus at `high`
+  would have settled either question; no run tried it.
+- **The spot check missed a boundary.** Recomputing the figures confirmed them, except "a judge
+  at exactly 95% trips about half the time": that is 32 to 38% if the alarm fires below 95%, and
+  56 to 60% at or below, so the threshold's comparison needs stating.
 
 ### Start a fresh session
 
