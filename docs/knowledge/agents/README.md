@@ -51,12 +51,23 @@ Change effort first, then the model, one step at a time.
 
 ### When to reach for Fable
 
-Reach for Claude Fable 5.1 as a scoped worker, with the user's yes, in two cases:
+Reach for Claude Fable 5.1 as a scoped worker, with the user's yes, in three cases:
 
 1. **An Opus pass names a question it can't settle by reading,** and the answer changes a design
    decision: quantitative or probabilistic reasoning (false-alarm rates, sample sizes),
    re-identification and privacy inference, or adversarial reasoning across several documents.
 2. **Opus 5.5 at `high` has failed the same task twice.**
+3. **The user asks for it by name** for long multi-step research, a large refactor across several
+   repos, or dense PDF and spreadsheet analysis. These are the areas Anthropic names for it:
+   start on Opus 5.5 and use Fable 5.1 "for demanding reasoning and long-horizon agentic work, or
+   when your evals on Claude Opus 5.5 at higher effort still fall short"
+   ([what's new in Fable 5.1](https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1),
+   checked 2026-10-19).
+
+It costs 2.5 times Opus 5.5 per token, always thinks and defaults to `high` effort. On a Max plan
+Fable can use up to half of the weekly limit; on Pro it's paid from usage credits
+([Fable on your plan](https://support.claude.com/en/articles/15424964-claude-fable-models-on-your-plan),
+checked 2026-10-19).
 
 Not for unknowns that only a test can answer (what an API actually does when the docs are
 silent: run a spike), not for breadth review (Opus finds more issues per token), and not for

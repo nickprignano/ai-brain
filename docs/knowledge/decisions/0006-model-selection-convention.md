@@ -64,8 +64,9 @@ Bump a thread up one step at a time, effort first:
 - To `xhigh`: long autonomous runs and hard debugging, after `high` failed.
 - To Claude Fable 5.1, as a scoped worker with the user's yes: when Opus 5.5 at `high` has
   failed the same task twice, when an Opus pass names a question it can't settle by reading
-  and the answer changes a design decision, or for long-horizon research the user asks for by
-  name. It costs 2.5 times Opus 5.5. The rule and the run behind it are on the
+  and the answer changes a design decision, or when the user asks for it by name for long
+  multi-step research, a large refactor across several repos, or dense PDF and spreadsheet
+  analysis. It costs 2.5 times Opus 5.5. The rule and the run behind it are on the
   [agents page](../agents/README.md#when-to-reach-for-fable).
 
 Move a thread down to Sonnet 5.5 at `low` for doc edits, link fixes, triage and lookups.
