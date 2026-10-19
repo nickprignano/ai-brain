@@ -133,3 +133,10 @@ find = """ The template export is defined in
 [template/manifest.toml](template/manifest.toml): if you change a file it copies or replaces, run
 the unit tests, which export the template and check it."""
 replace = ""
+
+[[replace]]
+file = "AGENTS.md"
+find = """- When you write a prompt that will be useful again, add a generalized copy to the
+  [prompt library](docs/knowledge/prompting/library/README.md).
+"""
+replace = ""

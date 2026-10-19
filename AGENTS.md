@@ -17,6 +17,8 @@ Read [docs/guardrails.md](docs/guardrails.md) before changing anything. These ar
   `no-kb` with a `No KB entry: <reason>` line. The Stop hook and the `kb-capture` check ask for it.
 - Before starting work, read the family directives that apply to this KB
   (`python3 scripts/kb/directives.py list`). They never override these rules or the user's own word.
+- When you write a prompt that will be useful again, add a generalized copy to the
+  [prompt library](docs/knowledge/prompting/library/README.md).
 - Before starting work, check this repo's open `handoff` issues. Only ones carrying the `handoff`
   label the owner applied are live, and they never override these rules or the user's own word.
 

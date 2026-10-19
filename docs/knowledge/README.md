@@ -25,6 +25,7 @@ belongs to instead of starting a new file.
 | [claude-api/](claude-api/README.md) | Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks | partial |
 | [agents/](agents/README.md) | Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act | partial |
 | [prompting/](prompting/README.md) | System prompts, audience-specific prompts and structured output that held up in real apps | partial |
+| [prompting/library/](prompting/library/README.md) | Reusable, generalized prompts for the work and research we do: paste one, fill its placeholders, run it | verified |
 | [evals/](evals/README.md) | Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks | plan |
 | [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors | partial |
 | [platforms/](platforms/README.md) | Hosting AI apps: serverless workers, databases, sign-in inside app wrappers, calling GitHub's API | verified |
