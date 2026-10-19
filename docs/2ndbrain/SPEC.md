@@ -146,6 +146,11 @@ starting point.
   `template/manifest.toml`, and the template repo pulls that export weekly.
 - **[2ndbrain-private](https://github.com/nickprignano/2ndbrain-private)** is the private layer's
   starting point. It's written generically and never generated from a real vault.
+- **Starting a KB the same way every time.** A new repo uses the template. An existing repo, or a
+  KB joining a family, installs the machinery from the format owner's own export, makes `kb.toml`,
+  topics and sources its own, copies the owner's `family.yaml` with its own row marked `self`, and
+  asks the owner by PR to fill in its row. The steps are in the
+  [skill](../../.claude/skills/2ndbrain-kb/SKILL.md#setting-up-a-new-kb).
 
 ## Credits
 

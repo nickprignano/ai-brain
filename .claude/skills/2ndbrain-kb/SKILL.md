@@ -1,6 +1,6 @@
 ---
 name: 2ndbrain-kb
-description: Use when working in a repo that keeps a 2ndbrain knowledge base under docs/knowledge/: adding facts or decisions, working a digest or freshness issue, aligning with sibling KBs, or acting on a directive.
+description: Use when working in a repo that keeps a 2ndbrain knowledge base under docs/knowledge/: setting up a new KB, adding facts or decisions, working a digest or freshness issue, aligning with sibling KBs, or acting on a directive.
 ---
 
 # Working in a 2ndbrain knowledge base
@@ -52,6 +52,42 @@ python3 -m unittest discover -s scripts/kb
 
 Never edit between `BEGIN GENERATED` and `END GENERATED`; edit the source and run `build.py`.
 Changes land as pull requests.
+
+## Setting up a new KB
+
+A brand-new repo can press **Use this template** on the template repo and follow its README. For a
+repo that already exists, or a KB joining a family, follow these steps so every KB starts the same.
+
+1. **Install the machinery from the format's owner, not from memory.** The KB that owns the format
+   is the `reference` row of `family.yaml`. Run its exporter on a fresh checkout of its default
+   branch (`python3 scripts/kb/export_template.py <empty folder>`), or copy from the template repo
+   only after checking it holds every script the owner has. Copy the result into the repo, except the
+   template's own `README.md`, `NOTICE` and `template-sync` workflow. Keep the repo's README and add
+   a short knowledge base section to it. Write a `NOTICE` that credits where the machinery came
+   from, under its Apache-2.0 license.
+2. **Make it this KB's own.** In `docs/knowledge/kb.toml`, set `name`, `title`, `tagline`,
+   `user_agent` and `topic_order`. Put the same topics in the `topic` list of
+   `schema/page.schema.json`. Replace `getting-started/` with the first real topic page, and keep
+   decision 0001, which adopts the format. In `sources.toml`, add the public sources the topics
+   depend on (release notes, docs, repos) and keep the template source.
+3. **Join the family.** Copy the owner's `family.yaml`, move `self: true` to this KB's row, and set
+   its `repo`, `kb_path`, `role` (usually `member`) and `format_version` to the owner's version. For
+   every sibling with a `repo`, add its two `github_commits` sources: one on its decisions folder
+   and one on its KB folder. `validate.py` fails without them.
+4. **Tell the family.** Open a PR on the owning KB that fills in this KB's row (`repo`, `kb_path`,
+   `format_version`) and adds this KB's two sources there. Other siblings add the same when they
+   next update their `family.yaml`.
+5. **Read the directives** (`python3 scripts/kb/directives.py list`) and follow the ones in scope.
+   Record any family convention that applies to this KB as a decision that links to the owner's
+   record instead of copying it.
+6. **Check and propose.** Run the checks below until they're clean, and open everything as pull
+   requests for the maintainer to merge.
+7. **Hand back the owner-only steps.** The maintainer turns on **Allow GitHub Actions to create and
+   approve pull requests** (Settings > Actions > General) and runs **Actions > kb-freshness** once,
+   so the `kb-*` labels exist.
+
+For a KB that already exists on an older layout, do the same steps as a migration: compare it with
+the export, keep its content, and move its files and `family.yaml` to the current format.
 
 ## Family format changes
 

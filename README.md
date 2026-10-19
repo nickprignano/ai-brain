@@ -47,6 +47,9 @@ prototype. Two template repositories carry it to anyone who wants one:
 - [2ndbrain-private](https://github.com/nickprignano/2ndbrain-private): a private wisdom layer that
   sits above your public KBs. The maintainer keeps one too. Its contents stay private by design.
 
+To add a project to this family, follow [docs/2ndbrain/new-family-kb.md](docs/2ndbrain/new-family-kb.md):
+it has the steps and a prompt to paste into the new project's chat.
+
 ## Where the idea came from
 
 The project second brain started as a work prototype for a complex enterprise migration
