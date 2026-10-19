@@ -26,7 +26,7 @@ belongs to instead of starting a new file.
 | [agents/](agents/README.md) | Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act | partial |
 | [prompting/](prompting/README.md) | System prompts, audience-specific prompts and structured output that held up in real apps | partial |
 | [evals/](evals/README.md) | Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks | plan |
-| [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs and building AI features for kids | plan |
+| [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors | partial |
 | [platforms/](platforms/README.md) | Hosting AI apps: serverless workers, databases, sign-in inside app wrappers, calling GitHub's API | verified |
 | [learning/](learning/README.md) | Courses, docs, cookbooks and people worth following to learn how to build with AI | plan |
 | [troubleshooting/](troubleshooting/README.md) | Errors hit with the Claude API, SDKs, agents and AI tooling: symptom, cause, fix and source | verified |
