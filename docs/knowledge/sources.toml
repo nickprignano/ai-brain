@@ -65,3 +65,17 @@ kind = "github_commits"
 repo = "nickprignano/nerdio-hcl"
 path = "docs/knowledge"
 kb_page = "curation.md"
+
+[[source]]
+name = "Sibling KB: Liquidware decisions"
+kind = "github_commits"
+repo = "nickprignano/avd-liquidware"
+path = "docs/knowledge/decisions"
+kb_page = "curation.md"
+
+[[source]]
+name = "Sibling KB: Liquidware"
+kind = "github_commits"
+repo = "nickprignano/avd-liquidware"
+path = "docs/knowledge"
+kb_page = "curation.md"

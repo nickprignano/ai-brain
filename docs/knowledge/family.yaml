@@ -30,9 +30,12 @@ projects:
   owns: [Azure Virtual Desktop platform, FSLogix, session host images in general]
 - id: liquidware
   name: Liquidware
+  repo: nickprignano/avd-liquidware
+  kb_path: docs/knowledge
   role: member
   focus: Liquidware products on virtual desktops
   owns: [Liquidware products]
+  format_version: 1
 - id: private-layer
   name: Private layer
   role: observer
