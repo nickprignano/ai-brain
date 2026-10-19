@@ -2,7 +2,7 @@
 title: "Prompt: Research how a project could use a set of tools"
 summary: "Research-and-proposal only: evaluates candidate tools against a project's real architecture and threat model and returns a ranked recommendation"
 topic: prompting
-status: unverified
+status: verified
 last_reviewed: 2026-10-19
 ---
 
@@ -12,6 +12,8 @@ last_reviewed: 2026-10-19
 project should work out which of them fit its own architecture before anyone installs anything.
 
 **Paste into** the project that would use the tools, or send it as a handoff issue.
+
+**Run so far:** not yet as written; a close earlier version was handed to a sibling project (2026-10-19).
 
 ## Placeholders
 

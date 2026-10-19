@@ -69,10 +69,22 @@ def link_from(page_dir: Path, target: str) -> str:
     return rel_path + (f"#{frag}" if frag else "")
 
 
+def has_folder_index(folder: Path) -> bool:
+    readme = folder / "README.md"
+    return readme.is_file() and "BEGIN GENERATED: folder-index" in readme.read_text(encoding="utf-8")
+
+
+def in_folder_index(p: Path) -> bool:
+    """A page nested below a topic folder that a folder-index lists, so the main index lists only the folder."""
+    if rel(p).count("/") < 2:
+        return False
+    return has_folder_index(p.parent.parent if p.name == "README.md" else p.parent)
+
+
 def render_kb_index() -> str:
     rows = []
     for p, fm in pages():
-        if rel(p) == "README.md" or rel(p).count("/") > 1:  # deeper pages are in their folder's index
+        if rel(p) == "README.md" or in_folder_index(p):
             continue
         target = rel(p).removesuffix("README.md") or rel(p)
         rows.append([f"[{target}]({rel(p)})", fm["summary"], fm["status"]])
@@ -258,7 +270,7 @@ def targets() -> dict[Path, str]:
         },
     }
     for readme in sorted(KB_DIR.rglob("README.md")):
-        if "BEGIN GENERATED: folder-index" in readme.read_text(encoding="utf-8"):
+        if has_folder_index(readme.parent):
             jobs.setdefault(readme, {})["folder-index"] = lambda d=readme.parent: render_folder_index(d)
     for path, renderers in jobs.items():
         if not path.exists():  # optional pages, such as upstream asks, that a KB may not have

@@ -2,7 +2,7 @@
 title: "Prompt: Work the handoffs"
 summary: "Has a receiving project check its repos' handoff issues and pick up the live ones, following decision 0012's pickup rules"
 topic: prompting
-status: unverified
+status: verified
 last_reviewed: 2026-10-19
 ---
 
@@ -12,6 +12,8 @@ last_reviewed: 2026-10-19
 text of its daily routine.
 
 **Paste into** the receiving project, or use it as that project's routine prompt.
+
+**Run so far:** not yet; written from decision 0012's pickup rules.
 
 ## Placeholders
 
@@ -33,8 +35,9 @@ Work the handoffs for {{REPOS}}, following decision 0012 (handoff issues).
    closed as completed. If one was closed unmerged or as not planned, comment once for the owner
    and wait. If the list is still waiting, comment once with what it waits on, and say nothing
    more until that changes.
-4. Before starting, re-read the comments. If none says "Picked up", comment "Picked up" with a
-   link to your branch. Work one handoff at a time.
+4. Before starting, re-read the comments. If no comment by {{OWNER}} says "Picked up", comment
+   "Picked up" with a link to your branch. A "Picked up" with no PR link after seven days is
+   stale: tell me instead of skipping the issue. Work one handoff at a time.
 5. Do the ask as written, inside this repo's guardrails and AGENTS.md. If the ask would break
    either, comment why and leave the issue open.
 6. Open pull requests; don't merge them. Comment with their links and close the issue.

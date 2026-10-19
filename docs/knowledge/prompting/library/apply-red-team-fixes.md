@@ -2,7 +2,7 @@
 title: "Prompt: Apply red-team findings in another project"
 summary: "Hands a red-team findings file to the project that owns the design, to fix, accept or dispute each finding through pull requests"
 topic: prompting
-status: partial
+status: verified
 last_reviewed: 2026-10-19
 ---
 
@@ -13,6 +13,8 @@ another project's repos.
 
 **Paste into** the project that owns the design, or send it as a handoff issue. The findings must
 be somewhere it can read, such as a public repo or the issue itself.
+
+**Run so far:** a close earlier version (2026-10-19).
 
 ## Placeholders
 
@@ -38,7 +40,7 @@ Go in this order: {{PRIORITY}}. Open one pull request per repo, each listing the
 fixes, and don't merge them. Record the lessons in this project's KB.
 
 When you're done, give me a table: finding, status (fixed, already fixed, disputed, open) and the
-PR. Don't paste the findings into any public repo or PR if they name real customers, estates or
+PR. Don't paste the findings into any public repo or PR if they name real customers or
 systems; refer to them by ID.
 ```
 

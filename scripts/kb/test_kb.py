@@ -202,11 +202,16 @@ class BuildTests(unittest.TestCase):
         fm = {"title": "T", "summary": "S", "status": "plan"}
         lib = kblib.KB_DIR / "topic" / "library"
         fake = [(kblib.KB_DIR / "topic" / "README.md", fm), (lib / "README.md", fm), (lib / "one.md", fm)]
-        with mock.patch.object(build, "pages", return_value=fake):
+        listed = lambda folder: folder in (lib, lib.parent)  # noqa: E731
+        with mock.patch.object(build, "pages", return_value=fake), \
+                mock.patch.object(build, "has_folder_index", side_effect=listed):
             self.assertNotIn("library", build.render_kb_index())
             self.assertIn("[library/](library/README.md)", build.render_folder_index(lib.parent))
             self.assertIn("[T](one.md)", build.render_folder_index(lib))
             self.assertNotIn("README", build.render_folder_index(lib))
+        with mock.patch.object(build, "pages", return_value=fake), \
+                mock.patch.object(build, "has_folder_index", return_value=False):
+            self.assertIn("[topic/library/one.md](topic/library/one.md)", build.render_kb_index())
 
     def test_link_from(self):
         page_dir = kblib.KB_DIR / "troubleshooting"

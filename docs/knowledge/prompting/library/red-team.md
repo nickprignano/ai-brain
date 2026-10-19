@@ -11,15 +11,18 @@ last_reviewed: 2026-10-19
 **Use when** a thread has produced a design, a spec or a decision record, before it's presented as
 final or anything is built from it.
 
-**Paste into** the thread that wrote the design, or give it to a sub-agent running the second
-model. The design document must be readable from there.
+**Paste into** the thread that wrote the design. That thread hands the attack to a sub-agent
+running the second model and keeps the fixing for itself, so the red team never grades its own
+findings.
+
+**Run so far:** yes, on several designs and decisions in this family (2026-10-19).
 
 ## Placeholders
 
 | Placeholder | What goes in | Example |
 |---|---|---|
 | `{{DOC}}` | The design to attack, as a path or link | docs/spec.md, sections 4 to 6 |
-| `{{MODEL}}` | The model that does the red team, not the one that wrote it | Fable |
+| `{{MODEL}}` | The model that does the red team, not the one that wrote it | a model other than the author's, as your model convention picks |
 | `{{SCOPE}}` | What to attack hardest | security, privacy, cost and whether the thresholds can fire |
 | `{{CONTEXT}}` | Facts the attacker needs: volumes, who uses it, what's out of scope | one operator; 10 to 50 eval questions a run |
 | `{{PREFIX}}` | A short ID prefix for findings | RT |
@@ -28,10 +31,10 @@ model. The design document must be readable from there.
 ## The prompt
 
 ```text
-Red team {{DOC}} with {{MODEL}}, a different model from the one that wrote it. Attack
-{{SCOPE}} hardest. Context: {{CONTEXT}}.
+Red team {{DOC}} with {{MODEL}}, a different model from the one that wrote it. Give the
+sub-agent running {{MODEL}} only the next three paragraphs, and keep the last one for yourself.
 
-Assume the design is wrong somewhere and find where. For each finding:
+Attack {{SCOPE}} hardest. Context: {{CONTEXT}}. Don't edit the design. Assume the design is wrong somewhere and find where. For each finding:
 - an ID ({{PREFIX}}-1, {{PREFIX}}-2, ...), a one-line title and a severity (High, Medium, Low);
 - the verdict in one or two sentences;
 - what goes wrong, with a concrete case: inputs, numbers, an attacker's steps or a failure path
@@ -42,8 +45,9 @@ Assume the design is wrong somewhere and find where. For each finding:
 Check numbers with arithmetic, not intuition: thresholds, rates, costs, sample sizes. Say when a
 claim in the design has no source. Don't pad: three real findings beat ten weak ones.
 
-Write the findings to {{OUT}}, with a summary table first (ID, title, severity, status). Then fix
-what's in scope in the design itself, mark each finding Fixed, Accepted (with the reason) or Open,
+Return the findings with a summary table first (ID, title, severity).
+
+Then write the findings to {{OUT}} with a status column, fix what's in scope in the design itself, mark each finding Fixed, Accepted (with the reason) or Open,
 and tell me what the red team found and what changed.
 ```
 

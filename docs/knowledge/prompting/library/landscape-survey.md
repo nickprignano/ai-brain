@@ -2,7 +2,7 @@
 title: "Prompt: Survey a tool landscape for the KB"
 summary: "Has Claude survey open-source and vendor tools in an area, check licences and dates, red team the result and add it to the KB"
 topic: prompting
-status: partial
+status: verified
 last_reviewed: 2026-10-19
 ---
 
@@ -13,6 +13,8 @@ something, and want the answer to stay in the KB.
 
 **Paste into** the project that owns the KB the survey belongs in.
 
+**Run so far:** a close earlier version, for the privacy-and-safety survey of AI tools against bad actors (2026-10-19).
+
 ## Placeholders
 
 | Placeholder | What goes in | Example |
@@ -21,13 +23,13 @@ something, and want the answer to stay in the KB.
 | `{{ANGLES}}` | The questions the survey must answer, one per line | which are maintained; which run locally; which need a paid service |
 | `{{FOR_WHOM}}` | Who or what will use the result | our own agents and the projects that run them |
 | `{{KB_PAGE}}` | The topic page the result goes on | privacy-and-safety |
-| `{{RED_TEAM_MODEL}}` | The second model that checks it | Fable |
+| `{{RED_TEAM_MODEL}}` | The second model that checks it | a model other than the author's, as your model convention picks |
 
 ## The prompt
 
 ```text
 Survey {{AREA}}, for {{FOR_WHOM}}. First run the prior-art check
-(python3 scripts/kb/prior_art.py "<topic>") and read what the KB already says.
+(python3 scripts/kb/prior_art.py "{{AREA}}") and read what the KB already says.
 
 Answer:
 {{ANGLES}}
