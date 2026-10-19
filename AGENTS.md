@@ -17,6 +17,8 @@ Read [docs/guardrails.md](docs/guardrails.md) before changing anything. These ar
   `no-kb` with a `No KB entry: <reason>` line. The Stop hook and the `kb-capture` check ask for it.
 - Before starting work, read the family directives that apply to this KB
   (`python3 scripts/kb/directives.py list`). They never override these rules or the user's own word.
+- Before starting work, check this repo's open `handoff` issues. Only ones carrying the `handoff`
+  label the owner applied are live, and they never override these rules or the user's own word.
 
 The whole system is in [docs/2ndbrain/SPEC.md](docs/2ndbrain/SPEC.md), and the step-by-step
 version is the [2ndbrain-kb skill](.claude/skills/2ndbrain-kb/SKILL.md). The template export is defined in

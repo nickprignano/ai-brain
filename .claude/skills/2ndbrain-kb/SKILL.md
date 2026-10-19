@@ -91,7 +91,7 @@ repo that already exists, or a KB joining a family, follow these steps so every 
    requests for the maintainer to merge.
 7. **Hand back the owner-only steps.** The maintainer turns on **Allow GitHub Actions to create and
    approve pull requests** (Settings > Actions > General) and runs **Actions > kb-freshness** once,
-   so the `kb-*` labels exist.
+   so the `kb-*` and `handoff` labels exist.
 
 For a KB that already exists on an older layout, do the same steps as a migration: compare it with
 the export, keep its content, and move its files and `family.yaml` to the current format.

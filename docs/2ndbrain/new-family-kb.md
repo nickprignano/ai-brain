@@ -65,7 +65,7 @@ When you're done, tell me the steps only I can do.
 These are the maintainer's, because they change repo or project settings:
 
 - In the new repo, **Settings > Actions > General**: turn on **Allow GitHub Actions to create and
-  approve pull requests**. Then run **Actions > kb-freshness** once, so the `kb-*` labels exist.
+  approve pull requests**. Then run **Actions > kb-freshness** once, so the `kb-*` and `handoff` labels exist.
 - In the new project's instructions, add the model line from
   [decision 0006](../knowledge/decisions/0006-model-selection-convention.md).
 - Other siblings add the new KB's two sources the next time they update their `family.yaml`; their

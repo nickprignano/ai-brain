@@ -19,7 +19,7 @@ The full system is in [docs/2ndbrain/SPEC.md](docs/2ndbrain/SPEC.md). Agents fol
    page, and add the sources you want watched to
    [sources.toml](docs/knowledge/sources.toml).
 4. In **Settings > Actions > General**, turn on **Allow GitHub Actions to create and approve pull
-   requests**. Then run **Actions > kb-freshness** once, so the `kb-*` labels exist.
+   requests**. Then run **Actions > kb-freshness** once, so the `kb-*` and `handoff` labels exist.
 5. Run the checks (or let CI do it):
 
    ```bash
