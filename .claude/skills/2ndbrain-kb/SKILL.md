@@ -53,6 +53,10 @@ python3 scripts/kb/validate.py
 python3 -m unittest discover -s scripts/kb
 ```
 
+If code changed, the PR needs a KB change too, or the `no-kb` label and a `No KB entry: <reason>`
+line in its body (`kb-capture`). In a repo without its own KB, add `KB: <link>` to the lesson in the
+KB it feeds. When the Stop hook asks for a lesson, write it or say in one line why there's none.
+
 Never edit between `BEGIN GENERATED` and `END GENERATED`; edit the source and run `build.py`.
 Changes land as pull requests.
 

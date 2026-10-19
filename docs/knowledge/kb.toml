@@ -8,6 +8,11 @@ user_agent = "ai-brain-kb-curator"
 topic_order = ["overview", "claude-api", "agents", "prompting", "evals", "privacy-and-safety", "platforms",
                "learning", "troubleshooting", "roadmap", "curation"]
 
+# Decision 0011: what the Stop hook does when code changed without a KB entry ("block", "warn" or
+# "off"). The kb-capture PR check runs either way. capture_ignore lists more paths that aren't code.
+capture_hook = "block"
+capture_ignore = []
+
 # Structured data files listed in llms.txt, in order. A file that doesn't exist is skipped.
 [[data]]
 name = "Known errors"

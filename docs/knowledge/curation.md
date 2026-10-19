@@ -146,6 +146,25 @@ sites this KB's topics build on plus the repos watched in [sources.toml](sources
   the link. No agent opens an issue or PR outside the family's own repos, and nothing from a real
   account or the private layer goes upstream.
 
+## Capture check (`kb-capture`)
+
+Code that changes without a KB entry loses what was learned, so two checks ask for one
+(family decision 0011, in the [family spec](../2ndbrain/SPEC.md#3-keeping-a-kb-current)). Both use only git and
+[`scripts/kb/capture_check.py`](../../scripts/kb/capture_check.py):
+
+- **Stop hook.** [`.claude/settings.json`](../../.claude/settings.json) runs it when a Claude Code
+  session ends. If files outside `docs/knowledge/` changed and nothing inside it did, it asks once
+  for the lesson, or for one line saying why there's none. `capture_hook` in [kb.toml](kb.toml)
+  sets it to `block`, `warn` (a reminder only) or `off`.
+- **PR check.** [`.github/workflows/kb-capture.yml`](../../.github/workflows/kb-capture.yml) fails a
+  pull request that changes code without changing `docs/knowledge/`, unless it has the `no-kb`
+  label and a `No KB entry: <reason>` line in its body. It reruns when the label or body changes.
+  PRs from the family's automation are exempt.
+- **A repo without its own KB** puts `capture_hook` and `kb_repos` in `.claude/kb-capture.toml`
+  and passes with a `KB: <link>` line to the lesson in one of those KB repos.
+
+Paths in `capture_ignore` (and `llms.txt` and lockfiles) don't count as code.
+
 ## Checks on every change (`kb-validate`)
 
 [`.github/workflows/kb-validate.yml`](../../.github/workflows/kb-validate.yml) runs on pull

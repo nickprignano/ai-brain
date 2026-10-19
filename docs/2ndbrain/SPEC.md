@@ -64,7 +64,15 @@ a person reviews.
 | Freshness (`kb-freshness`) | The 1st of each month | One issue listing stale pages, open unverified claims, unresolved field reports, experts due for re-scoring, and sibling drift |
 
 On every PR, `kb-validate` runs `build.py --check`, `validate.py` (schemas, MADR sections, links and
-anchors, leak patterns, family checks) and the unit tests, and gitleaks scans for secrets. Experts
+anchors, leak patterns, family checks) and the unit tests, and gitleaks scans for secrets.
+
+**Capture is enforced (decision 0011, piloted first).** A Claude Code Stop hook asks for the lesson
+when a session changed code but not `docs/knowledge/`, and the `kb-capture` check fails a PR that
+does the same unless it carries the `no-kb` label and a reason. A repo without its own KB links the
+lesson in the KB it feeds instead. Threads also run the capture closeout before they're resolved.
+Both checks use only git; `capture_hook` in `kb.toml` sets the hook to block, warn or off.
+
+Experts
 are chosen by a fixed method: four gates (original, recent, feed, identity) and five scores from 0
 to 3. A total of 10 or more is tracked, 6 or more goes on the watch list.
 

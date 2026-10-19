@@ -125,3 +125,4 @@ AVD KB, the Nerdio HCL kit and the Liquidware KB when each project adopts the pi
 copies and each KB's `family.yaml` row are the standing record of what each project runs.
 
 Accepted by the owner on 2026-10-19.
+Built here in `scripts/kb/capture_check.py`, `.github/workflows/kb-capture.yml` and `.claude/settings.json`, and exported to the template, so each pilot installs from the export.
