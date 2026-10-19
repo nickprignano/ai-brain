@@ -23,8 +23,33 @@ sources:
 # Privacy and safety
 
 Keeping AI features safe and private: handling keys, prompt injection from untrusted text, local-only
-designs where data never leaves the device, and extra care for apps children use. Only the section
-below is written so far.
+designs where data never leaves the device, and extra care for apps children use. Keys and the
+security tools survey are written so far.
+
+## Keys and secrets
+
+The rule is [decision 0016](../decisions/0016-secrets-handling.md): one password manager holds the
+master copy, and each key is pasted by the owner into the secret store of the one service that uses
+it. What that means in practice:
+
+- **Claude needs names, not values.** A session can write the code, the config and the deploy step
+  that reads `<PROVIDER>_API_KEY`; only the paste is the owner's. That's why a vault that connects to
+  Claude adds risk without saving work.
+- **Prefer no key at all.** Managed identity, workload identity federation and OIDC from CI remove
+  the key instead of storing it.
+- **A cloud session's environment is not a secret store.** Anything set there is readable by every
+  command the session runs, including ones a prompt injection talks it into.
+- **Scope and cap at the provider.** One key per app and environment, narrowest permissions, and a
+  provider-side spend limit, so a leak costs a known, small amount.
+- **The deployment note is the rotation checklist.** Writing where a key is deployed on its vault
+  entry is what makes "revoke and replace" a five-minute job instead of a search.
+- **Deploy tokens and connectors are keys too.** A CI token that deploys a Worker, or a connector
+  that reads a KV store, can reach more than a model key. Prefer OIDC from CI, and never park a key
+  where a connector can read it back into a session.
+- **Rotate without an outage.** Create and deploy the new key, check it, then revoke the old one;
+  revoke first only when usage shows abuse.
+- **Push protection catches it early, gitleaks late.** GitHub's push protection blocks known key
+  types before they're public; a gitleaks hit after a push means the key is in history, so rotate it.
 
 ## Open-source AI tools for fighting bad actors
 
