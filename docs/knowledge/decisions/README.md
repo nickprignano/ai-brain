@@ -17,4 +17,5 @@ the family numbers its own decisions; refer to a sibling's as `<project> 0012`, 
 | [0006](0006-model-selection-convention.md) | One convention for using Claude models, piloted on the family, with per-project overrides | Proposed |
 | [0007](0007-family-format-ai-brain-as-format-source.md) | Family format: this KB is the source of truth for the format, and templates are generated from it | Accepted |
 | [0008](0008-family-format-maintainer-directives-and-pause-switch.md) | Family format: maintainer directives and a pause switch | Accepted |
+| [0009](0009-second-model-family.md) | Claude stays primary; Grok is the one second model family, for named jobs only | Proposed |
 <!-- END GENERATED: decision-index -->

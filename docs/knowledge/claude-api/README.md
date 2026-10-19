@@ -3,13 +3,20 @@ title: "Claude API"
 summary: "Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks"
 topic: claude-api
 status: partial
-last_reviewed: 2026-10-18
+last_reviewed: 2026-10-19
 sources:
   - https://platform.claude.com/docs/en/about-claude/models/overview
   - https://platform.claude.com/docs/en/about-claude/pricing
   - https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry
   - https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models-quotas-limits
   - https://code.claude.com/docs/en/model-config
+  - https://docs.x.ai/developers/models.md
+  - https://docs.x.ai/developers/faq/security
+  - https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability
+  - https://ai.google.dev/gemini-api/terms
+  - https://dev.meta.ai/legal/terms-of-service
+  - https://developers.openai.com/api/docs/guides/safety-checks/under-18-api-guidance
+  - https://developers.cloudflare.com/workers-ai/platform/data-usage/
 ---
 
 # Claude API
@@ -94,6 +101,28 @@ Checked against Anthropic's Foundry page and Microsoft's quota page (updated 202
   2026-10-18).
 - **Claude Code on Foundry:** its `opus`, `sonnet` and `haiku` aliases point at Opus 4.6,
   Sonnet 4.5 and Haiku 4.5 there. Set `ANTHROPIC_DEFAULT_OPUS_MODEL` and its siblings to full IDs.
+
+## Other model families
+
+Which second family the apps use, and for what, is
+[decision 0009](../decisions/0009-second-model-family.md). These are the facts behind it, checked on
+the providers' own pages on 2026-10-19; re-check before relying on them.
+
+- **What Claude doesn't do.** It reads images and PDFs but can't create or edit images, takes no
+  video or audio, and has no embedding model (Anthropic points to Voyage).
+- **xAI.** Text models `grok-4.7` ($2/$6 per MTok) and `grok-4.3` ($1.25/$2.50); image, video
+  and speech models on the same API. No training on API data; requests kept 30 days by default,
+  with a zero-retention switch. Chat Completions is marked legacy in favour of the Responses API.
+- **Grok on Azure.** Foundry sells `grok-4.3`, `grok-4.6`, `grok-4.7` and `grok-4.20` (Global
+  Standard in US, Canada and Brazil regions; Data Zone in US regions). Text only: no Grok Imagine.
+- **Ruled out for apps children use, by terms.** The Gemini API and Meta's own Model API (now
+  serving Meta's Muse models) both require users to be 18 and bar products aimed at or likely used
+  by under-18s. ElevenLabs requires 18. OpenAI bars personal data of under-13s without zero
+  retention, which needs sales approval. Mistral bars personal data of under-13s.
+- **Retired lately.** OpenAI's Sora 2 and Videos API (2026-09-24); Imagen 4 on the Gemini API
+  (2026-08-17); the Gemini API's Veo 3.1 previews (2026-10-22). Check deprecation pages first.
+- **Cloudflare Workers AI** doesn't train on or keep request data unless AI Gateway logging is on,
+  and hosts Llama Guard 3, FLUX image models and Whisper.
 
 ## Measuring a model choice
 
