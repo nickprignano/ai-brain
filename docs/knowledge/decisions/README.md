@@ -23,4 +23,5 @@ the family numbers its own decisions; refer to a sibling's as `<project> 0012`, 
 | [0012](0012-family-format-handoff-issues.md) | Family format: handoffs between Claude projects go through a `handoff` issue in the receiving repo | Accepted |
 | [0013](0013-one-2ndbrain-template-private-by-default.md) | One 2ndbrain template, set up as public or private, private by default | Accepted |
 | [0014](0014-family-format-auto-merge-low-risk-prs.md) | Family format: GitHub work conventions, with low-risk pull requests merging themselves on green | Proposed |
+| [0015](0015-personal-swarm-on-the-2ndbrain.md) | A personal swarm on the 2ndbrain, built from the roles that already run | Proposed |
 <!-- END GENERATED: decision-index -->

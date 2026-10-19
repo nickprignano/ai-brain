@@ -57,6 +57,10 @@ and tell me what the red team found and what changed.
   a second model finds the overstated claims and the arithmetic that doesn't hold.
 - **Give it the numbers.** Findings about thresholds and false alarms were only possible because
   the prompt said how many runs and samples there are.
+- **Name the questions the first pass couldn't settle,** and point the attacker at the code and
+  schemas the design leans on, not only the design. On a swarm spec (2026-10-19), the two
+  strongest findings came from reading the directive schema and the handoff script, which the
+  design only described.
 - **"Acceptable as is" matters.** It records what was checked and passed, which stops the next
   reviewer from reopening it.
 - When the fixes belong to another project, follow with

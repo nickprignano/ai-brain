@@ -179,6 +179,50 @@ thread with that summary instead of carrying on.
 - For the pilot, count per project: threads that needed a bump, sessions restarted because
   quality slipped, and the cache share from `/usage`.
 
+## Swarms and multi-agent patterns
+
+What we learned specifying a personal swarm ([0015](../decisions/0015-personal-swarm-on-the-2ndbrain.md);
+the spec lives in the swarm's own private repo). Checked 2026-10-19.
+
+**Claude Code's own multi-agent pieces.** Subagents report a result back to one session. Agent
+teams are a lead plus teammates that share a task list and message each other; they're
+experimental, off unless `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, one team per session, no nested
+teams, and in-process teammates don't come back after `/resume`. Teammates' permission prompts
+surface in the lead, and a teammate can't approve a prompt for you
+([agent teams](https://code.claude.com/docs/en/agent-teams)). Anthropic suggests three to five
+teammates and says to try subagents or cross-session messaging first. None of these outlives a
+session, so a swarm that runs for weeks is built from projects, routines and GitHub, with these
+only inside one piece of work.
+
+**For one owner, the bottleneck is review, not agents.**
+
+- A cap on the owner's queue doesn't raise merges per owner minute; how fast the owner reviews
+  sets that. With about 4 items a day needing the owner and one 30-minute sitting that clears
+  about 6, the queue averages 2 (M/M/1, ρ = 4/6) and a cap never binds. At 8 a day the queue grows
+  without bound and throughput is still 6. What a cap buys is age (Little's law: wait = queue /
+  rate), which saves rebases and re-skims. *Inferred* from one day's numbers.
+- Count the cap in owner-minutes, not items: eight skims and eight full reads differ fourfold.
+- Count it from a live query (open, green, non-draft, needs the owner), not a morning list that also
+  holds answers and stale items, or builders wait forever on items that will never clear.
+
+**Agents acting as your own GitHub account defeat every "the owner opened it" check.** Author
+filters on handoff issues, auto-merge and directives all pass for anything a session opens, so
+one session that read a stranger's issue can relaunder it as yours. Provenance lines (what owner
+message or whose issue an agent's issue or PR answers) make it visible; only a separate machine
+identity makes it checkable.
+
+**A stop switch needs a fast, take-away-only trip any agent can throw.** A pause that needs a PR
+the owner merges takes hours. An open issue with a reserved label, which only the owner closes
+and no issue template can apply, takes seconds and needs no credential. Also disarm auto-merge
+that was armed before the stop, or green checks merge it anyway. In this hub, directives' `pause`
+enum accepts only `all` and four `kb-*` names today, so a new pause target is a schema change.
+
+**Field note: the second Fable red team (2026-10-19).** A scoped Fable worker took four questions
+the Opus pass named (throughput, bypass, the stop switch, scope) and returned eight findings in
+about four minutes, one Critical and three High; the two checked against the code held. As in the
+first field note above, the gain was reframes with numbers (the cap buys age, not throughput) and
+code-level checks the Opus pass hadn't run (the schema enum, the author filter).
+
 ## Cloud sessions can commit to your GitHub repos
 
 A Claude session with GitHub tools can list your repos, attach one with push access, clone it,
