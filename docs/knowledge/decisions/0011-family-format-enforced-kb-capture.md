@@ -60,27 +60,33 @@ catches work done outside Claude or a hook that was skipped. None of them calls 
 ### Pilot
 
 - **Where, in parallel:** the AVD repos (the AVD KB, its swarm and its landing zone), the Nerdio
-  HCL kit and the Liquidware repo. AVD tests repos without a KB of their own; nerdio-hcl tests the
-  hook and the check against a mature KB and CI; Liquidware tests a project that starts with no
-  KB. Anything that needs testing first is tested in this KB's own repos.
-- **Liquidware until its KB exists.** It sets up its own KB with the family's new-KB steps. Until
-  then it runs as a repo without a KB: its PR check passes with a `KB: <link>` to the lesson in
-  the sibling KB that owns the topic (the AVD KB or this one), or with `no-kb` and a reason. Its
-  demo on 2026-11-04 must not depend on the hook or the check, so its hook warns instead of
-  blocking until after the demo.
+  HCL kit and the Liquidware KB. AVD tests repos without a KB of their own; nerdio-hcl and
+  Liquidware test the hook and the check against an existing KB and CI. Anything that needs
+  testing first is tested in this KB's own repos.
+- **Liquidware.** Its KB starts in warn mode, like the reference repo, and its PR check runs for
+  real. Its demo on 2026-11-04 must not wait on either: a demo PR with a red check gets `no-kb`
+  and a reason. The private ux-assess repo that project owns is exempt from the hook and the
+  check for the pilot, because the pilot covers public family repos only and a private repo's
+  lessons need their own guardrail review before they reach a public KB. The closeout rule still
+  applies to its threads, and the review decides whether private repos join.
 - **Warn before block in the reference repo.** In nerdio-hcl the Stop hook only warns (a message
   to the session, no block) until the AVD pilot shows it behaves; its PR check runs for real from
-  the start. The mode is one setting, `capture_hook = "warn"` or `"block"`, in each repo's
+  the start. Liquidware starts the same way. The mode is one setting, `capture_hook = "warn"` or `"block"`, in each repo's
   `kb.toml`, or in `.claude/kb-capture.toml` for a repo without a KB.
 - **Order:** this KB builds and tests `capture_check.py` and the `kb-capture` job once this
-  decision is accepted; each pilot project then installs them from this KB's export and adds the
-  hook, the check and the closeout rule in its own PR.
+  decision is accepted. Both ship in the template export (`scripts/kb/*.py` and the `kb-*`
+  workflows already do), and the build adds the hook's `.claude/settings.json` snippet to
+  `template/manifest.toml`. The script reads `kb.toml` in a repo with a KB and
+  `.claude/kb-capture.toml` in one without. Each pilot project installs from the export only after
+  that build merges, and adds the hook, the check and the closeout rule in its own PR.
 - **When:** to 2026-10-31, reviewed on 2026-11-01. The clock starts when the hook and the check
   are live in the pilot repos, not on this decision's date; if too few sessions have run by
   2026-10-31 to judge it, the owner extends the review instead of deciding on thin data. The
   review also decides whether the nerdio-hcl hook moves from warn to block.
 - **What's measured:** PRs merged, how many carried a KB change, how many used `no-kb`, and how
-  often the hook blocked or warned, per repo. Results go in `field-reports.yaml`.
+  often the hook blocked or warned, per repo (AVD, nerdio-hcl, Liquidware). Each pilot project
+  adds one report to this KB's `field-reports.yaml` at each checkpoint, next to the 0006
+  model-selection numbers.
 
 ### Rollout and standard convention
 
@@ -115,4 +121,5 @@ Follows from the owner's question about what enforces capture, answered in the p
 their dev projects (2026-10-19). Related: guardrail 7 in [guardrails.md](../../guardrails.md), the 2ndbrain skill's
 closeout, [0006](0006-model-selection-convention.md) for the same pilot-then-promote pattern, and
 [0010](0010-family-format-upstream-sources.md) for the next format version. To be recorded in the
-AVD KB, the Nerdio HCL kit and the Liquidware KB when each project adopts the pilot.
+AVD KB, the Nerdio HCL kit and the Liquidware KB when each project adopts the pilot; those
+copies and each KB's `family.yaml` row are the standing record of what each project runs.
