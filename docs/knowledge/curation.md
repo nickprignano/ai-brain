@@ -3,7 +3,7 @@ title: "Keeping the knowledge base current"
 summary: "How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment"
 topic: curation
 status: verified
-last_reviewed: 2026-10-18
+last_reviewed: 2026-10-19
 ---
 
 # Keeping the knowledge base current
@@ -11,7 +11,7 @@ last_reviewed: 2026-10-18
 Four tools keep the KB current without spending time (or LLM tokens) rediscovering things. Two
 bring new information in (the weekly digest and the prior-art check), and two check that what's
 already here still holds (the feedback loop and the monthly freshness check). A fifth part keeps
-this KB aligned with its siblings.
+this KB aligned with its siblings, and a sixth keeps it pointed at the upstream sources it builds on.
 
 ## Weekly digest (`kb-curator`)
 
@@ -125,6 +125,26 @@ in `llms.txt`. The schema and the family code in `scripts/kb/` are the same in e
   all of them have merged. The freshness check flags a sibling whose version differs.
 - **Cross-project decisions.** A decision that affects more than one project is recorded in each
   affected KB, and each copy says "Also recorded in ..." with links.
+
+## Upstream: link out, check against, give back
+
+This KB is not a second copy of anyone's documentation. Vendor docs and product or SDK repos are
+upstream, the sources of truth for what a product is documented to do; the rules are in the
+[family spec](../2ndbrain/SPEC.md#5-upstream-sources), section 5. The upstream set is the docs
+sites this KB's topics build on plus the repos watched in [sources.toml](sources.toml).
+
+- **Link out.** A topic page links the upstream page each fact builds on and adds only what
+  upstream doesn't say. Upstream wins on what a product is documented to do; a real run wins on
+  what it did, and when they disagree the page keeps both links and the gap becomes an upstream ask.
+- **Check against it.** When the weekly digest shows an upstream change that touches a page,
+  re-check the page and update `last_reviewed`. A page is `verified` only when its claims about
+  documented behavior link the source they were checked against. Format version 2 proposes an
+  `upstream:` front matter list that the monthly freshness check compares with each source's own
+  last-changed date.
+- **Give back.** When a run shows a gap or a docs error, add an entry to the KB's `upstream.yaml`,
+  draft the text for review in a PR, and have a person file it under their own account and record
+  the link. No agent opens an issue or PR outside the family's own repos, and nothing from a real
+  account or the private layer goes upstream.
 
 ## Checks on every change (`kb-validate`)
 

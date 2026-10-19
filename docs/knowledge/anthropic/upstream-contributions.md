@@ -3,7 +3,7 @@ title: "Upstream asks for Anthropic"
 summary: "Gaps, API asks and doc fixes we could raise with Anthropic, with evidence"
 topic: claude-api
 status: verified
-last_reviewed: 2026-10-18
+last_reviewed: 2026-10-19
 ---
 
 # Upstream asks for Anthropic
@@ -11,6 +11,13 @@ last_reviewed: 2026-10-18
 Things only Anthropic can change: gaps in the API, SDKs, Claude Code or MCP, and docs fixes. The
 tables are generated from [upstream.yaml](upstream.yaml). Nothing is raised upstream without the
 maintainer's go-ahead, and every entry carries its evidence.
+
+To raise one ([decision 0010](../decisions/0010-family-format-upstream-sources.md)): draft its text
+in the PR that adds or updates the entry, and get it reviewed there. A person then files it under
+their own account, following the target repo's contributing rules, and sets `status: raised` and
+`link`. Drafts carry generic steps and public evidence only, never anything from a real account.
+Until format version 2 adds `target` and `upstream/drafts/`, an entry for an upstream other than
+Anthropic names its target in `note`.
 
 ## Feature gaps
 

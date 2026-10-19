@@ -9,6 +9,7 @@ optional private layer above them. Agents working in a 2ndbrain repo follow the
 
 Status: version 1 of the family format, in use by four project KBs. Format ownership and
 directives (decisions 0007 and 0008) are accepted and built in the hub; siblings adopt them by PR.
+The upstream rules in section 5 apply now; the checks proposed there wait for format version 2.
 
 ## 1. Layers
 
@@ -22,7 +23,7 @@ directives (decisions 0007 and 0008) are accepted and built in the hub; siblings
   same PR as the code it describes.
 - Signal flows **up**: project KBs into the hub, through the hub's weekly digest, and from the hub
   into the private layer.
-- Instructions flow **down** only through the hub, as owner-approved directives (section 6).
+- Instructions flow **down** only through the hub, as owner-approved directives (section 7).
 - The private layer reads the hub, which is public, and needs no credential to do it. Nothing
   inside it ever reaches a public repo.
 
@@ -85,7 +86,51 @@ it's the source of truth for, and the format version it follows.
 - **Cross-project decisions** are recorded in each affected KB, and each record says where else
   it's recorded.
 
-## 5. Guardrails
+## 5. Upstream sources
+
+A KB is not a second copy of anyone else's documentation. Vendor docs sites, product repos and SDK
+repos are **upstream**: the sources of truth for what a product is documented to do. A paraphrase
+goes stale the day the original changes, and nothing says it did. So a KB links out, checks
+against upstream, and gives back what it learns.
+
+### The rules (format version 1, in force now)
+
+- **Link, don't restate.** A page says only what upstream doesn't: a gap, a contradiction found in
+  a real run, or how documented pieces combine. For everything else it links the upstream page. A
+  sibling's topic still gets a link to the sibling (section 4); an upstream topic gets a link to
+  upstream.
+- **Who wins.** Upstream is the source of truth for what a product is documented to do. A real run
+  is the source of truth for what it did. When they disagree, the page keeps the finding, links
+  both, and the disagreement becomes an upstream ask.
+- **Verified means checked against the source.** A page is `verified` when its claims were checked
+  against a primary source or a real run, and every claim about documented behavior links the
+  source it was checked against.
+- **Giving back is a person's act.** An ask starts as a `candidate` in the KB's `upstream.yaml`,
+  its text is drafted and reviewed in a PR, and a person files it upstream under their own account
+  and records `status: raised` and the link. An agent opens issues and PRs only on the family's own
+  repos (`family.yaml`) and its project's repos; anything else is upstream.
+- **What a draft may hold.** Generic reproduction steps and public evidence only: nothing from a
+  real estate, tenant or account, no IDs or secrets (section 6), and nothing from the private layer.
+  It follows the upstream's own contributing rules, license and CLA, uses their template, and says
+  which upstream page or version it was checked against.
+- **The default upstream set** is the docs sites the KB names for its topics plus the repos it
+  watches in `sources.toml`. The weekly digest reports upstream changes; when one touches a page,
+  the page is re-checked and `last_reviewed` updated.
+
+### Proposed for format version 2
+
+Not built yet. It ships once every KB in the family accepts it, in the same version bump as the
+other queued format changes, so siblings change version once.
+
+| Change | What it does |
+|---|---|
+| `upstream:` in page front matter | An optional list of `https://` URLs the page builds on. `validate.py` checks the shape. An empty list says no upstream applies |
+| `upstream_docs` in `kb.toml` | The KB's primary docs sites, its default upstream set. The first one is the default target of an ask |
+| Upstream freshness | `freshness.py --upstream`, passed only by the monthly job, warns on `verified` pages with no `upstream` field and on pages whose upstream changed after `last_reviewed`: a GitHub file's last commit, a docs page's own date metadata, or its `Last-Modified` header. A URL with no readable date is listed as "can't tell". Warnings never fail the run |
+| One `upstream/` folder | `upstream.yaml` and its page move from a vendor folder to `upstream/` in every KB, with `upstream/drafts/` beside them, so the shared code points at one path |
+| Any upstream | Entries gain an optional `target` (a repo, docs set or product team), a `drafted` status between `candidate` and `raised`, and a `draft` path. `drafted` needs the draft file; `raised` and `merged` need `link` |
+
+## 6. Guardrails
 
 The same in every KB, worded for each one's topic:
 
@@ -99,7 +144,7 @@ The same in every KB, worded for each one's topic:
 6. **Every step works from a browser.**
 7. **Every decision and lesson goes into the KB.**
 
-## 6. Directives and the pause switch
+## 7. Directives and the pause switch
 
 One owner-only `directives.yaml` in the hub tells the whole family something at once.
 
@@ -114,7 +159,7 @@ One owner-only `directives.yaml` in the hub tells the whole family something at 
 - **Instant stop:** a `KB_PAUSED` repository variable stops that repo's automation at once.
   `kb-validate` and the secret scan always run.
 
-## 7. The private layer
+## 8. The private layer
 
 An optional private repo above the family, for one person's judgment. It's described generically
 here, and the [2ndbrain-private template](https://github.com/nickprignano/2ndbrain-private) is a
@@ -139,7 +184,7 @@ starting point.
   - No employer or customer material goes into it at all.
   - Public text may say the layer exists. It never names its repo, its notes or their paths.
 
-## 8. Templates
+## 9. Templates
 
 - **[2ndbrain-public](https://github.com/nickprignano/2ndbrain-public)** is the machinery and an
   empty KB skeleton. It's generated from the hub by `scripts/kb/export_template.py`, following
