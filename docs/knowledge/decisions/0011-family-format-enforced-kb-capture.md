@@ -70,7 +70,10 @@ catches work done outside Claude or a hook that was skipped. None of them calls 
 - **Order:** this KB builds and tests `capture_check.py` and the `kb-capture` job once this
   decision is accepted; each pilot project then installs them from this KB's export and adds the
   hook, the check and the closeout rule in its own PR.
-- **When:** to 2026-11-30, reviewed on 2026-12-01, the same window as decision 0006.
+- **When:** to 2026-11-30, reviewed on 2026-12-01, the same window as decision 0006. Both
+  projects are in active build through at least year end, so there's plenty to judge. The
+  2026-12-01 review decides whether the nerdio-hcl hook moves from warn to block, and a second
+  checkpoint around 2026-12-31 confirms it before the family adopts the rule.
 - **What's measured:** PRs merged, how many carried a KB change, how many used `no-kb`, and how
   often the hook blocked or warned, per repo. Results go in `field-reports.yaml`.
 - **Then:** if it holds up, it joins the family format in the next version bump after the review.
