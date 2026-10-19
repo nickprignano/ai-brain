@@ -45,7 +45,7 @@ it.
 - Good, because the strict default fails loudly: a public copy that skips setup goes red at once.
 - Bad, because detection in CI happens after a push. The pre-commit hook and setup's check are the
   guards before it, and both need the copy to be set up.
-- Neutral, because 2ndbrain-private is archived once its pieces are here.
+- Neutral, because 2ndbrain-private is no longer a template; its owner reuses the repo for other work.
 
 ## More Information
 
