@@ -70,14 +70,27 @@ catches work done outside Claude or a hook that was skipped. None of them calls 
 - **Order:** this KB builds and tests `capture_check.py` and the `kb-capture` job once this
   decision is accepted; each pilot project then installs them from this KB's export and adds the
   hook, the check and the closeout rule in its own PR.
-- **When:** to 2026-11-30, reviewed on 2026-12-01, the same window as decision 0006. Both
-  projects are in active build through at least year end, so there's plenty to judge. The
-  2026-12-01 review decides whether the nerdio-hcl hook moves from warn to block, and a second
-  checkpoint around 2026-12-31 confirms it before the family adopts the rule.
+- **When:** to 2026-10-31, reviewed on 2026-11-01. The clock starts when the hook and the check
+  are live in the pilot repos, not on this decision's date; if too few sessions have run by
+  2026-10-31 to judge it, the owner extends the review instead of deciding on thin data. The
+  review also decides whether the nerdio-hcl hook moves from warn to block.
 - **What's measured:** PRs merged, how many carried a KB change, how many used `no-kb`, and how
   often the hook blocked or warned, per repo. Results go in `field-reports.yaml`.
-- **Then:** if it holds up, it joins the family format in the next version bump after the review.
-  It is not part of format version 2, which carries 0005, 0007, 0008, AVD 0009 and 0010.
+
+### Rollout and standard convention
+
+- **Rollout after the review.** If the review holds up, the hook, the check and the closeout rule
+  go live on the owner's other Claude dev projects. Each project gets a paste-ready adopt prompt,
+  like the pilot's, and adopts it in its own PRs; the owner merges each one.
+- **Standard for every dev project from then on.** A new dev project starts with a KB (the
+  template, or the family's new-KB steps) and the hook, the check and the closeout rule switched
+  on, in block mode. A dev repo without a KB of its own names the KB it feeds, as the pilot's
+  swarm and landing zone repos do.
+- **Exceptions are decisions.** A project that opts out or stays in warn mode records it as a
+  decision in its own KB, with the reason.
+- **Family format.** The shared script and job join the family format in the next version bump
+  after the review. They are not part of format version 2, which carries 0005, 0007, 0008, AVD
+  0009 and 0010.
 
 ### Consequences
 
@@ -93,7 +106,8 @@ catches work done outside Claude or a hook that was skipped. None of them calls 
 ## More Information
 
 Follows from the owner's question about what enforces capture, answered in the project on
-2026-10-19. Related: guardrail 7 in [guardrails.md](../../guardrails.md), the 2ndbrain skill's
-closeout, [0006](0006-model-selection-convention.md) for the pilot window, and
+2026-10-19. The owner set the pilot to run through October and then become the standard for all
+their dev projects (2026-10-19). Related: guardrail 7 in [guardrails.md](../../guardrails.md), the 2ndbrain skill's
+closeout, [0006](0006-model-selection-convention.md) for the same pilot-then-promote pattern, and
 [0010](0010-family-format-upstream-sources.md) for the next format version. To be recorded in the
 AVD KB and the Nerdio HCL kit when each project adopts the pilot.
