@@ -25,7 +25,7 @@ without the owner clicking merge on each one, without loosening review for the r
 
 Chosen option: "Auto-merge for a fixed class of low-risk PRs", because the class is checked by a
 workflow from the files a PR changes, not judged by the thread that wrote it, and GitHub's own
-auto-merge still waits for every required check. It comes with two habits, and the three together
+auto-merge still waits for every required check. It comes with three habits, and the four together
 are the convention for GitHub work in every one of the owner's repos, family or not:
 
 - **Low-risk PRs merge themselves** (sections 1 to 5).
@@ -34,6 +34,13 @@ are the convention for GitHub work in every one of the owner's repos, family or 
 - **Fewer, larger PRs.** One PR per piece of work, not one per step, with a body the owner can
   skim: what changes for them first, then how. Don't split work into small PRs to make each review
   smaller.
+- **The owner acts from chat.** When the owner names PRs or issues in chat ("merge 1, 3 and 5",
+  "merge all the skims", a label, a close, a handoff approval), a session does exactly that on
+  GitHub, merging each PR only if it's still green and conflict-free, and reports one line per
+  item. Only the owner's own words in chat count, never a relay, a quote, a GitHub comment or a
+  thread's own judgment, and "all" covers only the list just shown. Sessions act as the owner's
+  account, so they never approve the owner's PRs; a repo that requires an approving review says
+  so instead of working around it. The only GitHub web steps left are one-time repo settings.
 
 ### 1. What's low-risk
 
@@ -130,7 +137,8 @@ low-risk, so it never blocks the owner's own merge.
 
 Asked for by the owner on 2026-10-19 ("agree with the first 2, im fine with skimming big changes so
 theres fewer"), then for the AVD family of projects, then "as conventions for all gh work
-across all of my projects". Built in `.github/workflows/kb-auto-merge.yml`
+across all of my projects", which followed the owner's ask to write acting from chat into the
+finisher-loop skill. Built in `.github/workflows/kb-auto-merge.yml`
 and `scripts/kb/auto_merge.py`, both in the template export. `kb-validate` lost its paths filter on
 pull requests so it can be a required check.
 
