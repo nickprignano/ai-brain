@@ -1,4 +1,4 @@
-"""Decide whether a pull request is low-risk enough to merge itself on green (decision 0013).
+"""Decide whether a pull request is low-risk enough to merge itself on green (decision 0014).
 
 Stdlib-only, so a repo without the KB scripts can copy this one file:
 

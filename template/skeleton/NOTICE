@@ -1,4 +1,4 @@
-2ndbrain-public
+2ndbrain
 Copyright 2026 Nick Prignano and the 2ndbrain contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
@@ -8,7 +8,9 @@ Generated from ai-brain
 
 Everything here is exported from ai-brain (https://github.com/nickprignano/ai-brain), Copyright
 2026 Nick Prignano and the ai-brain contributors, licensed under the Apache License, Version 2.0,
-with its content removed and an empty knowledge base skeleton added.
+with its content removed and an empty knowledge base skeleton added. The private layer (notes/,
+outbox/, hub.toml and its scripts) was written as an empty starting point. Nothing here is
+generated from anyone's private notes.
 
 ai-brain's knowledge base tooling (scripts/kb/, docs/knowledge/schema/, .github/workflows/kb-*.yml
 and .github/ISSUE_TEMPLATE/) is in turn adapted from nerdio-hcl

@@ -4,7 +4,7 @@ date: 2026-10-19
 decision-makers: [maintainer]
 ---
 
-# 0013. Family format: GitHub work conventions, with low-risk pull requests merging themselves on green
+# 0014. Family format: GitHub work conventions, with low-risk pull requests merging themselves on green
 
 ## Context and Problem Statement
 

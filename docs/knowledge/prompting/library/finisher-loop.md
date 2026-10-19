@@ -55,4 +55,4 @@ Never merge, approve, close or apply a `handoff` label without them.
 - **Thread status isn't enough.** Threads often report "completed" while their last message asks
   the owner something.
 - Generalized on 2026-10-19 from the owner's own skill and its two test runs. The conventions it
-  serves are [decision 0013](../../decisions/0013-family-format-auto-merge-low-risk-prs.md).
+  serves are [decision 0014](../../decisions/0014-family-format-auto-merge-low-risk-prs.md).

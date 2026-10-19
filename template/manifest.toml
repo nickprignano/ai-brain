@@ -1,7 +1,8 @@
-# What goes into the 2ndbrain-public template, and how. Read by scripts/kb/export_template.py.
+# What goes into the 2ndbrain template, and how. Read by scripts/kb/export_template.py.
 # The export copies `include`, overlays `skeleton`, applies `replace` (each one must match, so a
 # changed source line fails the export instead of drifting), runs build.py in the output, and
-# refuses to finish if any file still contains a `forbid` string.
+# refuses to finish if any file still contains a `forbid` string or the private layer holds anything
+# but its empty templates.
 
 skeleton = "template/skeleton"
 
@@ -74,7 +75,7 @@ file = "docs/knowledge/curation.md"
 find = """- Anthropic's Claude Code and Python SDK releases, and the Anthropic cookbook and courses repos
 - The Model Context Protocol specification
 """
-replace = """- The 2ndbrain-public template, for changes to the shared machinery
+replace = """- The 2ndbrain template, for changes to the shared machinery
 """
 
 [[replace]]
@@ -134,6 +135,14 @@ find = """ The template export is defined in
 [template/manifest.toml](template/manifest.toml): if you change a file it copies or replaces, run
 the unit tests, which export the template and check it."""
 replace = ""
+
+[[replace]]
+file = "AGENTS.md"
+find = """Read [docs/guardrails.md](docs/guardrails.md) before changing anything. These are not optional:"""
+replace = """If this repo has a `notes/` folder, it's a private layer: read [notes/CLAUDE.md](notes/CLAUDE.md)
+before touching notes/, outbox/ or hub.toml.
+
+Read [docs/guardrails.md](docs/guardrails.md) before changing anything. These are not optional:"""
 
 [[replace]]
 file = "AGENTS.md"

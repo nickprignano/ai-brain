@@ -36,13 +36,14 @@ theirs. Follow the "Setting up a new KB" steps in the 2ndbrain-kb skill in nickp
 (.claude/skills/2ndbrain-kb/SKILL.md) and docs/2ndbrain/new-family-kb.md there.
 
 1. Install: export the machinery from ai-brain's main with
-   `python3 scripts/kb/export_template.py <empty folder>`, and copy it into {{REPO}} except the
+   `python3 scripts/kb/export_template.py <empty folder>`, run `python3 scripts/setup.py --public`
+   in that folder to drop the private layer, and copy it into {{REPO}} except the
    template's README.md, NOTICE and template-sync workflow. Keep the existing README and add a short
    knowledge base section. Write a NOTICE crediting ai-brain and nerdio-hcl under Apache-2.0.
 2. Make it ours: in docs/knowledge/kb.toml set name "{{ID}}", the title, tagline and user_agent,
    and topic_order. Add these topics to schema/page.schema.json: {{TOPICS}}. Replace
    getting-started/ with the first real topic page. In sources.toml, watch {{SOURCES}}, and keep the
-   2ndbrain-public source.
+   2ndbrain source.
 3. Join the family: copy ai-brain's docs/knowledge/family.yaml, mark {{ID}} as self, and set its
    repo {{REPO}}, kb_path docs/knowledge, role {{ROLE}} and ai-brain's format_version. Add the two
    github_commits sources (decisions folder and KB folder) for every sibling that has a repo.
@@ -73,7 +74,7 @@ These are the maintainer's, because they change repo or project settings:
 
 ## Why the hub's export, not the template repo
 
-The template repo, [2ndbrain-public](https://github.com/nickprignano/2ndbrain-public), is the same
+The template repo, [2ndbrain](https://github.com/nickprignano/2ndbrain), is the same
 export but only as new as its last merged `template-sync` pull request. Exporting from ai-brain's
 main gets the current machinery, including anything the template hasn't pulled yet. Once the
 template is in step, copying from it gives the same files.

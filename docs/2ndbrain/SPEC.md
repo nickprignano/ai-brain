@@ -73,7 +73,7 @@ does the same unless it carries the `no-kb` label and a reason. A repo without i
 lesson in the KB it feeds instead. Threads also run the capture closeout before they're resolved.
 Both checks use only git; `capture_hook` in `kb.toml` sets the hook to block, warn or off.
 
-**GitHub work conventions (decision 0013).** Fewer, larger PRs the owner can skim; everything
+**GitHub work conventions (decision 0014).** Fewer, larger PRs the owner can skim; everything
 that isn't low-risk waits for the owner's batch review (the `finisher-loop` skill builds the
 batch and acts on the owner's replies from chat); and low-risk PRs merge themselves (opt-in). With `auto_merge = "on"` in `kb.toml`,
 the `kb-auto-merge` workflow turns on GitHub's auto-merge for an owner's PR whose every changed file
@@ -179,7 +179,7 @@ One owner-only `directives.yaml` in the hub tells the whole family something at 
 ## 8. The private layer
 
 An optional private repo above the family, for one person's judgment. It's described generically
-here, and the [2ndbrain-private template](https://github.com/nickprignano/2ndbrain-private) is a
+here, and the [2ndbrain template](https://github.com/nickprignano/2ndbrain), set up as private, is a
 starting point.
 
 - **Note types, and when each is written:**
@@ -203,11 +203,15 @@ starting point.
 
 ## 9. Templates
 
-- **[2ndbrain-public](https://github.com/nickprignano/2ndbrain-public)** is the machinery and an
-  empty KB skeleton. It's generated from the hub by `scripts/kb/export_template.py`, following
-  `template/manifest.toml`, and the template repo pulls that export weekly.
-- **[2ndbrain-private](https://github.com/nickprignano/2ndbrain-private)** is the private layer's
-  starting point. It's written generically and never generated from a real vault.
+- **[2ndbrain](https://github.com/nickprignano/2ndbrain)** is the one template: the machinery, an
+  empty KB skeleton and an empty private layer. It's generated from the hub by
+  `scripts/kb/export_template.py`, following `template/manifest.toml`, and the template repo pulls
+  that export weekly.
+- **Public or private is chosen at setup** (`scripts/setup.py`), and private is the default.
+  Private keeps the layer and refuses unless GitHub confirms the repo can't be read signed out.
+  Public removes the layer for good. A `privacy` workflow, kept in both, fails a public repo that
+  has the layer; the template itself passes only while the layer is empty, and the export refuses
+  to ship a layer that holds anything but its templates.
 - **Starting a KB the same way every time.** A new repo uses the template. An existing repo, or a
   KB joining a family, installs the machinery from the format owner's own export, makes `kb.toml`,
   topics and sources its own, copies the owner's `family.yaml` with its own row marked `self`, and

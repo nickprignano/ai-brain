@@ -7,7 +7,7 @@ description: Use when the owner says "finisher loop" or asks what's waiting on t
 
 Goal: get started work to done (merged and in use), not start new work. The owner acts from chat,
 not the GitHub web UI, so the list is built to be answered in a few words. The conventions it
-serves are decision 0013 in the hub KB: fewer, larger PRs the owner can skim, low-risk PRs merging
+serves are decision 0014 in the hub KB: fewer, larger PRs the owner can skim, low-risk PRs merging
 themselves, and everything else cleared in one batch.
 
 ## Which repos
@@ -38,7 +38,7 @@ for more repos from a session scoped to a repo list.
 4. **Fix what Claude can:** red CI or conflicts on PRs Claude opened in this project's repos. In a
    project, only the coordinator nudges stuck threads; a thread session lists them instead.
 5. **Check named preconditions** of accepted decisions: labels, repo variables and settings they
-   need (for example the `no-kb` label for decision 0011, or "Allow auto-merge" for 0013).
+   need (for example the `no-kb` label for decision 0011, or "Allow auto-merge" for 0014).
 6. **Build the PR review batch:** every green, conflict-free PR waiting on the owner, oldest
    first, grouped by repo, numbered. A draft counts when the thread that owns it is done; mark it
    "draft: I'll mark it ready first". Skip PRs a live thread is still driving, or list them under

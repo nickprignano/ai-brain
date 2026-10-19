@@ -1,0 +1,23 @@
+name: private-layer
+
+# The private layer's own checks: note front matter, the outbox, and the scripts' tests.
+# setup.py --public removes this workflow with the layer. privacy.yml stays either way.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 scripts/stale_check.py
+      - run: python3 scripts/outbox_check.py
+      - run: python3 -m unittest discover -s scripts

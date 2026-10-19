@@ -331,7 +331,7 @@ class DirectiveTests(unittest.TestCase):
 
 
 class ExportTests(unittest.TestCase):
-    """The 2ndbrain-public export builds, validates and passes its own tests. Skipped in the template."""
+    """The 2ndbrain export builds, validates and passes its own tests. Skipped in the template."""
 
     def exporter(self):
         try:
@@ -348,9 +348,21 @@ class ExportTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, out)
         export_template.export(out)
         for cmd in (["scripts/kb/validate.py"], ["scripts/kb/build.py", "--check"],
-                    ["-m", "unittest", "discover", "-s", "scripts/kb"]):
+                    ["-m", "unittest", "discover", "-s", "scripts/kb"],
+                    ["-m", "unittest", "discover", "-s", "scripts"]):
             r = subprocess.run([sys.executable, *cmd], cwd=out, capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, f"{' '.join(cmd)} failed in the export:\n{r.stdout}{r.stderr}")
+
+    def test_a_note_in_the_private_layer_fails(self):
+        export_template = self.exporter()
+        out = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, out)
+        (out / "notes" / "lessons").mkdir(parents=True)
+        (out / "notes" / "lessons" / "_template.md").write_text("x")
+        export_template.check_private_layer_empty(out)
+        (out / "notes" / "lessons" / "a-lesson.md").write_text("x")
+        with self.assertRaises(export_template.ExportError):
+            export_template.check_private_layer_empty(out)
 
     def test_replace_that_no_longer_matches_fails(self):
         export_template = self.exporter()
@@ -435,7 +447,7 @@ class CaptureTests(unittest.TestCase):
 
 
 class AutoMergeTests(unittest.TestCase):
-    """Decision 0013: which pull requests turn on auto-merge."""
+    """Decision 0014: which pull requests turn on auto-merge."""
 
     CFG = {"on": True, "paths": ["docs/**", "README.md", "llms.txt"], "deny": []}
     REPO = {"repo": {"full_name": "me/kb", "default_branch": "main"}, "ref": "main"}
@@ -459,7 +471,7 @@ class AutoMergeTests(unittest.TestCase):
 
     def test_hard_deny_beats_the_configured_paths(self):
         wide = {"on": True, "paths": ["*"], "deny": []}
-        for f in ["docs/knowledge/decisions/0013-x.md", "docs/knowledge/directives.yaml",
+        for f in ["docs/knowledge/decisions/0014-x.md", "docs/knowledge/directives.yaml",
                   "docs/knowledge/kb.toml", ".github/workflows/kb-auto-merge.yml", "scripts/kb/x.py",
                   "docs/guardrails.md", "docs/2ndbrain/SPEC.md", "AGENTS.md", "infra/main.bicep",
                   "docs/knowledge/schema/page.schema.json", ".claude/settings.json", "deploy.ps1",

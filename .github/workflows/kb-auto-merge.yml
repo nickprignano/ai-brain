@@ -1,6 +1,6 @@
 name: kb-auto-merge
 
-# Decision 0013: a pull request that only touches the low-risk paths (by default the knowledge base,
+# Decision 0014: a pull request that only touches the low-risk paths (by default the knowledge base,
 # never decisions, workflows, scripts or code) turns on GitHub's auto-merge, so it merges itself
 # once the required checks pass. Any other PR has auto-merge turned off. The repo opts in with
 # auto_merge = "on" in its settings; the owner flips "Allow auto-merge" and makes this job a

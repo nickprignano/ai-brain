@@ -204,7 +204,7 @@ Trade-offs:
 
 When agents open most of the PRs, the owner's merge click becomes the bottleneck. GitHub's
 auto-merge can take the low-risk ones, if the class is decided by a workflow, not by the agent that
-wrote the change. The family's version is [decision 0013](../decisions/0013-family-format-auto-merge-low-risk-prs.md).
+wrote the change. The family's version is [decision 0014](../decisions/0014-family-format-auto-merge-low-risk-prs.md).
 What matters when building one (from GitHub's docs, 2026-10-19):
 
 - **Judge from the base branch.** A `pull_request` workflow runs the PR's own copy of the workflow,

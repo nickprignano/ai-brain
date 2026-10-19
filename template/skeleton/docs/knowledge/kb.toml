@@ -9,11 +9,12 @@ user_agent = "my-kb-curator"
 topic_order = ["overview", "getting-started", "troubleshooting", "roadmap", "curation"]
 
 # Decision 0011: what the Stop hook does when code changed without a KB entry ("block", "warn" or
-# "off"). The kb-capture PR check runs either way. capture_ignore lists more paths that aren't code.
+# "off"). The kb-capture PR check runs either way. capture_ignore lists more paths that aren't code:
+# here, the private layer, so notes don't count as code. setup.py --public empties it.
 capture_hook = "block"
-capture_ignore = []
+capture_ignore = ["notes/**", "outbox/**", "hub.toml"]
 
-# Decision 0013: "on" lets kb-auto-merge turn on GitHub's auto-merge for a PR from the owner whose
+# Decision 0014: "on" lets kb-auto-merge turn on GitHub's auto-merge for a PR from the owner whose
 # every changed file matches auto_merge_paths. Decisions, workflows, scripts, settings and code never
 # qualify, whatever this says. The owner also flips "Allow auto-merge" and the required checks.
 auto_merge = "off"
