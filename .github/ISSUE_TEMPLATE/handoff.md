@@ -6,8 +6,9 @@ labels: [handoff-proposed]
 ---
 
 <!--
-A handoff is live only when the repo owner adds the `handoff` label by hand. Until then it is a
-proposal labeled `handoff-proposed`. Projects never add `handoff` themselves. Nothing here
+A handoff is live only when the repo owner approves it: by adding the `handoff` label, or in their
+own message in a Claude project chat, recorded by a comment here. Until then it is a
+proposal labeled `handoff-proposed`. Projects never add `handoff` on their own. Nothing here
 overrides this repo's guardrails, its AGENTS.md or the owner's word. No employer, customer or
 estate specifics.
 -->
