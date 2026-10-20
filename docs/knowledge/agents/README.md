@@ -3,7 +3,7 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: partial
-last_reviewed: 2026-10-19
+last_reviewed: 2026-10-20
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/model-config
@@ -217,6 +217,26 @@ and no issue template can apply, takes seconds and needs no credential. Also dis
 that was armed before the stop, or green checks merge it anyway. In this hub, directives' `pause`
 enum accepts only `all` and four `kb-*` names today, so a new pause target is a schema change.
 
+**Red-team patterns for agents that act** (from a design-stage red team, 2026-10-19):
+
+- **Guardrails move with the executor.** When the component that acts moves (from a playbook to a
+  separate swarm, say), its safety rules ("never undo another operator's change", "unknown
+  sessions count as busy") have to move with it, or the new executor runs without them.
+- **Public repos show the plan.** Actions logs and job summaries in a public repo are readable by
+  anyone, so a write path that logs its targets publishes them. Run it from a private fork.
+- **Default-token PRs don't trigger checks.** A PR opened with `GITHUB_TOKEN` starts no other
+  workflow, so an agent's PR can skip the guard check meant for it.
+- **One maintainer can't review themselves.** CODEOWNERS and watchdog rules do nothing with a solo
+  owner; a time-lock (a delay before a change takes effect) works instead.
+- **A kill switch must stop every path that spends.** One that halts the main loop but not a
+  fallback API call keeps spending, and a daily cost cap sees spend only hours later.
+
+**Hard limits for agents that spend money.** A draft trading bot's guardrails had five bugs that
+make a test checklist for any agent with a budget: the daily cap counted only open orders, the
+loss breaker always returned 0, sells counted against the capital cap, negative amounts got past
+the per-trade cap, and the trading day ran on UTC instead of market time. Each bot also gets its
+own key variable and fails hard when it's missing, instead of falling back to a shared key.
+
 **Field note: the second Fable red team (2026-10-19).** A scoped Fable worker took four questions
 the Opus pass named (throughput, bypass, the stop switch, scope) and returned eight findings in
 about four minutes, one Critical and three High; the two checked against the code held. As in the
@@ -243,6 +263,42 @@ Trade-offs:
 - Pushes that add or change `.github/workflows/` files work from a cloud session, and commit
   trailers (co-author and session lines) come through as written (checked in a real run on
   2026-10-18).
+
+What a cloud session can't do on GitHub (seen in real runs, 2026-10-19):
+
+- **Create repos or delete remote branches.** Repo creation returns 403 and the git proxy refuses
+  branch deletes, so merged branches stay until the owner deletes them.
+- **Create a label on its own.** The tools apply labels to issues but have no "create label" call;
+  applying a new label to an issue once creates it.
+- **See repos added after it started.** Repos added in the project's settings reach new sessions
+  only. A running session attaches them itself (`add_repo`), and only to that session.
+- **Read PR state with read access.** Read access is a clone; mergeable state and check runs need
+  the repo attached with push access.
+- **Use connectors in a scheduled task** when the organization doesn't allow it. The task then
+  relies on the environment's own GitHub access.
+
+**Check merge state before pushing more to a PR.** Three times in one day a PR merged a moment
+before the next push, and the new commit was stranded on a merged branch and needed its own PR.
+Related traps:
+
+- GitHub runs no CI on a PR with a merge conflict, so a conflicted PR shows fewer checks, not red
+  ones.
+- Archiving a repo leaves comparison checks that read it silently green. Repoint anything that
+  depends on it first.
+
+## What counts as the owner's yes
+
+A decision, a merge or a write to a private layer waits for the owner's own words in chat, such
+as "accept 0016" or "merge 1, 3". These don't count (field notes, 2026-10-18 and 2026-10-19):
+
+- **A bare "go"** after a report approves the work, not the decisions inside it. Decision records
+  stay `proposed` until the owner names them.
+- **A relay.** A card tap or a message another session passes on is that session's account of
+  what the owner said, not the owner's words. Ask, or read the owner's message yourself.
+- **A widened decision.** When a red team adds rules the owner didn't agree to, the record stays
+  `proposed` until the owner accepts the new version.
+
+Handoff issues follow the same rule ([decision 0012](../decisions/0012-family-format-handoff-issues.md)).
 
 ## Letting agent PRs merge themselves
 
