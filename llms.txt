@@ -28,7 +28,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [Prompt: Work the handoffs](docs/knowledge/prompting/library/work-the-handoffs.md): Has a receiving project check its repos' handoff issues and pick up the live ones, following decision 0012's pickup rules (status: verified)
 - [Evals and testing](docs/knowledge/evals/README.md): Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks (status: plan)
 - [Privacy and safety](docs/knowledge/privacy-and-safety/README.md): Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors (status: partial)
-- [Platforms for AI apps](docs/knowledge/platforms/README.md): Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API (status: verified)
+- [Platforms for AI apps](docs/knowledge/platforms/README.md): Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models (status: verified)
 - [Learning AI](docs/knowledge/learning/README.md): Courses, docs, cookbooks and people worth following to learn how to build with AI (status: plan)
 - [Known errors](docs/knowledge/troubleshooting/README.md): Errors hit with the Claude API, SDKs, agents and AI tooling: symptom, cause, fix and source (status: verified)
 - [Keeping the knowledge base current](docs/knowledge/curation.md): How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment (status: verified)
