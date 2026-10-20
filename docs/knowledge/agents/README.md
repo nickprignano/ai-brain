@@ -14,6 +14,12 @@ sources:
   - https://www.verdent.ai/guides/obsidian-mcp-server
   - https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request
   - https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows
+  - https://claude.com/docs/connectors/building/authentication
+  - https://claude.com/docs/connectors/building/lazy-authentication
+  - https://github.com/cloudflare/workers-oauth-provider
+  - https://developers.cloudflare.com/cloudflare-one/access-controls/ai-controls/secure-mcp-servers/
+  - https://docs.x.ai/developers/management-api-guide.md
+  - https://docs.x.ai/console/billing.md
 ---
 
 # Agents and Claude Code
@@ -374,3 +380,67 @@ Constraints:
   it as unmaintained and check for a fork before relying on it.
 - *Unverified* since 2026-10-17: whether an official connector now exists, and whether the web
   chat gained a local-file bridge.
+
+## Giving Claude a paid media API through an MCP server
+
+What we learned designing a server that lets Claude call another provider's image, video and
+speech APIs (2026-10-19 and 20, checked against the docs in the front matter). The provider choice
+itself is [decision 0009](../decisions/0009-second-model-family.md); key storage is
+[decision 0016](../decisions/0016-secrets-handling.md).
+
+**Check what exists first.** Community MCP servers for a big provider's media API are common and
+MIT-licensed, but the ones we found had no spend cap, no limit on which files they send out, and
+extra tools (code execution, file upload, chat) the job didn't need. A small server of your own is
+often a few hundred lines; use theirs as a reference.
+
+**Local server or connector decides everything else.**
+
+- A local stdio server is set up per repo in `.mcp.json`, so *where it is installed* can be a
+  guardrail (for example, never in a kids' app repo).
+- A remote server added as a claude.ai custom connector belongs to the account and shows up in
+  every project, chat and phone. Any rule that relied on where it's installed has to move into
+  the server. Prompt injection can now reach it from any chat, and a per-call approval is one tap,
+  or none once someone picks "always allow".
+- For a paid tool on a connector, keep the paid tools switched off by default. The owner turns
+  them on for a short window from a page only they can log into, and while off they refuse calls.
+  Read-only tools can stay on.
+
+**Spend: put the hard cap in the provider account, not the code.** Use a separate team or
+project, prepaid credit with auto top-up off, and a key restricted to the media models. With xAI,
+keys take `acls` such as `api-key:endpoint:image` and per-key `qps`/`qpm`, and a $0 invoiced limit
+rejects requests once credit runs out. Caps in the server (per call, session, day, month) are a
+brake on mistakes, and the prepaid balance is the cap no bug can pass. Never retry a request the
+API has already accepted: async video jobs are billed even when cancelled.
+
+**Claude's connector OAuth, in practice:**
+
+- Sign-in starts only on an HTTP `401` with `WWW-Authenticate: Bearer resource_metadata="…"`. A `200`
+  carrying a tool error never prompts.
+- Claude uses a Client ID Metadata Document (CIMD) only when the authorization server metadata
+  advertises `client_id_metadata_document_supported: true` and `none` in
+  `token_endpoint_auth_methods_supported`; otherwise it falls back to dynamic client registration.
+  Leaving registration off and allowing only CIMD clients from Claude's own origin closes the
+  "anyone can register a client" hole.
+- The hosted apps' redirect URI is `https://claude.ai/api/mcp/auth_callback`. Claude Code uses a
+  loopback redirect on any port. Discovery and token endpoints get 10 seconds, and `/token` must accept
+  form-encoded bodies. Connector traffic comes from Anthropic's published egress range, which a
+  WAF rule can allowlist.
+- The confused-deputy risk stays even then: someone can start a connect from their own Claude
+  account and send you the consent link. Show the consent page every time, and only approve
+  one you just started.
+
+**Cloudflare Workers specifics.** Cloudflare's Access-plus-OAuth MCP template pins
+`workers-oauth-provider` 0.8 and has open registration turned on. Version 1.2 (2026-10) ships
+browser-bound consent and upstream sign-in helpers that replace the template's hand-written
+cookie and CSRF code. It also requires the exact resource URL, which is every token's audience, and
+CIMD needs the `global_fetch_strictly_public` compatibility flag. To keep a hostname out of an
+open-source repo, build the provider from an environment variable on the first request. Turning
+off `workers.dev` doesn't turn off preview URLs; both need to be off (see
+[Cloudflare Access in front of a Worker](../platforms/README.md#cloudflare-access-in-front-of-a-worker)).
+
+**Files.** The provider's result URLs expire, so store results yourself. Accept inputs only as ids
+of files the server made or the owner uploaded on purpose, never as paths, URLs or base64, so a
+chat can't push someone's photo or a document out. Serve downloads through short-lived signed links
+of allowlisted media types (never SVG or HTML), with `attachment`, `nosniff` and a sandbox CSP. Links
+pasted into a shared chat travel with it.
+
