@@ -107,6 +107,10 @@ where the backup and vault live.
   organization's tenant; IT often blocks it. [onenote-md-exporter](https://github.com/alxnbl/onenote-md-exporter)
   runs offline against the desktop apps. Its README lists Markdown and Joplin as formats, with
   wikilinks by default, which Obsidian reads; it has no named Obsidian mode.
+- **If DLP blocks the export.** [segunak/one-note-to-markdown](https://github.com/segunak/one-note-to-markdown)
+  (MIT, a Windows desktop app) reads each page's XML over COM with `GetPageContent()` and, per
+  its README, avoids OneNote's `Publish()` because DLP policies can block the intermediate files
+  it writes (checked 2026-10-20). Not tried in a run; give it the same backup and page-count checks.
 - **The .onepkg backup and the page-count baseline are what make "no data lost" checkable.**
   The tool's own README warns some data can be lost on export, so the prompt treats the
   conversion as a copy to verify, never a move.

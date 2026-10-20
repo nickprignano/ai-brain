@@ -177,8 +177,13 @@ thread with that summary instead of carrying on.
   proxy set by `ANTHROPIC_BASE_URL` alone: the claude.ai login stays the credential, so the
   plan's limits still apply, as long as the proxy forwards the OAuth capability in the
   `anthropic-beta` header. A proxy that strips the cache markers bills the whole history as
-  uncached input on every turn, so check the `/usage` cache line first. *Unverified:* whether
-  Headroom forwards both.
+  uncached input on every turn, so check the `/usage` cache line first. Headroom's docs (checked
+  2026-10-20) say it merges the client's `anthropic-beta` tokens with its own, client tokens
+  first, and by default re-adds any token the client drops later in a session
+  (`HEADROOM_BETA_HEADER_STICKY`), and that it reads Claude Code's `cache_control` TTL. Its
+  Unix-socket mode makes Claude Code treat the session as API-key auth, which fails a
+  subscription login, so use `ANTHROPIC_BASE_URL`. *Unverified:* a real run with a claude.ai
+  login.
 
 ### Check it's working
 
@@ -394,6 +399,10 @@ theme-factory, canvas-design and web-artifacts-builder. Worth adding on top:
 | webapp-testing | anthropics/skills, Apache-2.0 | Drives a local web app with Python Playwright, with a helper that starts and stops the dev servers. |
 | differential-review, supply-chain-risk-auditor, static-analysis (plugins; static-analysis bundles codeql, semgrep and sarif-parsing) | [trailofbits/skills](https://github.com/trailofbits/skills), CC-BY-SA-4.0 | Security review of a diff, a dependency tree, and CodeQL or Semgrep scans. |
 
+Not yet reviewed, for the next pass: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+(MIT, about 106k stars, 25 engineering-lifecycle skills, installs as a Claude Code plugin
+marketplace; checked 2026-10-20).
+
 What we learned getting them in:
 
 - **A saved skill is one `SKILL.md`.** A claude.ai skill proposal carries no `scripts/` or
@@ -459,8 +468,9 @@ Constraints:
 - obsidian-claude-code-mcp still needs `mcp-remote` for Claude Desktop, because it serves the
   older HTTP-with-SSE transport, and its last commit was on 2025-06-23 (checked 2026-10-18). Treat
   it as unmaintained and check for a fork before relying on it.
-- *Unverified* since 2026-10-17: whether an official connector now exists, and whether the web
-  chat gained a local-file bridge.
+- No official connector as of 2026-10-20: Anthropic's connectors help page doesn't list one, and
+  says custom connectors reach your MCP server from Anthropic's cloud, not your device, so the web
+  chat still can't open a local vault. Third-party Obsidian MCP plugins exist; they aren't official.
 
 ## Giving Claude a paid media API through an MCP server
 

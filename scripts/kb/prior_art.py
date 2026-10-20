@@ -45,12 +45,20 @@ def section(title: str, fn) -> list[str]:
 
 
 def repos(query: str, limit: int) -> list[str]:
-    data = github("/search/repositories", {"q": query, "sort": "stars", "per_page": limit})
-    return [
-        f"- [{r['full_name']}]({r['html_url']}) · {r['stargazers_count']}★ · "
-        f"updated {r['pushed_at'][:10]}" + (f" · {r['description']}" if r.get("description") else "")
-        for r in data.get("items", [])
-    ]
+    # Best match first, then most stars: stars alone ranks hyped repos above the vetted ones.
+    seen, rows = set(), []
+    for label, params in (("best match", {}), ("most stars", {"sort": "stars"})):
+        data = github("/search/repositories", {"q": query, "per_page": limit, **params})
+        for r in data.get("items", []):
+            if r["full_name"] in seen:
+                continue
+            seen.add(r["full_name"])
+            rows.append(
+                f"- [{r['full_name']}]({r['html_url']}) · {r['stargazers_count']}★ · "
+                f"updated {r['pushed_at'][:10]} · {label}"
+                + (f" · {r['description']}" if r.get("description") else "")
+            )
+    return rows
 
 
 def code(query: str, limit: int) -> list[str]:

@@ -29,7 +29,9 @@ something, and want the answer to stay in the KB.
 
 ```text
 Survey {{AREA}}, for {{FOR_WHOM}}. First run the prior-art check
-(python3 scripts/kb/prior_art.py "{{AREA}}") and read what the KB already says.
+(python3 scripts/kb/prior_art.py "{{AREA}}") and read what the KB already says. Search more
+than one way: GitHub by best match and by stars, the curated index or vendor org for the area,
+and the web. Open every candidate's own page before listing it.
 
 Answer:
 {{ANGLES}}
@@ -53,5 +55,7 @@ found and what changed, and suggest which projects should evaluate which tools n
   copyleft licence and a red-team tool whose default mode sends data to a third-party cloud.
 - **Red team before the PR, not after.** A second model reliably finds overstated claims and at
   least one missing tool.
+- **One query isn't a survey.** A single star-sorted search missed three vetted repos in a 2026-10-20
+  test; see [Searching well](../../curation.md#searching-well-what-a-head-to-head-showed).
 - Follow up with [Research how a project could use a set of tools](research-proposal.md) for each
   project that should act on the survey.
