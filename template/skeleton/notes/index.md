@@ -14,4 +14,6 @@ One line per note, grouped by type: `- [Title](folder/file.md): one-line summary
 
 ## Disagreements
 
+## Parked ideas
+
 ## Patterns

@@ -11,6 +11,7 @@ this repo follows them exactly, and asks before writing anything not listed here
 | Decision | `decisions/` | The person had to make a call that needed judgment | Offered in one line at the end; written only on a yes. Carries a `revisit_on` date |
 | Goal | `goals/` | The person states something they want to reach | Offered in one line; written only on a yes. Reviewed every 90 days |
 | Disagreement | `disagreements/` | Only when the person asks for one | Both positions in their strongest form, and what would settle it |
+| Parked idea | `parked/` | The person parks a side idea that isn't main quest (the park-it skill) | What was checked, why it's parked, and what would bring it back. Check here before researching an idea again |
 | Pattern | `patterns/` | The same lesson or decision shows up in two or more knowledge bases, or one is plainly general | Offered in one line when the weekly roll-up shows one; written only on a yes |
 
 ## Every note
