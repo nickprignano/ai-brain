@@ -20,6 +20,11 @@ capture_ignore = ["notes/**", "outbox/**", "hub.toml"]
 auto_merge = "off"
 auto_merge_paths = ["docs/knowledge/**", "llms.txt"]
 
+# Decision 0016, step 6: the secrets-touch PR comment flags any host not in egress_allow (on top of
+# localhost and example hosts), and doesn't scan secrets_touch_ignore.
+egress_allow = []
+secrets_touch_ignore = []
+
 # Structured data files listed in llms.txt, in order. A file that doesn't exist is skipped.
 [[data]]
 name = "Known errors"

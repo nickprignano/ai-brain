@@ -62,6 +62,12 @@ is copied is another place it can leak.
      deploy token. A session's platform connector token is scoped to previews or a
      non-production account, or the session has none. Preview secrets are the capped dev keys of
      step 4, never production ones.
+   - For an app that holds production keys, the build from `main` only uploads a version
+     (`wrangler versions upload` as the Workers Builds deploy command) and the owner releases it
+     in the platform dashboard, so a merge alone puts nothing live. Branch builds stay off: they
+     run the branch's own build scripts with the build token, which by default can edit every
+     Worker on the account. The build still runs merged scripts with that token, so a change to
+     dependencies or build scripts in such an app is read before merging.
    - No repository-level Actions secrets: a workflow on any pushed branch can print them.
      Environment secrets only, limited to `main`, with the owner as required reviewer (free on
      public repos; private repos need GitHub Pro). A PR that changes `.github/workflows/` never
@@ -69,7 +75,10 @@ is copied is another place it can leak.
    - These gates are policy for a session that pushes as the owner's account, since GitHub can't
      tell them apart: a session never merges to `main`, approves a deployment or changes a
      ruleset except on the owner's own words in chat. The technical backstop is a ruleset on
-     `main` that requires a PR and the CI checks, so nothing lands unseen by CI.
+     `main` that requires a PR and the CI checks, so nothing lands unseen by CI. Planned, to
+     revisit once the deploy gate is in use: a separate GitHub account for sessions, a
+     collaborator that can't change settings, with one required approval on `main` in the repos
+     that hold keys, so a merge there needs the owner's own click.
    - A CI check flags any PR that touches a file reading a secret binding or `env` as a whole,
      or adds an outbound host not on the app's allowlist, so the owner reads that part. It's a
      prompt to read, not a gate: a check the session can edit can't be one.
@@ -131,6 +140,9 @@ is copied is another place it can leak.
   leak a key without seeing it, which the Fable pass missed. Steps 4 to 7, 9 and 10 changed;
   step 6 is new. Owner accepted the amended version on 2026-10-20. Red-teamed again with Fable the same day: six findings, all taken (the gates are
   policy when agents push as the owner, a CI check that can be edited is a prompt not a gate,
-  the connector split, gateway pricing limits, usage in the yearly check, GitHub plan limits). Calendar rotation was dropped on Gemini's point alone. *Unverified:* whether an
+  the connector split, gateway pricing limits, usage in the yearly check, GitHub plan limits). Calendar rotation was dropped on Gemini's point alone. Putting step 6 into practice
+  (2026-10-20) got a Fable pass and a fresh-Claude control: the control found that branch builds
+  run branch code with an account-wide token and that a read-only connector still reads logs and
+  storage; the owner chose the deploy gate over a separate GitHub account for now. *Unverified:* whether an
   Anthropic workspace spend limit blocks requests or only alerts.
 - Revisit when a provider the owner uses offers keyless access, or on 2027-04-19.

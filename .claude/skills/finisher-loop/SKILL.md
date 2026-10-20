@@ -43,8 +43,11 @@ for more repos from a session scoped to a repo list.
    first, grouped by repo, numbered. A draft counts when the thread that owns it is done; mark it
    "draft: I'll mark it ready first". Skip PRs a live thread is still driving, or list them under
    "coming". For each: link, one plain line on what changes, size (files, +/- lines), and a flag:
-   **Skim** for KB, docs or small changes, **Read** for decisions, code, workflows or infra. Mark
-   any PR auto-merge will take on its own.
+   **Skim** for KB, docs or small changes, **Read** for decisions, code, workflows or infra. A PR
+   with a secrets-touch comment listing places to read is **Read**, and its line says how many
+   "to read first". Count only that comment from `github-actions[bot]` naming the PR's latest
+   commit; a code PR without one hasn't been checked, so say so on its line.
+   Mark any PR auto-merge will take on its own.
 7. **Post one list** headed "N things are waiting on you", grouped by project where the owner has
    to go elsewhere to act:
    - the PR review batch
