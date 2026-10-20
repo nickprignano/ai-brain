@@ -3,7 +3,7 @@ title: "Keeping the knowledge base current"
 summary: "How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment"
 topic: curation
 status: verified
-last_reviewed: 2026-10-19
+last_reviewed: 2026-10-20
 ---
 
 # Keeping the knowledge base current
@@ -18,8 +18,9 @@ this KB aligned with its siblings, and a sixth keeps it pointed at the upstream 
 [`.github/workflows/kb-curator.yml`](../../.github/workflows/kb-curator.yml) runs every Monday.
 It reads [sources.toml](sources.toml), collects anything new from the last 8 days and opens an
 issue labelled **kb-digest** with a checklist grouped by source. Each source names the KB page its
-findings belong on. Items whose URL is already linked from the KB are left out. If nothing is new,
-no issue is opened.
+findings belong on. Items whose URL is already linked from the KB are left out, and so are merge
+commits and dependency bumps; an item listed under one source isn't listed again under a later
+one. If nothing is new, no issue is opened.
 
 Watched today:
 
@@ -54,9 +55,44 @@ GITHUB_TOKEN=$(gh auth token) python3 scripts/kb/prior_art.py "prompt caching"
 ```
 
 or run **Actions > kb-prior-art** with the topic. It searches, in order: this KB, each sibling KB
-in [family.yaml](family.yaml), GitHub repositories, Python and TypeScript code, and issues and pull
-requests. If something useful turns up, record it on the relevant topic page, so the next person
-doesn't search again.
+in [family.yaml](family.yaml), GitHub repositories (best match, then most stars), Python and
+TypeScript code, and issues and pull requests. If something useful turns up, record it on the
+relevant topic page, so the next person doesn't search again.
+
+### Searching well: what a head-to-head showed
+
+On 2026-10-20 Claude (in a claude.ai cloud session) and GitHub Copilot Chat on github.com ran
+the same three prior-art searches and two freshness tasks, scored against answer keys written
+before Copilot's answers came in. One run of five tasks, first answers only, so the find rates
+are indicative:
+
+| Task | Claude | Copilot |
+| --- | --- | --- |
+| OneNote to Obsidian tools | 4/4 | 3/4, plus one find Claude missed |
+| Well-known Claude Code skills | 1/4 | 2/4, plus one new find |
+| Cloudflare repos to watch | 2/4 | 3/4, plus one repo that wouldn't load |
+| Weekly digest of three repos | 6/6 | 1/6, three items from a months-old changelog section |
+| Re-check three KB claims | 1 settled | 1 moved forward, 2 wrong or unanswered |
+
+What it means for how we search:
+
+- **Search from more than one angle.** One star-sorted query missed the three skills repos this
+  KB had already vetted, because the most-starred results were hyped ones. Use best match and
+  stars, the curated index for the area (for skills, skills.sh and Anthropic's plugin directory;
+  for a platform, the vendor's own GitHub org) and a web search. The union of both tools' lists
+  beat either one.
+- **Open every candidate before it goes in the KB.** Copilot's answers listed "checked on repo"
+  in place of licences, stars and dates, included one repo that wouldn't load, and passed off a
+  changelog section about 300 versions old as current. Its finds are leads until opened.
+- **Read the source for a digest.** Reading the changelog and release pages directly beat
+  search-based summaries for "what changed this week".
+- **Know what a cloud session can't reach.** In a claude.ai cloud session the proxy blocks
+  `api.github.com`, so `prior_art.py`'s GitHub sections fail there (checked 2026-10-20); run
+  **Actions > kb-prior-art** instead and read its log. The session's GitHub tools can search all
+  of GitHub but only read commits and files in attached repos, so a freshness check that needs
+  another repo's history has to attach it first.
+- **Copilot is worth a paste before publishing a survey list**, where one or two extra finds
+  matter. It isn't worth automating: every item still has to be checked.
 
 The digest and prior-art scripts use only the Python standard library (3.11+).
 
@@ -101,7 +137,8 @@ of each month and keeps one open issue labelled **kb-freshness** listing:
 - sibling KBs on a different family format version, or whose `family.yaml` can't be read
 
 Work it by re-checking each item against a primary source or a real run, then updating the page's
-text, `last_reviewed` and `status`. Run it locally with `python3 scripts/kb/freshness.py --family`.
+text, `last_reviewed` and `status`. Open claim re-checks as a pull request labelled
+`no-auto-merge`: a wrong "still true" or "now false" changes what the KB tells people. Run it locally with `python3 scripts/kb/freshness.py --family`.
 
 ## Staying aligned with the family
 

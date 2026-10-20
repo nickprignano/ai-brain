@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import tomllib
 import urllib.parse
 import urllib.request
@@ -24,6 +25,8 @@ def _user_agent() -> str:
 
 USER_AGENT = _user_agent()
 GITHUB_API = "https://api.github.com"
+# Commit titles that never belong in a digest: merges and dependency bumps.
+NOISE = re.compile(r"^(Merge (pull request|branch|remote-tracking)|Bump |(build|chore)\(deps)", re.I)
 
 
 @dataclass
@@ -96,6 +99,7 @@ def github_commits(src: dict, since: datetime) -> list[Item]:
             text=c["commit"]["message"],
         )
         for c in commits
+        if not NOISE.match(first_line(c["commit"]["message"]))
     ]
 
 

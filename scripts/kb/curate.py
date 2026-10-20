@@ -41,6 +41,7 @@ def matches(keywords: list[str], text: str) -> bool:
 
 def collect(sources: list[dict], since: datetime, known: set[str]):
     results, errors = [], []
+    known = set(known)  # also holds URLs already listed by an earlier source, so each appears once
     for src in sources:
         fetch = FETCHERS.get(src["kind"])
         if fetch is None:
@@ -54,6 +55,7 @@ def collect(sources: list[dict], since: datetime, known: set[str]):
         keywords = src.get("keywords", [])
         items = [i for i in items
                  if i.url not in known and matches(keywords, f"{i.title}\n{i.text}")]
+        known.update(i.url for i in items)
         if items:
             results.append((src, sorted(items, key=lambda i: i.date, reverse=True)))
     return results, errors
