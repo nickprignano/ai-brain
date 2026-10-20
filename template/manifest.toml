@@ -19,6 +19,7 @@ include = [
   ".github/ISSUE_TEMPLATE/handoff.md",
   ".github/workflows/kb-*.yml",
   ".github/workflows/secrets.yml",
+  ".github/workflows/secrets-touch.yml",
   "docs/guardrails.md",
   "docs/2ndbrain/SPEC.md",
   "docs/knowledge/curation.md",

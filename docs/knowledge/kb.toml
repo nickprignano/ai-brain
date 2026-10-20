@@ -19,6 +19,11 @@ capture_ignore = []
 auto_merge = "on"
 auto_merge_paths = ["docs/**", "README.md", "llms.txt"]
 
+# Decision 0016, step 6: the secrets-touch PR comment flags any host not in egress_allow (on top of
+# localhost and example hosts), and doesn't scan secrets_touch_ignore.
+egress_allow = ["api.github.com", "github.com", "raw.githubusercontent.com", "gitlab.com", "dev.azure.com"]
+secrets_touch_ignore = []
+
 # Structured data files listed in llms.txt, in order. A file that doesn't exist is skipped.
 [[data]]
 name = "Known errors"

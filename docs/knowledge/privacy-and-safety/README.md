@@ -50,6 +50,19 @@ it. What that means in practice:
   log line, a `fetch` elsewhere). Both reviewers in the first outside review found this and the
   Fable pass didn't, so production deploys only from CI on `main`, and a session's own platform
   token reaches previews only ([decision 0016](../decisions/0016-secrets-handling.md), step 6).
+- **The secrets-touch comment says which lines to read** (step 6, added 2026-10-20). The
+  `secrets-touch` workflow runs `scripts/kb/secrets_touch.py` from the base branch on every PR and
+  posts one comment listing changed files that read a secret-named binding, and added lines that
+  use the whole environment, log or return something secret-named, name a host outside the repo's
+  `egress_allow`, or call an address built at runtime. Running from the base branch means a PR
+  can't quiet the check reading it; it never fails a PR, because a regex can't prove code safe and
+  a red check people learn to ignore is worse than a comment. It misses a key passed through a
+  variable with an innocent name, which is where data-flow tools such as GitHub CodeQL's
+  clear-text-logging queries (free on public repos) do better, so turn CodeQL on as well.
+- **A connector that can call a platform's whole API can deploy.** Cloudflare's full-API connector
+  signs in as the user, so a session with it can upload a Worker that returns a secret. Keep its
+  write tool off in coding projects and let the platform's own build from `main` deploy; a
+  git-connected Worker build also makes branch previews, so sessions need no deploy token at all.
 - **Rotate without an outage.** Create and deploy the new key, check it, then revoke the old one;
   revoke first only when usage shows abuse.
 - **Push protection catches it early, gitleaks late.** GitHub's push protection blocks known key
