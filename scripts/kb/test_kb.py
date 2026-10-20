@@ -498,6 +498,9 @@ class AutoMergeTests(unittest.TestCase):
     def test_incomplete_file_list_blocks(self):
         self.assertFalse(self.check(["docs/knowledge/a.md"], pr=self.pr(changed_files=3001))[0])
         self.assertFalse(self.check([], pr=self.pr(changed_files=0))[0])
+        # One rename listed under both names makes 3,001 paths from 3,000 records; still blocked.
+        files = [f"docs/knowledge/p{i}.md" for i in range(3001)]
+        self.assertFalse(self.check(files, pr=self.pr(changed_files=3001))[0])
 
     def test_config_defaults_off(self):
         root = Path(tempfile.mkdtemp())

@@ -335,7 +335,10 @@ What matters when building one (from GitHub's docs, 2026-10-19):
 - **Judge from the base branch.** A `pull_request` workflow runs the PR's own copy of the workflow,
   so a PR could rewrite its own gate. `pull_request_target` runs the base branch's copy with a
   write token; that's safe only if it never checks out or runs the PR's code. Read the changed
-  files from the API instead (`pulls/{n}/files`, up to 3,000 files; fail closed above that).
+  files from the API instead (`pulls/{n}/files`, up to 3,000 files; fail closed above that, by the
+  PR's `changed_files` count, since renames listed under both names can hide a cut-off list).
+- **Turn auto-merge off when turning it on fails.** An earlier head may have armed it; a failed or
+  canceled enable step must fall through to the disable step, not leave the old arming in place.
 - **Count renames twice.** The files API gives `previous_filename` for a rename; moving a file out
   of a denied path must count as touching it.
 - **Auto-merge survives pushes** from anyone with write access. A later push that adds a risky file
