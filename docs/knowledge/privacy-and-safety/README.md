@@ -3,7 +3,7 @@ title: "Privacy and safety"
 summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors"
 topic: privacy-and-safety
 status: partial
-last_reviewed: 2026-10-19
+last_reviewed: 2026-10-20
 sources:
   - https://github.com/microsoft/PyRIT
   - https://github.com/promptfoo/promptfoo
@@ -23,8 +23,8 @@ sources:
 # Privacy and safety
 
 Keeping AI features safe and private: handling keys, prompt injection from untrusted text, local-only
-designs where data never leaves the device, and extra care for apps children use. Keys and the
-security tools survey are written so far.
+designs where data never leaves the device, and extra care for apps children use. Keys, making a repo
+public and the security tools survey are written so far.
 
 ## Keys and secrets
 
@@ -50,6 +50,19 @@ it. What that means in practice:
   revoke first only when usage shows abuse.
 - **Push protection catches it early, gitleaks late.** GitHub's push protection blocks known key
   types before they're public; a gitleaks hit after a push means the key is in history, so rotate it.
+
+## Before making a repo public
+
+Checks before flipping a private repo to public (2026-10-18):
+
+- **Scan the full history and PR text,** not just the current tree. Old commits and PR
+  descriptions keep hostnames, IDs and names that were removed later. If they're there, either
+  rewrite history before publishing or treat every value as public and rotate what needs it.
+- **Add a LICENSE.** With none, the repo is all rights reserved and nobody can reuse it.
+- **Safety filters teach what they block.** Publishing the patterns an app flags shows users,
+  kids included, how to word around them. Keep those lists out of the public repo.
+- **Public Actions logs are public too,** so check what workflows print (see the red-team patterns
+  on the [agents page](../agents/README.md#swarms-and-multi-agent-patterns)).
 
 ## Open-source AI tools for fighting bad actors
 
