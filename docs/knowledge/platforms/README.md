@@ -18,6 +18,26 @@ sources:
 Where and how AI apps run: serverless workers and their databases, sign-in from inside app
 wrappers, and calling third-party APIs from them.
 
+## Cloudflare repos worth watching
+
+For apps and remote MCP servers on Workers, watch these for releases (GitHub: Watch > Custom >
+Releases). Checked 2026-10-20 as the union of two independent searches:
+
+- [cloudflare/workers-sdk](https://github.com/cloudflare/workers-sdk): Wrangler, Miniflare and the
+  Vitest pool; the most direct signal for local dev and deploys. Releases several times a week.
+- [cloudflare/agents](https://github.com/cloudflare/agents): the Agents SDK that remote MCP servers
+  on Workers are built on.
+- [cloudflare/workers-oauth-provider](https://github.com/cloudflare/workers-oauth-provider): OAuth
+  for a remote MCP server on Workers.
+- [cloudflare/mcp-server-cloudflare](https://github.com/cloudflare/mcp-server-cloudflare) and
+  [cloudflare/mcp](https://github.com/cloudflare/mcp): Cloudflare's own MCP servers.
+- Lower priority: [cloudflare/workerd](https://github.com/cloudflare/workerd) (the runtime),
+  [cloudflare/skills](https://github.com/cloudflare/skills) (agent skills for building on
+  Cloudflare), [cloudflare/sandbox-sdk](https://github.com/cloudflare/sandbox-sdk) and
+  [cloudflare/ai](https://github.com/cloudflare/ai).
+
+Skip cloudflare/miniflare: Miniflare now lives in workers-sdk.
+
 ## Calling GitHub's API from Cloudflare Workers
 
 GitHub's REST API requires a `User-Agent` header on every request. Browsers and curl send one

@@ -259,6 +259,30 @@ class FamilyTests(unittest.TestCase):
         validate.errors.clear()
 
 
+class CuratorTests(unittest.TestCase):
+    def test_commits_skip_merges_and_bumps(self):
+        import sources
+
+        def commit(msg):
+            return {"commit": {"message": msg, "committer": {"date": "2026-10-18T00:00:00Z"}},
+                    "html_url": f"https://x/{msg[:5]}"}
+
+        fake = [commit("Add a decision"), commit("Merge pull request #3 from a/b"),
+                commit("build(deps-dev): bump eslint"), commit("Bump x from 1 to 2")]
+        with mock.patch.object(sources, "github", lambda *a, **k: fake):
+            items = sources.github_commits({"repo": "o/r"}, sources.parse_date("2026-10-01T00:00:00Z"))
+        self.assertEqual([i.title for i in items], ["Add a decision"])
+
+    def test_each_url_listed_once(self):
+        import curate
+        from sources import Item, parse_date
+        item = Item("t", "https://x/1", parse_date("2026-10-18T00:00:00Z"))
+        srcs = [{"name": "decisions", "kind": "k"}, {"name": "all", "kind": "k"}]
+        with mock.patch.dict(curate.FETCHERS, {"k": lambda src, since: [item]}):
+            results, _ = curate.collect(srcs, parse_date("2026-10-01T00:00:00Z"), set())
+        self.assertEqual([s["name"] for s, _ in results], ["decisions"])
+
+
 class DirectiveTests(unittest.TestCase):
     TODAY = date(2026, 10, 18)
     FAMILY = {"format_version": 1, "projects": [
@@ -499,6 +523,9 @@ class AutoMergeTests(unittest.TestCase):
     def test_incomplete_file_list_blocks(self):
         self.assertFalse(self.check(["docs/knowledge/a.md"], pr=self.pr(changed_files=3001))[0])
         self.assertFalse(self.check([], pr=self.pr(changed_files=0))[0])
+        # One rename listed under both names makes 3,001 paths from 3,000 records; still blocked.
+        files = [f"docs/knowledge/p{i}.md" for i in range(3001)]
+        self.assertFalse(self.check(files, pr=self.pr(changed_files=3001))[0])
 
     def test_config_defaults_off(self):
         root = Path(tempfile.mkdtemp())
