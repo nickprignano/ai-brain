@@ -89,6 +89,10 @@ cut off from the repos and keeps Claude from choosing which outside answer the o
 
 ## More Information
 
+- Pilot 1, 2026-10-20: outside review (Gemini) of [0016](0016-secrets-handling.md): 6 points, 6
+  taken, 1 that the Fable pass and the control missed (drop calendar rotation). Both Gemini and
+  the control also found the biggest gap, which the Fable pass had missed: a session that can
+  deploy code can leak a key without seeing it.
 - Pilot: the first run is decision [0016](0016-secrets-handling.md). Any extra reader finds
   something, so each pilot review has a control: the same file goes to a fresh Claude sub-agent
   that is neither the author nor the Fable pass, and only points the outside reviewer raised and

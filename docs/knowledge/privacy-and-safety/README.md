@@ -46,6 +46,10 @@ it. What that means in practice:
 - **Deploy tokens and connectors are keys too.** A CI token that deploys a Worker, or a connector
   that reads a KV store, can reach more than a model key. Prefer OIDC from CI, and never park a key
   where a connector can read it back into a session.
+- **A session that can deploy can leak a key without seeing it** (a handler that returns it, a
+  log line, a `fetch` elsewhere). Both reviewers in the first outside review found this and the
+  Fable pass didn't, so production deploys only from CI on `main`, and a session's own platform
+  token reaches previews only ([decision 0016](../decisions/0016-secrets-handling.md), step 6).
 - **Rotate without an outage.** Create and deploy the new key, check it, then revoke the old one;
   revoke first only when usage shows abuse.
 - **Push protection catches it early, gitleaks late.** GitHub's push protection blocks known key

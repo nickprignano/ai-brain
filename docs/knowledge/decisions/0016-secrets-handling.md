@@ -44,33 +44,69 @@ is copied is another place it can leak.
    GitHub environment secret that needs a reviewer, and give it a vault entry like any other key.
 4. **Local development uses its own key.** A separate dev-scoped key goes in the stack's
    gitignored local file (`.dev.vars`, `.env`, `local.settings.json`), never a production key.
-   Cloud sessions use a dev or preview environment's platform secret instead.
+   Cloud sessions use a dev or preview environment's platform secret instead. Treat dev and
+   preview keys as seen by AI sessions, since a session reads the workspace and can run code that
+   prints them: give them their own workspace or project with a small hard cap. They're rotated
+   on the yearly check, not after every session, because the cap bounds the loss.
 5. **Never in chat, repos, docs or Claude project environments.** That includes a claude.ai
    project's or cloud session's environment variables, and anywhere a connected tool can read it
    back into a session (a KV store, database or bucket a connector reaches). Claude only ever sees
    and writes key names; the owner runs every step that handles a value (guardrail 2).
-   Connectors and MCP servers are standing credentials themselves: least scope, revoked when idle.
-6. **One scoped key per purpose, with a cap.** One key per app and environment, with the
+   Connectors and MCP servers are standing credentials themselves: least scope, and removed when
+   unused for 30 days.
+6. **Knowing only names isn't enough.** A session that can write and deploy code can make a key
+   reachable without seeing it (a handler that returns it, a log line, a `fetch` to another host),
+   and a prompt-injected page or issue can ask it to. So:
+   - Production deploys only from CI on the main branch, after the owner's merge; a platform
+     build from `main` (Cloudflare Workers Builds) is simplest, since the platform holds the
+     deploy token. A session's platform connector token is scoped to previews or a
+     non-production account, or the session has none. Preview secrets are the capped dev keys of
+     step 4, never production ones.
+   - No repository-level Actions secrets: a workflow on any pushed branch can print them.
+     Environment secrets only, limited to `main`, with the owner as required reviewer (free on
+     public repos; private repos need GitHub Pro). A PR that changes `.github/workflows/` never
+     merges itself ([0014](0014-family-format-auto-merge-low-risk-prs.md)).
+   - These gates are policy for a session that pushes as the owner's account, since GitHub can't
+     tell them apart: a session never merges to `main`, approves a deployment or changes a
+     ruleset except on the owner's own words in chat. The technical backstop is a ruleset on
+     `main` that requires a PR and the CI checks, so nothing lands unseen by CI.
+   - A CI check flags any PR that touches a file reading a secret binding or `env` as a whole,
+     or adds an outbound host not on the app's allowlist, so the owner reads that part. It's a
+     prompt to read, not a gate: a check the session can edit can't be one.
+   - Mail, calendar and file connectors live in one Claude project used for nothing else; coding
+     projects don't have them attached (set once per project). A mailbox holds the password
+     resets for every other account. Until that split exists, treat the mailbox as reachable from
+     sessions. Either way, every provider account has a second factor that isn't email.
+7. **One scoped key per purpose, with a cap.** One key per app and environment, with the
    narrowest permissions and model access the provider allows. Set a hard spend cap where the
    provider has one (often per workspace or project, not per key, so give each app its own); where
-   it only offers budget alerts, set an alert and keep the key tightly scoped.
-7. **A deployment note on every entry.** Each vault entry says where the key is deployed, for
+   it only offers budget alerts, use prepaid credit with auto top-up off, or route the calls
+   through a gateway spend limit (Cloudflare AI Gateway blocks with a 429, but only for models
+   whose pricing it knows, so check media models, and a burst can briefly pass it, so add a rate
+   limit too). Any endpoint that spends provider money needs owner-only sign-in or a rate limit, since
+   anyone who can call it can spend without the key.
+8. **A deployment note on every entry.** Each vault entry says where the key is deployed, for
    example "Cloudflare Worker secret, `<worker-name>`", and whether it has a hard cap or only an
    alert. The vault, not a doc, is the list of where keys live.
-8. **Rotate on a leak, and on schedule.** Rotate when a key leaks, a device holding the vault is
-   lost, or a connector or app is retired, and once a year. If usage shows abuse, revoke at the
-   provider first. Otherwise create the new scoped key, paste it where the deployment note says,
+9. **Rotate on events; check once a year.** Rotate when a key leaks or may have, a device
+   holding the vault is lost, or a connector or app is retired. Once a year a scheduled issue
+   checks each deployment note against the secret names actually deployed, looks at each
+   provider's usage for traffic that isn't yours, and removes idle connectors; calendar rotation by hand adds outage risk for little gain. If usage shows abuse,
+   revoke at the provider first. Otherwise create the new scoped key, paste it where the deployment note says,
    check it works, then revoke the old one, so nothing goes down. Then update the note and check
    the provider's usage for anything not yours. A key that was "only in a private place" still
    gets rotated.
-9. **Protect the vault.** A passkey or hardware key as the second factor, the master password and
+10. **Protect the vault.** A passkey or hardware key as the second factor, the master password and
    recovery code on paper away from devices, and an emergency-access path to someone the owner
-   trusts. Let the extension fill only on an exact domain match, and never paste a vault item into
-   a page it didn't match: a cloned sign-in page is the likeliest attack.
-10. **Push protection first, gitleaks as the backstop.** GitHub secret scanning push protection
+   trusts (Bitwarden's emergency access is a Premium feature; the free path is a sealed paper
+   sheet with that person). Keep each provider account's recovery codes on paper too, not only in
+   the vault: keys can be reissued, but not without the accounts. Let the extension fill only on
+   an exact domain match, and never paste a vault item into a page it didn't match: a cloned
+   sign-in page is the likeliest attack.
+11. **Push protection first, gitleaks as the backstop.** GitHub secret scanning push protection
     (free on public repos) blocks a push that holds a known key type. The `secrets` workflow runs
     gitleaks on every push and PR; add a custom rule for any key prefix it doesn't know. A hit
-    after a push means the key is in history, so it's treated as leaked (step 8).
+    after a push means the key is in history, so it's treated as leaked (step 9).
 
 ### Consequences
 
@@ -80,7 +116,7 @@ is copied is another place it can leak.
 - Bad, because every new key or rotation is a manual step for the owner, and a deployment note
   that wasn't updated leaves a stale copy running after a rotation.
 - Bad, because everything rests on the vault: if its sign-in is lost or phished, every key goes
-  with it, which is why step 9 isn't optional.
+  with it, which is why step 10 isn't optional.
 
 ## More Information
 
@@ -90,4 +126,11 @@ is copied is another place it can leak.
 - How-to notes: [privacy and safety, keys and secrets](../privacy-and-safety/README.md#keys-and-secrets).
 - Red-teamed 2026-10-19 with Fable: eight findings, all taken (deploy tokens, connectors, local
   dev, rotation order, vault protection, where spend caps exist, push protection, entry naming).
+- Outside review 2026-10-20 (Gemini), [decision 0017](0017-outside-review-for-high-stakes-work.md)'s
+  first pilot, with a fresh Claude as control: both found that a session able to deploy code can
+  leak a key without seeing it, which the Fable pass missed. Steps 4 to 7, 9 and 10 changed;
+  step 6 is new. Red-teamed again with Fable the same day: six findings, all taken (the gates are
+  policy when agents push as the owner, a CI check that can be edited is a prompt not a gate,
+  the connector split, gateway pricing limits, usage in the yearly check, GitHub plan limits). Calendar rotation was dropped on Gemini's point alone. *Unverified:* whether an
+  Anthropic workspace spend limit blocks requests or only alerts.
 - Revisit when a provider the owner uses offers keyless access, or on 2027-04-19.
