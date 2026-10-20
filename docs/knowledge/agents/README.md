@@ -297,6 +297,20 @@ Related traps:
 - Archiving a repo leaves comparison checks that read it silently green. Repoint anything that
   depends on it first.
 
+## Outside review from another company's model
+
+A second Claude model as red team still shares a company's training and habits with the author,
+so a mistake both miss gets no flag. For the few items where a miss is expensive (secrets and
+access, money, going public, things that can't be undone), the family adds one pass from another
+company's assistant through a single file the owner pastes: [decision 0017](../decisions/0017-outside-review-for-high-stakes-work.md),
+[prompt](../prompting/library/outside-review.md). What made it workable:
+
+- **A file, not access.** The reviewer reads one self-contained file and never the repos, so the
+  file must be safe to publish: free consumer assistants may keep what they're given.
+- **Leave out your own red team's findings,** or the second pass anchors on the first.
+- **Paste by hand before building a tool.** xAI's text API costs about two cents a review, but a
+  tool means a new connector to red team, and Claude would then choose what the owner sees.
+
 ## What counts as the owner's yes
 
 A decision, a merge or a write to a private layer waits for the owner's own words in chat, such
