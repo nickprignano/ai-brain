@@ -20,6 +20,11 @@ sources:
   - https://developers.cloudflare.com/cloudflare-one/access-controls/ai-controls/secure-mcp-servers/
   - https://docs.x.ai/developers/management-api-guide.md
   - https://docs.x.ai/console/billing.md
+  - https://github.com/anthropics/skills
+  - https://skills.sh/anthropics/skills
+  - https://github.com/obra/superpowers
+  - https://github.com/trailofbits/skills
+  - https://github.com/forrestchang/andrej-karpathy-skills
 ---
 
 # Agents and Claude Code
@@ -353,6 +358,65 @@ proposing the complete updated file for the user to save. Two things make that w
   inference never lands silently.
 - Bump a revision number and keep sample counts in the file, so the next session can tell how
   much the learned state rests on.
+
+## Third-party skills worth adding
+
+A survey of well-known Claude Code skills, checked 2026-10-20 against each repo's LICENSE files,
+the [skills.sh](https://skills.sh/anthropics/skills) install counts and Anthropic's plugin
+directory. Anthropic's
+own set ([anthropics/skills](https://github.com/anthropics/skills), Apache-2.0 for most skills; the
+document skills are proprietary) is
+mostly built into claude.ai already: the document skills, skill-creator, mcp-builder,
+theme-factory, canvas-design and web-artifacts-builder. Worth adding on top:
+
+| Skill or plugin | Source and license | Why |
+| --- | --- | --- |
+| verification-before-completion | [obra/superpowers](https://github.com/obra/superpowers), MIT | Run the proving command and read its output before any "done" claim. |
+| systematic-debugging | obra/superpowers, MIT | Reproduce and find the root cause before fixing; a failing test first. |
+| frontend-design | anthropics/skills, Apache-2.0; also a one-skill plugin in Anthropic's plugin directory | The most-installed skill on skills.sh at the time of writing; steers UI work away from a generic look. |
+| webapp-testing | anthropics/skills, Apache-2.0 | Drives a local web app with Python Playwright, with a helper that starts and stops the dev servers. |
+| differential-review, supply-chain-risk-auditor, static-analysis (plugins; static-analysis bundles codeql, semgrep and sarif-parsing) | [trailofbits/skills](https://github.com/trailofbits/skills), CC-BY-SA-4.0 | Security review of a diff, a dependency tree, and CodeQL or Semgrep scans. |
+
+What we learned getting them in:
+
+- **A saved skill is one `SKILL.md`.** A claude.ai skill proposal carries no `scripts/` or
+  reference files, and many popular skills lean on them (webapp-testing's server helper,
+  systematic-debugging's three technique files, the three Trail of Bits plugins here). For a small skill,
+  inline the extra files into `SKILL.md` and say where the rest lives upstream. A skill built
+  around scripts belongs in a plugin instead: Trail of Bits publishes its repo as a Claude Code
+  plugin marketplace (`/plugin marketplace add trailofbits/skills`, then install from the
+  `/plugin` menu or with `/plugin install <name>@trailofbits`).
+- **Take single skills, not whole methodology bundles.** Superpowers ships 15 skills and a
+  SessionStart hook that steer every session through brainstorm, plan and subagent steps. That
+  clashes with a setup that already has its own PR and closeout workflow, so we took the two
+  skills that stand alone. Its plugin in Anthropic's directory installs all of them.
+- **Adapting is allowed, so say so.** MIT and Apache-2.0 allow modified copies; keep the
+  copyright line and a "changes" note at the top of the adapted `SKILL.md`. CC-BY-SA requires
+  the same license on adaptations, so Trail of Bits skills are installed as published, not copied.
+- **Skip:** the aggregator lists of 1,000 or more skills (unvetted, and a skill is text Claude
+  follows), token-cutting style skills such as Caveman (they trade readable replies for tokens),
+  and interview-style planning skills where a design red-team step already covers it
+  ([When to reach for Fable](#when-to-reach-for-fable)).
+
+### The "Karpathy guidelines"
+
+[forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills)
+(MIT per its README; no LICENSE file) is a community distillation of Andrej Karpathy's January
+2026 post on LLM coding mistakes, not something he wrote. It is one CLAUDE.md with four rules:
+think before coding, simplicity first, surgical changes, and goal-driven execution. Its own
+caveat is that the rules trade speed for caution.
+
+Three of the four hold as written. The first doesn't fit agents that work while the owner is
+away: "if uncertain, ask" and "present interpretations, don't pick silently" park an
+asynchronous thread until someone answers. We kept the half that matters, saying the assumption
+out loud, and paired it with the rule threads already follow: pick the reasonable default, say
+which, and ask only when the answer changes the goal, a visible result or an irreversible step.
+The template's `AGENTS.md` now carries the four rules in that form, in our own words, under "How
+to make a change"; siblings pick it up on their next template sync.
+
+Much of this already lives in Claude Code's own instructions (match the surrounding style, act
+when you have enough to act). Writing it into `AGENTS.md` still pays: other agents that read
+`AGENTS.md` get it, and the rule is visible and editable in the repo instead of implied.
 
 ## Connecting an Obsidian vault
 
