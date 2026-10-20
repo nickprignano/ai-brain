@@ -292,6 +292,15 @@ What a cloud session can't do on GitHub (seen in real runs, 2026-10-19):
   the repo attached with push access.
 - **Use connectors in a scheduled task** when the organization doesn't allow it. The task then
   relies on the environment's own GitHub access.
+- **Search GitHub or call the API on a repo outside the session (checked 2026-10-20).** The
+  session is bound to its configured repos, and the 403 says so: `/search/...` is refused
+  ("sessions are bound to their configured repositories") and `/repos/<other>/...` is refused
+  until the repo is attached. This holds with the environment's network access on Full, so
+  don't blame or change the network setting. Raw files on `raw.githubusercontent.com` and web
+  search still work, so for prior-art research check candidates one repo at a time.
+- **Request the owner's review on its own PR.** The session's PRs are opened as the owner, so
+  asking the owner to review fails ("Review cannot be requested from pull request author");
+  assign the PR instead. The PR itself is still created (checked 2026-10-20).
 
 **Check merge state before pushing more to a PR.** Three times in one day a PR merged a moment
 before the next push, and the new commit was stranded on a merged branch and needed its own PR.
