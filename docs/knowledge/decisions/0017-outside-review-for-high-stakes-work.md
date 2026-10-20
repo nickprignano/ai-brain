@@ -96,7 +96,7 @@ cut off from the repos and keeps Claude from choosing which outside answer the o
   one such point changed the work, as the owner judges in chat.
 - Considered and not chosen for now: an API tool so Claude calls the reviewer itself. Cost isn't
   the issue: xAI's text models come to one or two cents a review, reasoning included. The
-  blockers are that the owner's xAI connector isn't built yet, its key is limited to media
+  blockers are that the owner's xAI connector is media-only and still waiting on setup, its key is limited to media
   endpoints, so a review tool needs a second text-scoped key (vault entry, Worker secret, budget
   row, arming gate, per [0016](0016-secrets-handling.md)), and its design only lets Claude-written
   media prompts out. xAI's API doesn't train on what it's sent, so that route is the more private
