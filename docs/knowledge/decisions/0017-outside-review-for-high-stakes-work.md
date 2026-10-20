@@ -59,11 +59,13 @@ cut off from the repos and keeps Claude from choosing which outside answer the o
    never children's data or kid-profile media in any form. Describe a design, never paste real
    data. If the item can't be described without those, it gets no outside review, and the reply
    says so.
-5. **The reviewer.** Another company's assistant on the owner's personal account. The default is
-   Grok, which the owner already uses ([0009](0009-second-model-family.md)), in its own chat
-   app: no cost and nothing to build. GitHub Copilot or ChatGPT free tiers work the same way.
-   Never a work account's assistant for personal work, or the other way round. In Grok, use a
-   private chat or turn off model training first; the file is still written as if published. In
+5. **The reviewer.** Another company's assistant on the owner's personal account, in its own
+   chat app: one the owner already pays for or uses, so no new cost and nothing to build. The
+   default is Gemini, which the owner already subscribes to; Grok
+   ([0009](0009-second-model-family.md)), GitHub Copilot or ChatGPT work the same way. Never a
+   work account's assistant for personal work, or the other way round. Use a temporary or private
+   chat, or turn off the setting that keeps chats for training (Gemini's app activity, Grok's
+   "improve the model"), first; the file is still written as if published. In
    a chat that offers several models, such as Copilot, pick one not made by Anthropic. Record the
    model, not the product: "Grok 4.x", not "Copilot".
 6. **The return.** The owner pastes the reply into the thread. The thread saves it unedited
