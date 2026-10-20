@@ -93,6 +93,11 @@ Checks before flipping a private repo to public (2026-10-18):
 - **Scan the full history and PR text,** not just the current tree. Old commits and PR
   descriptions keep hostnames, IDs and names that were removed later. If they're there, either
   rewrite history before publishing or treat every value as public and rotate what needs it.
+- **Check every branch, not just the default one.** Scrubbing `main` or squashing a fresh history
+  leaves the old branches public. A branch with no merge base with `main` is usually the
+  pre-publication history and still carries what was scrubbed. List them with
+  `git branch -r` and `git merge-base origin/main <branch>`, then delete or scrub each one before
+  the flip (2026-10-20, found two days after a repo went public).
 - **Add a LICENSE.** With none, the repo is all rights reserved and nobody can reuse it.
 - **Safety filters teach what they block.** Publishing the patterns an app flags shows users,
   kids included, how to word around them. Keep those lists out of the public repo.
