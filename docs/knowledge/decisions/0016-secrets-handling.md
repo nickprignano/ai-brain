@@ -129,7 +129,7 @@ is copied is another place it can leak.
 - Outside review 2026-10-20 (Gemini), [decision 0017](0017-outside-review-for-high-stakes-work.md)'s
   first pilot, with a fresh Claude as control: both found that a session able to deploy code can
   leak a key without seeing it, which the Fable pass missed. Steps 4 to 7, 9 and 10 changed;
-  step 6 is new. Red-teamed again with Fable the same day: six findings, all taken (the gates are
+  step 6 is new. Owner accepted the amended version on 2026-10-20. Red-teamed again with Fable the same day: six findings, all taken (the gates are
   policy when agents push as the owner, a CI check that can be edited is a prompt not a gate,
   the connector split, gateway pricing limits, usage in the yearly check, GitHub plan limits). Calendar rotation was dropped on Gemini's point alone. *Unverified:* whether an
   Anthropic workspace spend limit blocks requests or only alerts.

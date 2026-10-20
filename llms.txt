@@ -63,7 +63,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0014. Family format: GitHub work conventions, with low-risk pull requests merging themselves on green](docs/knowledge/decisions/0014-family-format-auto-merge-low-risk-prs.md): proposed
 - [0015. A personal swarm on the 2ndbrain, built from the roles that already run](docs/knowledge/decisions/0015-personal-swarm-on-the-2ndbrain.md): proposed
 - [0016. Secrets: one password manager as the master copy, keys only in each service's own secret store](docs/knowledge/decisions/0016-secrets-handling.md): accepted
-- [0017. Outside review: high-stakes work gets one pass from another company's model, through a file](docs/knowledge/decisions/0017-outside-review-for-high-stakes-work.md): proposed
+- [0017. Outside review: high-stakes work gets one pass from another company's model, through a file](docs/knowledge/decisions/0017-outside-review-for-high-stakes-work.md): accepted
 
 ## Related knowledge bases
 
