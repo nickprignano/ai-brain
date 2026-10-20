@@ -600,7 +600,19 @@ class SecretsTouchTests(unittest.TestCase):
         md = secrets_touch.markdown([("a|b.ts", 3, "x")], "o/r", "abc")
         self.assertTrue(md.startswith(secrets_touch.MARKER))
         self.assertIn("[`a\\|b.ts:3`](https://github.com/o/r/blob/abc/a%7Cb.ts#L3)", md)
-        self.assertIn("1 place to read", md)
+        self.assertIn("1 to read first, 0 more at `abc`", md)
+        md = secrets_touch.markdown([("a.ts", 1, "this file reads `X_KEY`: read"), ("b.ts", 2, "y")], "", "f" * 40)
+        self.assertLess(md.index("**Read first**"), md.index("`b.ts:2`"))
+        self.assertLess(md.index("**Also**"), md.index("`a.ts:1`"))
+
+    def test_whole_file_changes(self):
+        diff = "\n".join(["diff --git a/package-lock.json b/package-lock.json", "--- a/package-lock.json",
+                          "+++ b/package-lock.json", "@@ -3,0 +4 @@", '+    "tiny-logger": "1.0.0",',
+                          "diff --git a/wrangler.jsonc b/wrangler.jsonc", "--- a/wrangler.jsonc",
+                          "+++ b/wrangler.jsonc", "@@ -9,0 +10 @@", '+  "tail_consumers": [{"service": "x"}],'])
+        found = secrets_touch.scan(secrets_touch.parse_diff(diff), lambda p: "x", self.CFG)
+        self.assertEqual([(p, n) for p, n, _ in found], [("package-lock.json", 4), ("wrangler.jsonc", 10)])
+        self.assertTrue(self.flags("import { connect } from 'cloudflare:sockets';"))
 
     def test_host_allowlist(self):
         allow = ["api.example.dev", "*.workers.dev"]

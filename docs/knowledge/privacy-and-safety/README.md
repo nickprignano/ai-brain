@@ -14,6 +14,7 @@ sources:
   - https://arxiv.org/pdf/2607.00395
   - https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/
   - https://developers.cloudflare.com/workers/previews/configuration/
+  - https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
   - https://developers.cloudflare.com/changelog/post/2026-08-22-wrangler-mcp-optional-oauth-scopes/
   - https://codeql.github.com/codeql-query-help/javascript/js-clear-text-logging
   - https://support.claude.com/en/articles/15591275-child-safety-guidance-for-developers
@@ -62,17 +63,24 @@ it. What that means in practice:
   can't quiet the check reading it; it never fails a PR, because a regex can't prove code safe and
   a red check people learn to ignore is worse than a comment. It misses a key passed through a
   variable with an innocent name, which is where data-flow tools such as GitHub CodeQL's
-  clear-text-logging queries (free on public repos) do better, so turn CodeQL on as well.
+  clear-text-logging queries do better, so turn CodeQL on as well (free on public repos only, so
+  a private app repo has just the comment). The comment is posted on every PR, even when nothing
+  is flagged and with the commit it checked, so a missing or stale one means the check didn't run.
+  Changes to dependencies, Worker config and the repo's own settings are always listed, since new
+  code or a new binding can move a key without a suspicious line in the diff.
 - **A connector that can call a platform's whole API can deploy.** Cloudflare's full-API connector
   signs in as the user, so a session with it can upload a Worker that returns a secret. Keep its
-  scopes read-only in coding projects (its consent page has a Read Only template) and let the
-  platform's own build from `main` deploy; a git-connected Worker build also makes branch
-  previews, so sessions need no deploy token at all. **Check the preview model first:** a Worker
-  connected to Workers Builds before Worker Previews (September 2026) builds branches with its
-  production secrets until the one-time, irreversible "Set up Worker Previews" switch, so a
-  pushed branch whose handler returns a key would serve it with the production value. Switch,
-  set the capped dev keys with `wrangler preview base-config secret put`, then turn preview
-  builds on. Preview URLs are public unless Cloudflare Access is in front of them.
+  scopes to the minimum in coding projects (its consent page lets you edit them), and leave out
+  the read scopes for logs, KV, D1 and R2 too, since a leaked key lands there and a session that
+  reads them brings it back. Let the platform's own build from `main` deploy, so sessions need no
+  deploy token.
+- **Leave branch builds off on a Worker that holds real keys.** A Workers Builds build runs the
+  branch's own build scripts with the build token, which by default is a user token that can edit
+  every Worker, KV namespace, R2 bucket and route on the account, so any pushed branch could
+  deploy to production or copy the token. Workers connected before Worker Previews (September
+  2026) also build branches with production secrets until a one-time, irreversible switch. Test
+  with `wrangler dev` and dev keys; if branch previews are worth it, build them in a second
+  account that holds only dev keys.
 - **Rotate without an outage.** Create and deploy the new key, check it, then revoke the old one;
   revoke first only when usage shows abuse.
 - **Push protection catches it early, gitleaks late.** GitHub's push protection blocks known key

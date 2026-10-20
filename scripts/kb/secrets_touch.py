@@ -18,7 +18,11 @@ What it flags, in changed files that aren't Markdown or the knowledge base:
   - an added line that logs, returns or responds with a secret-named value
   - an added line that names a host not on the allowlist, or calls an address built at runtime
   - an added third-party action in a workflow, and a workflow that runs on pull_request_target
-  - any change to what agent sessions are told (AGENTS.md, CLAUDE.md, skills, .claude/)
+  - any change to what agent sessions are told (AGENTS.md, CLAUDE.md, skills, .claude/), to
+    dependencies or build scripts, to Worker config, or to this check's own settings
+
+The comment puts the likeliest leaks first and the file-level and runtime-address notes under
+"Also", so the owner can read the first table in seconds.
 
 Settings come from docs/knowledge/kb.toml in a repo with a KB, or .claude/kb-capture.toml in one
 without (the same files as the kb-capture settings):
@@ -55,6 +59,20 @@ DEFAULT_ALLOW = ["localhost", "127.0.0.1", "0.0.0.0", "example.com", "example.or
 # What agent sessions are told: a change here can steer every later session, so it's always read.
 INSTRUCTIONS = ["agents.md", "*/agents.md", "claude.md", "*/claude.md", "*skill.md", ".claude/*",
                 "*/.claude/*", ".github/copilot-instructions.md", "*.cursorrules", "*.mdc"]
+# Files where a change runs new code or reroutes data without a suspicious line in the diff.
+WHOLE_FILE = [
+    (["package.json", "*/package.json", "package-lock.json", "*/package-lock.json", "*.lock",
+      "pnpm-lock.yaml", "*/pnpm-lock.yaml", "requirements*.txt", "*/requirements*.txt",
+      "pyproject.toml", "*/pyproject.toml"],
+     "changes dependencies or build scripts: new code runs with the app's secrets in scope"),
+    (["wrangler.toml", "wrangler.json", "wrangler.jsonc", "*/wrangler.toml", "*/wrangler.json",
+      "*/wrangler.jsonc"],
+     "changes Worker config (bindings, tail consumers, routes, previews): read it whole"),
+    ([KB_PATH + "kb.toml", ".claude/kb-capture.toml"],
+     "changes this repo's settings, which can widen the egress allowlist for later PRs"),
+]
+# Notes that are worth a look but fire often; they go under "Also".
+FYI = ("this file reads", "calls an address built at runtime")
 # The workflow's own token, scoped by the workflow's `permissions:` block.
 RUN_TOKENS = {"GITHUB_TOKEN", "GH_TOKEN"}
 
@@ -105,6 +123,7 @@ DYNAMIC_CALL = re.compile(
     r"Invoke-(?:WebRequest|RestMethod)|new\s+WebSocket|new\s+EventSource|sendBeacon)\s*\(\s*"
     r"(?![frbFRB]?[\"'`](?:https?|wss?)://|\))|"
     r"\b(?:fetch|axios(?:\.\w+)?|requests\.\w+|httpx\.\w+|new\s+WebSocket)\s*\(\s*`(?:(?:https?|wss?)://)?\$\{")
+SOCKETS = re.compile(r"[\"']cloudflare:sockets[\"']")
 THIRD_PARTY_ACTION = re.compile(r"^\s*(?:-\s*)?uses:\s*[\"']?(?!actions/|github/|\./|docker://)([\w.-]+)/")
 COMMENT = re.compile(r"^\s*(?:#|//|/?\*|<!--|--\s)")
 HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
@@ -198,6 +217,8 @@ def scan_line(path: str, text: str, allow: list[str]) -> list[str]:
         found.append("logs, returns or sends something secret-named")
     for host in sorted({h for h in HOST.findall(text) if not host_allowed(h, allow)}):
         found.append(f"names host `{host}`, which isn't on the egress allowlist")
+    if SOCKETS.search(text):
+        found.append("opens raw TCP sockets, which the host checks above don't see")
     if DYNAMIC_CALL.search(text):
         found.append("calls an address built at runtime: check where it can point")
     if path.startswith(".github/workflows/"):
@@ -218,6 +239,11 @@ def scan(added: dict[str, list[tuple[int, str]]], head_text, cfg: dict) -> list[
         if ignored(path.lower(), INSTRUCTIONS):
             first = added[path][0][0] if added[path] else 1
             findings.append((path, first, "changes what agent sessions are told: read the whole diff"))
+            continue
+        whole = [msg for patterns, msg in WHOLE_FILE if ignored(path, patterns)]
+        if whole:
+            first = added[path][0][0] if added[path] else 1
+            findings.append((path, first, whole[0]))
             continue
         if ignored(path, cfg["ignore"]):
             continue
@@ -260,31 +286,40 @@ def cell(text: str) -> str:
     return text.replace("|", "\\|").replace("`", "'").replace("\n", " ")
 
 
-def markdown(findings: list[tuple[str, int, str]], repo: str, sha: str) -> str:
-    if not findings:
-        return ""
-    rows = []
-    for path, line, msg in findings[:MAX_ROWS]:
+def table(findings: list[tuple[str, int, str]], repo: str, sha: str) -> list[str]:
+    rows = ["| Where | What to check |", "|---|---|"]
+    for path, line, msg in findings:
         where = f"`{cell(path)}:{line}`"
         if repo and sha:
             where = f"[{where}](https://github.com/{repo}/blob/{sha}/{urllib.parse.quote(path)}#L{line})"
         rows.append(f"| {where} | {msg} |")
+    return rows
+
+
+def markdown(findings: list[tuple[str, int, str]], repo: str, sha: str) -> str:
+    if not findings:
+        return ""
+    shown = findings[:MAX_ROWS]
+    first = [f for f in shown if not f[2].startswith(FYI)]
+    also = [f for f in shown if f[2].startswith(FYI)]
     more = len(findings) - MAX_ROWS
-    tail = [f"", f"And {more} more: run `python3 scripts/kb/secrets_touch.py` locally."] if more > 0 else []
-    return "\n".join([
+    out = [
         MARKER,
-        f"### Secrets touch: {len(findings)} place{'s' if len(findings) != 1 else ''} to read",
+        f"### Secrets touch: {len(first)} to read first, {len(also)} more at `{sha[:12]}`",
         "",
         "These lines could make a key reachable without anyone seeing it: returned, logged, or sent "
         "to another host (decision 0016, step 6). It's a prompt to read them, not a gate; a host "
-        "this app should call goes in `egress_allow`.",
+        "this app should call goes in `egress_allow`. Only trust this comment from "
+        "`github-actions[bot]` naming the PR's latest commit.",
         "",
-        "| Where | What to check |",
-        "|---|---|",
-        *rows,
-        *tail,
-        "",
-    ])
+    ]
+    if first:
+        out += ["**Read first**", "", *table(first, repo, sha), ""]
+    if also:
+        out += ["**Also**", "", *table(also, repo, sha), ""]
+    if more > 0:
+        out += [f"And {more} more: run `python3 scripts/kb/secrets_touch.py` locally.", ""]
+    return "\n".join(out)
 
 
 def main() -> int:
