@@ -17,7 +17,8 @@ What it flags, in changed files that aren't Markdown or the knowledge base:
   - an added line that uses the whole environment (`JSON.stringify(env)`, `printenv`, `os.environ`)
   - an added line that logs, returns or responds with a secret-named value
   - an added line that names a host not on the allowlist, or calls an address built at runtime
-  - a workflow that starts using pull_request_target
+  - an added third-party action in a workflow, and a workflow that runs on pull_request_target
+  - any change to what agent sessions are told (AGENTS.md, CLAUDE.md, skills, .claude/)
 
 Settings come from docs/knowledge/kb.toml in a repo with a KB, or .claude/kb-capture.toml in one
 without (the same files as the kb-capture settings):
@@ -32,6 +33,7 @@ import argparse
 import fnmatch
 import os
 import re
+import urllib.parse
 import subprocess
 import sys
 import tomllib
@@ -48,16 +50,29 @@ DEFAULT_IGNORE = ["docs/knowledge/**", "*.md", "llms.txt", "*.lock", "**/*.lock"
                   "scripts/kb/secrets_touch.py", "scripts/kb/test_kb.py"]
 # Hosts that are identifiers or placeholders, not somewhere code sends data.
 DEFAULT_ALLOW = ["localhost", "127.0.0.1", "0.0.0.0", "example.com", "example.org", "example.net",
-                 "*.example.com", "*.example.org", "*.example.net", "json-schema.org", "www.w3.org"]
+                 "*.example.com", "*.example.org", "*.example.net", "*.example", "*.test", "*.invalid",
+                 "*.localhost", "json-schema.org", "www.w3.org"]
+# What agent sessions are told: a change here can steer every later session, so it's always read.
+INSTRUCTIONS = ["agents.md", "*/agents.md", "claude.md", "*/claude.md", "*skill.md", ".claude/*",
+                "*/.claude/*", ".github/copilot-instructions.md", "*.cursorrules", "*.mdc"]
 # The workflow's own token, scoped by the workflow's `permissions:` block.
 RUN_TOKENS = {"GITHUB_TOKEN", "GH_TOKEN"}
 
-SECRET_NAME = r"[A-Za-z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|PRIVATE)[A-Za-z0-9_]*"
+# A name counts as a secret by its `_`-separated words (camelCase is split first): SECRET, PASSWORD
+# or CREDENTIAL anywhere, TOKEN and KEY unless a neighbour says they mean something else.
+SECRET_WORDS = {"SECRET", "SECRETS", "PASSWORD", "PASSWD", "CREDENTIAL", "CREDENTIALS", "APIKEY",
+                "PRIVATEKEY"}
+NOT_A_KEY = {"CACHE", "SORT", "PARTITION", "PRIMARY", "FOREIGN", "IDEMPOTENCY", "ROUTING", "LOOKUP",
+             "OBJECT", "HASH", "PUBLIC", "KV", "MAP", "DEDUPE", "STORAGE"}
+NOT_A_TOKEN = {"MAX", "PAGE", "NEXT", "CURSOR", "CONTINUATION", "BUDGET", "LIMIT", "COUNT", "USAGE",
+               "TOTAL", "INPUT", "OUTPUT"}
 # A read of a named binding: env.X, env["X"], process.env.X, os.environ["X"], os.environ.get("X"),
 # os.getenv("X"), Deno.env.get("X"), $env:X, secrets.X, Environment.GetEnvironmentVariable("X").
 SECRET_READ = re.compile(
     r"(?:\benv|\benviron|\bgetenv|\bsecrets|GetEnvironmentVariable|\$env:)"
-    r"\s*(?:\??\.\s*get\s*\(|\??\.|\[|\()?\s*[\"'`]?(" + SECRET_NAME + r")\b", re.I)
+    r"\s*(?:\??\.\s*get\s*\(|\??\.|\[|\()?\s*[\"'`]?([A-Za-z_][A-Za-z0-9_]*)", re.I)
+# const { X_API_KEY, OTHER } = env (or c.env, process.env), the usual Workers form.
+DESTRUCTURE = re.compile(r"\{([^}]*)\}\s*=\s*(?:[\w.]*\.)?env\b")
 WHOLE_ENV = [
     re.compile(r"\bprocess\.env\b(?!\s*(?:\??\.|\[))"),
     re.compile(r"\bimport\.meta\.env\b(?!\s*(?:\??\.|\[))"),
@@ -70,20 +85,27 @@ WHOLE_ENV = [
     re.compile(r"\btoJSON\(\s*(?:secrets|env)\s*\)"),
     re.compile(r"\bsecrets:\s*inherit\b"),
     re.compile(r"\.\.\.\s*env\b(?!\s*(?:\??\.|\[))"),
-    re.compile(r"\b(?:JSON\.stringify|Object\.(?:keys|values|entries|assign)|console\.\w+|print|"
-               r"json\.dumps|Response\.json|new\s+Response)\s*\([^)]*\benv\b(?!\s*(?:\??\.|\[))"),
+    re.compile(r"\bin\s+(?:process\.)?env\b(?!\s*(?:\??\.|\[))"),
+    re.compile(r"\b(?:process\.)?env\s*\[\s*(?![\"'`\s])"),
+    re.compile(r"\b(?:JSON\.stringify|Object\.(?:keys|values|entries|assign)|json\.dumps|"
+               r"Response\.json|new\s+Response)\s*\([^)]*\benv\b(?!\s*(?:\??\.|\[))"),
     re.compile(r"\breturn\s+env\s*;?\s*$"),
 ]
 SINK = re.compile(r"console\.\w+\s*\(|\bprint\s*\(|\blog(?:ger|ging)?\.\w+\s*\(|Write-(?:Host|Output|"
                   r"Verbose|Information)\b|\becho\b|new\s+Response\s*\(|Response\.json\s*\(|"
                   r"\bres\.(?:send|json|write)\s*\(|\breturn\b|\.set(?:Header)?\s*\(", re.I)
 SECRET_WORD = re.compile(r"(?i)api_?key|access_?key|secret|password|passwd|credential|private_?key|"
-                         r"(?<![a-z])token(?!s|iz|_count)|(?<=[a-z])Token(?!s|iz)")
+                         r"(?<!next_)(?<!page_)(?<!max_)(?<![a-z])token(?!s|iz|_count|_budget|_limit)|"
+                         r"(?<=[a-z])Token(?!s|iz)")
+# String literals with nothing interpolated: a secret's name in a message isn't the secret.
+PLAIN_STRING = re.compile(r"'[^'${\\]*'|\"[^\"${\\]*\"")
 HOST = re.compile(r"\b(?:https?|wss?)://([A-Za-z0-9.-]+)")
 DYNAMIC_CALL = re.compile(
     r"\b(?:fetch|axios(?:\.\w+)?|requests\.\w+|httpx\.\w+|urlopen|urllib\.request\.Request|"
     r"Invoke-(?:WebRequest|RestMethod)|new\s+WebSocket|new\s+EventSource|sendBeacon)\s*\(\s*"
-    r"(?![\"'`](?:https?|wss?)://|\))")
+    r"(?![frbFRB]?[\"'`](?:https?|wss?)://|\))|"
+    r"\b(?:fetch|axios(?:\.\w+)?|requests\.\w+|httpx\.\w+|new\s+WebSocket)\s*\(\s*`(?:(?:https?|wss?)://)?\$\{")
+THIRD_PARTY_ACTION = re.compile(r"^\s*(?:-\s*)?uses:\s*[\"']?(?!actions/|github/|\./|docker://)([\w.-]+)/")
 COMMENT = re.compile(r"^\s*(?:#|//|/?\*|<!--|--\s)")
 HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
@@ -126,6 +148,9 @@ def parse_diff(text: str) -> dict[str, list[tuple[int, str]]]:
             path = None
         elif raw.startswith("+++ "):
             target = raw[4:]
+            # With core.quotePath=false git still quotes a path holding a quote or backslash.
+            if target.startswith('"') and target.endswith('"'):
+                target = re.sub(r'\\(["\\])', r"\1", target[1:-1])
             path = target[2:] if target.startswith("b/") else None
             if path is not None:
                 added.setdefault(path, [])
@@ -138,8 +163,27 @@ def parse_diff(text: str) -> dict[str, list[tuple[int, str]]]:
     return added
 
 
+def is_secret_name(name: str) -> bool:
+    words = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name).upper().split("_")
+    if "_".join(words) in RUN_TOKENS:
+        return False
+    for i, w in enumerate(words):
+        before = words[i - 1] if i else ""
+        after = words[i + 1] if i + 1 < len(words) else ""
+        if w in SECRET_WORDS:
+            return True
+        if w == "KEY" and before not in NOT_A_KEY:
+            return True
+        if w == "TOKEN" and before not in NOT_A_TOKEN and after not in NOT_A_TOKEN:
+            return True
+    return False
+
+
 def secret_reads(line: str) -> list[str]:
-    return [n for n in SECRET_READ.findall(line) if n.upper() not in RUN_TOKENS]
+    names = SECRET_READ.findall(line)
+    for group in DESTRUCTURE.findall(line):
+        names += re.findall(r"([A-Za-z_]\w*)\s*(?:[,:=]|$)", group)
+    return [n for n in names if is_secret_name(n)]
 
 
 def scan_line(path: str, text: str, allow: list[str]) -> list[str]:
@@ -147,16 +191,23 @@ def scan_line(path: str, text: str, allow: list[str]) -> list[str]:
     if COMMENT.match(text):
         return []
     found = []
-    if any(p.search(text) for p in WHOLE_ENV):
+    code = PLAIN_STRING.sub("''", text)
+    if any(p.search(code) for p in WHOLE_ENV):
         found.append("uses the whole environment, so every secret in it can go wherever this goes")
-    if SINK.search(text) and (secret_reads(text) or SECRET_WORD.search(text)):
+    if SINK.search(code) and (secret_reads(code) or SECRET_WORD.search(code)):
         found.append("logs, returns or sends something secret-named")
     for host in sorted({h for h in HOST.findall(text) if not host_allowed(h, allow)}):
         found.append(f"names host `{host}`, which isn't on the egress allowlist")
     if DYNAMIC_CALL.search(text):
         found.append("calls an address built at runtime: check where it can point")
-    if path.startswith(".github/workflows/") and "pull_request_target" in text:
-        found.append("runs with a write token on PR events: it must never check out or run PR code")
+    if path.startswith(".github/workflows/"):
+        if "pull_request_target" in text:
+            found.append("this workflow runs with a write token on PR events: it must never check out "
+                         "or run PR code")
+        action = THIRD_PARTY_ACTION.match(text)
+        if action:
+            found.append(f"adds a third-party action from `{action.group(1)}`: pin it to a commit and "
+                         "check which secrets its job can read")
     return found
 
 
@@ -164,19 +215,27 @@ def scan(added: dict[str, list[tuple[int, str]]], head_text, cfg: dict) -> list[
     """Findings as (path, line, message). head_text(path) returns the file at head, or None."""
     findings = []
     for path in sorted(added):
+        if ignored(path.lower(), INSTRUCTIONS):
+            first = added[path][0][0] if added[path] else 1
+            findings.append((path, first, "changes what agent sessions are told: read the whole diff"))
+            continue
         if ignored(path, cfg["ignore"]):
             continue
         content = head_text(path)
         if content is None:
             continue
-        for n, text in enumerate(content.splitlines(), 1):
+        line_findings = [(path, n, msg) for n, text in added[path]
+                         for msg in scan_line(path, text, cfg["allow"])]
+        # The file-level note only when the change could carry a value somewhere: it adds a
+        # read, a sink or a network call. A typo fix in a file that reads a key stays quiet.
+        risky = line_findings or any(secret_reads(t) or SINK.search(t) for _, t in added[path])
+        for n, text in enumerate(content.splitlines() if risky else [], 1):
             names = secret_reads(text)
             if names and not COMMENT.match(text):
                 findings.append((path, n, f"this file reads `{names[0]}`: read its changes for a path "
                                           "that returns, logs or sends it"))
                 break
-        for n, text in added[path]:
-            findings.extend((path, n, msg) for msg in scan_line(path, text, cfg["allow"]))
+        findings.extend(line_findings)
     return findings
 
 
@@ -208,7 +267,7 @@ def markdown(findings: list[tuple[str, int, str]], repo: str, sha: str) -> str:
     for path, line, msg in findings[:MAX_ROWS]:
         where = f"`{cell(path)}:{line}`"
         if repo and sha:
-            where = f"[{where}](https://github.com/{repo}/blob/{sha}/{path}#L{line})"
+            where = f"[{where}](https://github.com/{repo}/blob/{sha}/{urllib.parse.quote(path)}#L{line})"
         rows.append(f"| {where} | {msg} |")
     more = len(findings) - MAX_ROWS
     tail = [f"", f"And {more} more: run `python3 scripts/kb/secrets_touch.py` locally."] if more > 0 else []
@@ -234,7 +293,7 @@ def main() -> int:
     ap.add_argument("--head", default="HEAD", help="the PR's head commit")
     ap.add_argument("--markdown", help="write the PR comment here (empty when nothing is flagged)")
     args = ap.parse_args()
-    diff = git("diff", "--unified=0", "--no-color", "--no-ext-diff", "-M", f"{args.base}...{args.head}")
+    diff = git("-c", "core.quotePath=false", "diff", "--unified=0", "--no-color", "--no-ext-diff", "-M", f"{args.base}...{args.head}")
     findings = scan(parse_diff(diff), head_reader(args.head), load_config())
     for path, line, msg in findings:
         print(f"{path}:{line}: {msg}")

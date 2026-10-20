@@ -12,6 +12,10 @@ sources:
   - https://github.com/meta-llama/PurpleLlama
   - https://developers.cloudflare.com/workers-ai/models/
   - https://arxiv.org/pdf/2607.00395
+  - https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/
+  - https://developers.cloudflare.com/workers/previews/configuration/
+  - https://developers.cloudflare.com/changelog/post/2026-08-22-wrangler-mcp-optional-oauth-scopes/
+  - https://codeql.github.com/codeql-query-help/javascript/js-clear-text-logging
   - https://support.claude.com/en/articles/15591275-child-safety-guidance-for-developers
   - https://github.com/roostorg/awesome-safety-tools
   - https://learn.microsoft.com/en-us/azure/sentinel/datalake/sentinel-mcp-create-custom-tool
@@ -61,8 +65,14 @@ it. What that means in practice:
   clear-text-logging queries (free on public repos) do better, so turn CodeQL on as well.
 - **A connector that can call a platform's whole API can deploy.** Cloudflare's full-API connector
   signs in as the user, so a session with it can upload a Worker that returns a secret. Keep its
-  write tool off in coding projects and let the platform's own build from `main` deploy; a
-  git-connected Worker build also makes branch previews, so sessions need no deploy token at all.
+  scopes read-only in coding projects (its consent page has a Read Only template) and let the
+  platform's own build from `main` deploy; a git-connected Worker build also makes branch
+  previews, so sessions need no deploy token at all. **Check the preview model first:** a Worker
+  connected to Workers Builds before Worker Previews (September 2026) builds branches with its
+  production secrets until the one-time, irreversible "Set up Worker Previews" switch, so a
+  pushed branch whose handler returns a key would serve it with the production value. Switch,
+  set the capped dev keys with `wrangler preview base-config secret put`, then turn preview
+  builds on. Preview URLs are public unless Cloudflare Access is in front of them.
 - **Rotate without an outage.** Create and deploy the new key, check it, then revoke the old one;
   revoke first only when usage shows abuse.
 - **Push protection catches it early, gitleaks late.** GitHub's push protection blocks known key
