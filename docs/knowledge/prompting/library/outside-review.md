@@ -15,7 +15,7 @@ the [red team](red-team.md) has already run.
 **Paste into** the thread that did the work. It writes the file; the owner pastes that file into
 another company's assistant and pastes the reply back.
 
-**Run so far:** once, on a secrets-handling decision (2026-10-20), with a fresh-Claude control: both reviewers found a gap the red team had missed, and the outside reviewer found one point the control missed.
+**Run so far:** once, on a secrets-handling decision (2026-10-20), with a fresh-Claude control: both reviewers found a gap the red team had missed, and the outside reviewer found one point the control missed. Second run, on putting that decision into practice (2026-10-20): the fresh-Claude control alone found the most serious gap (branch builds running branch code with an account-wide deploy token), which the red team missed; the owner merged before the outside reviewer's turn, so run the control as soon as the file exists rather than waiting on the paste.
 
 ## Placeholders
 
