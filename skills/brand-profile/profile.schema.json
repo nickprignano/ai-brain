@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "brand-profile/v1",
+  "title": "Brand profile",
+  "description": "One file per repo (brand/profile.json) that says how anything made for the project looks and reads: colors, type, logo files, starters, required elements and rules. The brand-profile skill reads it before making a page, artifact, slide or image, and writes it when a brand is set up or changes. Paths are relative to the repo root.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "name",
+    "visibility",
+    "colors",
+    "roles",
+    "type",
+    "assets"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "description": "The brand as it is written, case included."
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string",
+      "description": "One or two sentences: what the project is and who it is for."
+    },
+    "visibility": {
+      "enum": [
+        "public",
+        "private"
+      ],
+      "description": "private: nothing made from this profile goes on a public page."
+    },
+    "updated": {
+      "type": "string",
+      "format": "date"
+    },
+    "sourceOfTruth": {
+      "type": "object",
+      "description": "Where the brand is defined when the profile is a summary of it. A change goes there first, then here; the repo's tests should keep the two equal.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string",
+          "description": "The git tag a copy is taken from."
+        },
+        "repo": {
+          "type": "string",
+          "description": "https URL of the repo that holds this profile."
+        }
+      }
+    },
+    "colors": {
+      "type": "object",
+      "description": "Color tokens by name (CSS custom property names when the brand has a stylesheet), each with a light and a dark value.",
+      "minProperties": 3,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "light",
+          "dark"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "light": {
+            "type": "string"
+          },
+          "dark": {
+            "type": "string"
+          },
+          "use": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "description": "Which color token plays each common part, so a tool that doesn't know the token names can still use the brand.",
+      "required": [
+        "background",
+        "surface",
+        "text",
+        "muted",
+        "line",
+        "accent",
+        "onAccent"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "type": {
+      "type": "object",
+      "description": "Font roles. Each names the family, the weights used, and where it comes from: self-hosted files and, for places that can only load hosted fonts, a Google Fonts family.",
+      "required": [
+        "display",
+        "body"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "family",
+          "fallback"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "family": {
+            "type": "string"
+          },
+          "fallback": {
+            "type": "string"
+          },
+          "weights": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "googleFonts": {
+            "type": "string",
+            "description": "The family as Google Fonts spells it, or empty if it isn't there."
+          },
+          "use": {
+            "type": "string"
+          },
+          "case": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "shape": {
+      "type": "object",
+      "description": "Radii, spacing, widths and motion by token name.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "assets": {
+      "type": "array",
+      "description": "Every brand file the repo holds, with what it is for.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "file",
+          "kind",
+          "use"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "mark",
+              "favicon",
+              "lockup",
+              "wordmark",
+              "avatar",
+              "social",
+              "source",
+              "pattern",
+              "illustration",
+              "screenshot"
+            ]
+          },
+          "background": {
+            "enum": [
+              "light",
+              "dark",
+              "any",
+              "transparent",
+              "brand"
+            ]
+          },
+          "use": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "generated": {
+            "type": "string",
+            "description": "The script that writes this file, if any."
+          }
+        }
+      }
+    },
+    "starters": {
+      "type": "object",
+      "description": "Files to copy instead of starting from nothing, by what they make (page, artifact, slide...).",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "required": {
+      "type": "array",
+      "description": "Elements every page or artifact made for the project carries (a notice, a credit line, a license line).",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "text"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "where": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "language": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "Do and don't, one line each.",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
