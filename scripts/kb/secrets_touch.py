@@ -335,7 +335,7 @@ def main() -> int:
     print(f"{len(findings)} place(s) to read.")
     if args.markdown:
         sha = git("rev-parse", args.head).strip()
-        Path(args.markdown).write_text(markdown(findings, os.environ.get("GITHUB_REPOSITORY", ""), sha))
+        Path(args.markdown).write_text(markdown(findings, os.environ.get("GITHUB_REPOSITORY", ""), sha), encoding="utf-8")
     return 0
 
 
