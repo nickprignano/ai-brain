@@ -25,6 +25,10 @@ sources:
   - https://github.com/obra/superpowers
   - https://github.com/trailofbits/skills
   - https://github.com/forrestchang/andrej-karpathy-skills
+  - https://github.com/timelinize/timelinize
+  - https://github.com/AgriciDaniel/claude-obsidian
+  - https://github.com/HKUDS/LightRAG
+  - https://github.com/urchade/GLiNER
 ---
 
 # Agents and Claude Code
@@ -489,6 +493,39 @@ Constraints:
 - No official connector as of 2026-10-20: Anthropic's connectors help page doesn't list one, and
   says custom connectors reach your MCP server from Anthropic's cloud, not your device, so the web
   chat still can't open a local vault. Third-party Obsidian MCP plugins exist; they aren't official.
+
+### Building a graph of personal data
+
+A prior-art survey on 2026-10-20 looked for tools that turn scattered personal data (cloud drives,
+social exports, chat exports, notes) into one store with an Obsidian-style graph of files and of
+people, places and topics. Stars and licences were read from GitHub that day.
+
+- **No single tool does it.** Copying and dedupe are solved (rclone, czkawka, dupeGuru), a local
+  timeline of people and places is close to solved
+  ([timelinize/timelinize](https://github.com/timelinize/timelinize), AGPL-3.0, imports Takeout,
+  Facebook, Instagram, messages and GPS, merges contacts across sources, but has no graph view and
+  says upgrades can mean rebuilding), and the Obsidian graph over the data is the gap.
+- **The popular "LLM wiki" vault tools send your content to a cloud model.**
+  [AgriciDaniel/claude-obsidian](https://github.com/AgriciDaniel/claude-obsidian) (MIT, about 15.7k
+  stars), SamurAIGPT/llm-wiki-agent and Ar9av/obsidian-wiki file sources into linked pages through
+  Claude or another hosted model. Fine for your own notes; wrong for other people's messages or
+  children's data.
+- **Fully local entity graphs need a strong GPU.**
+  [HKUDS/LightRAG](https://github.com/HKUDS/LightRAG) (MIT, has a graph web UI) gives
+  Qwen3-30B-A3B as its minimum for local extraction and warns slow models time out. A small
+  named-entity model like [GLiNER](https://github.com/urchade/GLiNER) (Apache-2.0) runs on CPU but
+  finds mentions only, with no merging of "Mom" and a full name, so over chat logs it makes a
+  hairball. For chats, take people from sender and participant fields instead.
+- **A vault of cards beats a card per item.** One Markdown note per folder or notable document, with
+  front matter that Dataview and [ExcaliBrain](https://github.com/zsviczian/excalibrain) read, keeps
+  Obsidian's graph usable; the global graph slows past roughly 10,000 to 20,000 notes (community
+  reports, not measured here).
+- **Keep a private vault off every sync path.** On Windows, Windows Backup can sync Desktop,
+  Documents and Pictures to OneDrive, so a private vault belongs outside those folders. Allow only
+  the plugins you need: [Smart Connections](https://github.com/brianpetro/obsidian-smart-connections)
+  is source-available under its own licence, not open source, and bundles cloud chat features.
+- **File names leak.** When an agent writes the indexing script, test it on a made-up folder and
+  have the owner share counts, not logs, because paths carry family members' names.
 
 ## Giving Claude a paid media API through an MCP server
 

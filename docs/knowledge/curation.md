@@ -91,6 +91,10 @@ What it means for how we search:
   **Actions > kb-prior-art** instead and read its log. The session's GitHub tools can search all
   of GitHub but only read commits and files in attached repos, so a freshness check that needs
   another repo's history has to attach it first.
+- **Batch licence lookups with `repo:` qualifiers.** In a cloud session, GitHub repo search with
+  several free-text terms plus a `stars:>N` filter often returned nothing (2026-10-20), while one
+  query of 20 `repo:owner/name` qualifiers returned stars, licence and last push for all of them in
+  one call. Search broadly first, then batch the finalists that way.
 - **Copilot is worth a paste before publishing a survey list**, where one or two extra finds
   matter. It isn't worth automating: every item still has to be checked.
 
