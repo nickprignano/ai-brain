@@ -12,8 +12,8 @@ The full system is in [docs/2ndbrain/SPEC.md](docs/2ndbrain/SPEC.md). Agents fol
 It sets up one of two ways, and **private is the default**:
 
 - **Private:** the knowledge base plus a private wisdom layer above your public KBs: lessons, root
-  causes, procedures, decisions, goals, disagreements and the patterns you notice across projects
-  ([notes/](notes/capture-rules.md)). Only short directives you approve ever leave it
+  causes, procedures, decisions, goals, disagreements, parked side ideas and the patterns you notice
+  across projects ([notes/](notes/capture-rules.md)). Only short directives you approve ever leave it
   ([outbox/](outbox/README.md)).
 - **Public:** the knowledge base alone, for a project you work on in the open. Setup removes the
   private layer for good.

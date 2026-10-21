@@ -23,6 +23,7 @@ TYPES = {
     "goals": "goal",
     "disagreements": "disagreement",
     "patterns": "pattern",
+    "parked": "parked",
 }
 REQUIRED = ["title", "type", "created", "last_verified", "review_after_days", "status"]
 EXTRA_REQUIRED = {"decision": ["revisit_on"], "pattern": ["sources"]}
