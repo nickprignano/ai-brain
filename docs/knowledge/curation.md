@@ -81,6 +81,11 @@ What it means for how we search:
   stars, the curated index for the area (for skills, skills.sh and Anthropic's plugin directory;
   for a platform, the vendor's own GitHub org) and a web search. The union of both tools' lists
   beat either one.
+- **For tools that read a data format, search code for the format's own names.** On 2026-10-21
+  a survey of tools for a social-network data export found its privacy-audit tools only through
+  GitHub code search for the export's file and field names; repo search by name, description and
+  stars returned viewers and chat-stats scripts instead. Small tools often have vague names but
+  have to spell out the field names in their code.
 - **Open every candidate before it goes in the KB.** Copilot's answers listed "checked on repo"
   in place of licences, stars and dates, included one repo that wouldn't load, and passed off a
   changelog section about 300 versions old as current. Its finds are leads until opened.
