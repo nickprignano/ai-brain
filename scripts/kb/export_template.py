@@ -81,7 +81,7 @@ def check_private_layer_empty(out: Path) -> None:
     hits = [p for p in sorted(notes.glob("*/**/*")) if p.is_file() and p.name != "_template.md"]
     hits += [p for p in sorted(outbox.glob("*")) if p.is_file() and p.name != "README.md"]
     index = notes / "index.md"
-    if index.exists() and any(line.lstrip().startswith(("- ", "* ")) for line in index.read_text().splitlines()):
+    if index.exists() and any(line.lstrip().startswith(("- ", "* ")) for line in index.read_text(encoding="utf-8").splitlines()):
         hits.append(index)
     if hits:
         raise ExportError("the private layer must ship empty:\n  " + "\n  ".join(p.relative_to(out).as_posix() for p in hits))
