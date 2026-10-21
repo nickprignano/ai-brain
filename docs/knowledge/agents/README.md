@@ -3,7 +3,7 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: partial
-last_reviewed: 2026-10-20
+last_reviewed: 2026-10-21
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/model-config
@@ -25,6 +25,13 @@ sources:
   - https://github.com/obra/superpowers
   - https://github.com/trailofbits/skills
   - https://github.com/forrestchang/andrej-karpathy-skills
+  - https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets
+  - https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/troubleshooting-rules
+  - https://docs.github.com/en/rest/repos/rules
+  - https://github.com/github-community-projects/safe-settings
+  - https://github.com/repository-settings/app
+  - https://github.com/BetaHuhn/repo-file-sync-action
+  - https://cli.github.com/manual/gh_ruleset_check
   - https://github.com/timelinize/timelinize
   - https://github.com/AgriciDaniel/claude-obsidian
   - https://github.com/HKUDS/LightRAG
@@ -368,6 +375,54 @@ What matters when building one (from GitHub's docs, 2026-10-19):
   the default branch.
 - **The agent is often the owner's account.** GitHub can't tell them apart, so "agents never arm
   auto-merge by hand" is a rule the agent keeps, not something GitHub enforces.
+
+## Keeping all your repos on the same conventions
+
+Once conventions like [decision 0014](../decisions/0014-family-format-auto-merge-low-risk-prs.md)
+apply to every repo, they drift: a label never created, a ruleset missing a check, a workflow copy
+left behind. [`scripts/kb/repo_audit.py`](../../../scripts/kb/repo_audit.py) lists the owner's
+repos from the API, reports drift per repo with a stable id (`repo/check`), and with
+`--fix repo/check,...` applies only the ids the owner names, using the owner's own `gh` login. It
+never runs from a cloud session (the session proxy refuses the API outside attached repos), and
+its full report names private repos, so only the `--summary` output goes into a chat.
+
+Prior art (checked 2026-10-21; maintenance dates not compared):
+
+- **[Safe Settings](https://github.com/github-community-projects/safe-settings)** (GitHub, ISC)
+  is the full version: policy as code, rulesets, labels, reverting manual changes. It's built
+  around an organization's `admin` repo, so it doesn't fit a personal account.
+- **The [Repository Settings app](https://github.com/repository-settings/app)** works per repo
+  on a personal account, but its README warns it gives anyone with push the admin role, and its
+  ruleset support is "still under development".
+- **The Terraform or OpenTofu GitHub provider** does real drift detection (`plan`) and supports
+  user-owned repos, at the cost of a state backend, a stored admin token and importing every
+  repo.
+- **[repo-file-sync-action](https://github.com/BetaHuhn/repo-file-sync-action)** (MIT) and the
+  label-sync tools fix one kind of drift each, and file sync needs a full `repo`-scope token.
+- **OpenSSF Allstar and Scorecard** check security hygiene, not your own conventions.
+- **[`gh ruleset check --default`](https://cli.github.com/manual/gh_ruleset_check)** shows one
+  repo's effective rules with no code; fine for a single repo.
+
+What the audit had to get right (red teamed with a second model, 2026-10-21):
+
+- **On GitHub Free, private repos have no rulesets and no auto-merge.** Both are public-only on
+  Free (and on Free for organizations); private repos need Pro, Team or Enterprise. So 0014's
+  auto-merge and required checks only hold in public repos on Free, a free org changes nothing for
+  private ones, and Pro on the personal account is the smallest step that makes them hold. The
+  audit reads the plan and doesn't report or "fix" what GitHub won't enforce.
+- **Require only checks that report on every PR.** A ruleset matches the check's job name (the
+  job's `name:` if set), and a path-filtered or schedule-only workflow never reports on some PRs,
+  which then wait forever. The audit takes the expected checks from what ran on recent merged PRs,
+  not from workflow YAML.
+- **Extend a ruleset by read, append, write back.** The update call replaces the whole ruleset, so
+  anything not sent back (a rule added by hand) is lost. Keep `strict_required_status_checks_policy`
+  off, or every merge makes the other armed PRs stale.
+- **Classic branch protection still applies alongside rulesets.** A leftover "1 approving review"
+  blocks a solo owner whatever the ruleset says.
+- **In a Codespace, `GITHUB_TOKEN` is the Codespace's own token,** scoped to one repo. An audit run
+  with it sees a fraction of the repos and looks clean; unset it and `gh auth login -w`.
+- **Compare file copies by committed blob SHA** (`git rev-parse HEAD:<path>`), not by hashing the
+  working tree, or Windows line endings show every file as changed.
 
 ## A capture skill for a two-layer second brain
 

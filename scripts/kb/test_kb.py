@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import shutil
 import subprocess
 import sys
@@ -20,6 +21,7 @@ import feedback  # noqa: E402
 import freshness  # noqa: E402
 import handoffs  # noqa: E402
 import kblib  # noqa: E402
+import repo_audit  # noqa: E402
 import secrets_touch  # noqa: E402
 
 SAFE = "### Public-safe\n\n- [X] I removed API keys, account and workspace IDs, names, domains, emails, IP addresses and secrets.\n"
@@ -535,6 +537,164 @@ class AutoMergeTests(unittest.TestCase):
         (root / ".claude").mkdir()
         (root / ".claude" / "kb-capture.toml").write_text('auto_merge = "on"\nauto_merge_paths = ["docs/*.md"]\n')
         self.assertEqual(auto_merge.load_config(root), {"on": True, "paths": ["docs/*.md"], "deny": []})
+
+
+class FakeGitHub:
+    """Recorded GitHub responses for repo_audit: GET by path prefix, writes logged."""
+
+    def __init__(self, routes):
+        self.routes, self.writes, self.scopes = routes, [], "repo"
+
+    def get(self, path):
+        for prefix in sorted(self.routes, key=len, reverse=True):
+            if path.startswith(prefix):
+                return self.routes[prefix]
+        return None
+
+    def get_all(self, path):
+        return self.get(path) or []
+
+    def call(self, method, path, body=None):
+        if method == "GET":
+            return self.get(path)
+        self.writes.append((method, path, body))
+        return {}
+
+
+class RepoAuditTests(unittest.TestCase):
+    """The conventions audit (decisions 0011, 0012, 0014, 0016)."""
+
+    R = "/repos/me/app"
+    GOOD_RS = {"id": 7, "name": "main", "target": "branch", "enforcement": "active",
+               "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+               "rules": [{"type": "deletion"},
+                         {"type": "pull_request", "parameters": {"required_approving_review_count": 0}},
+                         {"type": "required_status_checks", "parameters": {
+                             "required_status_checks": [{"context": "auto-merge"}, {"context": "gitleaks"}]}}],
+               "bypass_actors": [dict(repo_audit.ADMIN_BYPASS)]}
+
+    def repo(self, **kw):
+        r = {"name": "app", "full_name": "me/app", "default_branch": "main", "private": False,
+             "allow_auto_merge": True, "owner": {"login": "me"},
+             "security_and_analysis": {"secret_scanning_push_protection": {"status": "enabled"}}}
+        r.update(kw)
+        return r
+
+    def gh(self, files=None, labels=("handoff", "handoff-proposed", "no-auto-merge"),
+           checks=("auto-merge", "gitleaks"), rulesets=None, toml='auto_merge = "on"\n', extra=None):
+        import base64
+        files = files if files is not None else [".claude/kb-capture.toml", "AGENTS.md",
+                                                  *repo_audit.AUTO_MERGE_FILES]
+        texts = {".claude/kb-capture.toml": toml, "AGENTS.md": "GitHub work follows decision 0014\n"}
+        routes = {
+            f"{self.R}/git/trees/main": {"tree": [{"path": p, "type": "blob", "sha": f"sha-{p}"} for p in files]},
+            f"{self.R}/labels": [{"name": n} for n in labels],
+            f"{self.R}/pulls?state=closed": [{"merged_at": "x", "head": {"sha": "abc"}}],
+            f"{self.R}/commits/abc/check-runs": {"check_runs": [{"name": c} for c in checks]},
+            f"{self.R}/rulesets?": [{"id": 7}] if rulesets is None else rulesets,
+            f"{self.R}/rulesets/7": self.GOOD_RS,
+        }
+        for p, t in texts.items():
+            routes[f"{self.R}/git/blobs/sha-{p}"] = {"content": base64.b64encode(t.encode()).decode()}
+        routes.update(extra or {})
+        return FakeGitHub(routes)
+
+    def audit(self, gh, repo=None, paid=False):
+        with mock.patch.object(repo_audit, "local_blob", lambda p: None):
+            return {f["check"]: f for f in repo_audit.audit_repo(gh, repo or self.repo(), paid)}
+
+    def test_adopted_public_repo_on_the_conventions_is_clean(self):
+        self.assertEqual(self.audit(self.gh()), {})
+
+    def test_not_adopted_and_empty_repos_are_one_info_line(self):
+        found = self.audit(self.gh(files=["README.md"]))
+        self.assertEqual(list(found), ["adopted"])
+        self.assertEqual(found["adopted"]["level"], "info")
+        self.assertEqual(list(self.audit(FakeGitHub({}))), ["empty"])
+
+    def test_each_drift_kind(self):
+        gh = self.gh(files=[".claude/kb-capture.toml", repo_audit.AUTO_MERGE_FILES[0]],
+                     labels=["handoff"], checks=["auto-merge"], rulesets=[])
+        repo = self.repo(allow_auto_merge=False, security_and_analysis={
+            "secret_scanning_push_protection": {"status": "disabled"}})
+        found = self.audit(gh, repo)
+        for check in ["agents-md", "auto-merge-pair", "labels", "gitleaks", "auto-merge-setting",
+                      "ruleset", "push-protection"]:
+            self.assertEqual(found[check]["level"], "drift", check)
+        self.assertEqual(found["labels"]["data"], ["handoff-proposed", "no-auto-merge"])
+
+    def test_required_check_that_never_reports_is_flagged(self):
+        found = self.audit(self.gh(checks=["auto-merge"],
+                                   extra={f"{self.R}/commits/main/check-runs": {"check_runs": [{"name": "gitleaks"}]}}))
+        self.assertIn("haven't reported", found["ruleset"]["text"])
+        self.assertNotIn("gitleaks", found)
+
+    def test_private_repo_on_free_skips_what_github_doesnt_enforce(self):
+        found = self.audit(self.gh(rulesets=[]), self.repo(private=True, allow_auto_merge=False))
+        self.assertEqual(list(found), ["auto-merge-setting"])
+        self.assertIn("GitHub Free", found["auto-merge-setting"]["text"])
+        self.assertEqual(self.audit(self.gh(rulesets=[], toml=""), self.repo(private=True)), {})
+
+    def test_ruleset_is_info_until_auto_merge_is_on(self):
+        found = self.audit(self.gh(rulesets=[], toml='auto_merge = "off"\n'))
+        self.assertEqual(found["ruleset"]["level"], "info")
+
+    def test_classic_protection_with_reviews_is_flagged(self):
+        prot = {f"{self.R}/branches/main/protection": {"required_pull_request_reviews": {"required_approving_review_count": 1}}}
+        self.assertIn("branch-protection", self.audit(self.gh(extra=prot)))
+
+    def test_patch_only_sends_allowed_keys(self):
+        with self.assertRaises(ValueError):
+            repo_audit.patch_repo(FakeGitHub({}), "me/app", {"private": False})
+        with self.assertRaises(ValueError):
+            repo_audit.patch_repo(FakeGitHub({}), "me/app", {"allow_auto_merge": True, "visibility": "public"})
+
+    def test_extending_a_ruleset_keeps_everything_and_appends(self):
+        rs = json.loads(json.dumps(self.GOOD_RS))
+        rs["bypass_actors"] = []
+        rs["rules"].append({"type": "some_future_rule", "parameters": {"x": 1}})
+        body = repo_audit.extended_ruleset(rs, {"auto-merge", "gitleaks", "validate"})
+        self.assertIn({"type": "some_future_rule", "parameters": {"x": 1}}, body["rules"])
+        self.assertIn({"type": "deletion"}, body["rules"])
+        ctx = [c["context"] for r in body["rules"] if r["type"] == "required_status_checks"
+               for c in r["parameters"]["required_status_checks"]]
+        self.assertEqual(ctx, ["auto-merge", "gitleaks", "validate"])
+        self.assertEqual(body["bypass_actors"], [repo_audit.ADMIN_BYPASS])
+        self.assertNotIn("id", body)
+        self.assertEqual(rs["bypass_actors"], [])  # the input isn't changed
+
+    def test_new_ruleset_needs_no_review_and_isnt_strict(self):
+        body = repo_audit.new_ruleset({"gitleaks"})
+        pr = next(r for r in body["rules"] if r["type"] == "pull_request")
+        rsc = next(r for r in body["rules"] if r["type"] == "required_status_checks")
+        self.assertEqual(pr["parameters"]["required_approving_review_count"], 0)
+        self.assertFalse(rsc["parameters"]["strict_required_status_checks_policy"])
+        self.assertEqual(body["conditions"]["ref_name"]["include"], ["~DEFAULT_BRANCH"])
+
+    def test_fix_applies_only_the_named_finding(self):
+        gh = self.gh(labels=["handoff"], rulesets=[])
+        user = {"login": "me", "plan": {"name": "free"}, "public_repos": 1}
+        gh.routes["/user/repos"] = [self.repo(allow_auto_merge=False)]
+        gh.routes["/user"] = user
+        with mock.patch.object(repo_audit, "Client", lambda tok: gh), \
+                mock.patch.object(repo_audit, "token_from_env", lambda: "t"), \
+                mock.patch.object(repo_audit, "local_blob", lambda p: None), \
+                mock.patch("sys.stdout"):
+            repo_audit.main(["--fix", "app/labels"])
+        self.assertEqual([(m, p) for m, p, _ in gh.writes],
+                         [("POST", f"{self.R}/labels"), ("POST", f"{self.R}/labels")])
+
+    def test_codespace_token_is_refused(self):
+        with self.assertRaises(SystemExit):
+            repo_audit.token_from_env({"CODESPACES": "true", "GITHUB_TOKEN": "x"})
+        self.assertEqual(repo_audit.token_from_env({"GH_TOKEN": "y"}), "y")
+
+    def test_summary_names_no_private_repo(self):
+        results = [(self.repo(name="secret-thing", private=True), []), (self.repo(name="kb"), [])]
+        out = repo_audit.report(results, summary=True)
+        self.assertNotIn("secret-thing", out)
+        self.assertIn("private-1", out)
+        self.assertIn("secret-thing (private-1)", repo_audit.report(results, summary=False))
 
 
 class SecretsTouchTests(unittest.TestCase):
