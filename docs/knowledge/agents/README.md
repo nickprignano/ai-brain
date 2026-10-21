@@ -377,6 +377,15 @@ overlapping triggers both fire on "lessons learned", so the older one gets turne
 one is installed. A setting, `private_layer`, decides whether public text may say the private
 layer exists; its contents stay private either way.
 
+## A brand skill that reads one file per project
+
+[brand-profile](../../../skills/brand-profile/README.md) makes pages, artifacts and images in a
+project's look by reading the project's `brand/profile.json` (format in the skill's
+`profile.schema.json`). A per-brand theme skill isn't needed on top of it: a profile's `starters`,
+`required` lines and `rules` carry what such a skill would say, so one skill serves every brand and
+none is the default. A profile is kept honest by a test in its own repo that checks it against
+the schema and the brand's token stylesheet (checked 2026-10-21).
+
 ## Skills that learn from use
 
 A skill can't rewrite its own files. In a claude.ai Project or cloud session, the synced skill

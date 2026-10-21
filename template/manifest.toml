@@ -16,6 +16,8 @@ include = [
   ".claude/skills/finisher-loop/SKILL.md",
   "skills/2ndbrain/*.md",
   "skills/park-it/*.md",
+  "skills/brand-profile/*.md",
+  "skills/brand-profile/*.json",
   ".github/ISSUE_TEMPLATE/*.yml",
   ".github/ISSUE_TEMPLATE/handoff.md",
   ".github/workflows/kb-*.yml",
