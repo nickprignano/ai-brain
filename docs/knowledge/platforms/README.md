@@ -3,7 +3,7 @@ title: "Platforms for AI apps"
 summary: "Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models"
 topic: platforms
 status: verified
-last_reviewed: 2026-10-20
+last_reviewed: 2026-10-21
 sources:
   - https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api
   - https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
@@ -37,6 +37,20 @@ Releases). Checked 2026-10-20 as the union of two independent searches:
   [cloudflare/ai](https://github.com/cloudflare/ai).
 
 Skip cloudflare/miniflare: Miniflare now lives in workers-sdk.
+
+**Microsoft overlap is thin.** Searching the cloudflare org on 2026-10-20 for Azure, Microsoft,
+Windows, Entra, Intune and Teams found one Microsoft-specific repo:
+[cloudflare/msft-risky-user-ad-sync](https://github.com/cloudflare/msft-risky-user-ad-sync), a
+scheduled Worker that copies Entra ID risky users into groups for Zero Trust policies (small, a
+handful of stars, open issues). The rest lives in
+[cloudflare/cloudflare-docs](https://github.com/cloudflare/cloudflare-docs), which takes outside PRs:
+about 35 Zero Trust pages on Entra ID (SSO, SCIM, Conditional Access, risky users) plus Intune
+deployment, Microsoft 365 egress IPs and browser-based RDP, but nothing on Azure Virtual Desktop,
+Windows 365 or VDI. Realistic ways to contribute from Microsoft experience: an issue or fix in that
+small repo, a generic virtual-desktop tutorial in the docs, Windows issues in
+[cloudflare/cloudflared](https://github.com/cloudflare/cloudflared) (the Tunnel client runs as a
+Windows service), and an Entra ID upstream-login example for workers-oauth-provider, which no issue
+asks for yet.
 
 ## Calling GitHub's API from Cloudflare Workers
 
