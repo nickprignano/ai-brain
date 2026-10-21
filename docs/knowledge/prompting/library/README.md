@@ -35,6 +35,7 @@ only as a close earlier version, or not yet. `status` keeps its usual meaning: t
 | [Prompt: Standing instructions for a Claude project](project-instructions.md) | Project-instruction lines the owner pastes into a new Claude project: model, red team, closeout, handoffs and guardrails | verified |
 | [Prompt: Red team a design or decision](red-team.md) | Has a second model attack a design, spec or decision record, returning numbered findings with severity, a fix and what's acceptable as is | verified |
 | [Prompt: Research how a project could use a set of tools](research-proposal.md) | Research-and-proposal only: evaluates candidate tools against a project's real architecture and threat model and returns a ranked recommendation | verified |
+| [Prompt: Set up a brand profile in a repo](set-up-brand-profile.md) | Has a project write brand/profile.json from the brand files its repo already has, with a test that keeps it equal to the stylesheet | partial |
 | [Prompt: Thread closeout](thread-closeout.md) | The closeout a thread runs before its final reply: lessons to the project KB, and to shared or private layers only after the owner's yes | verified |
 | [Prompt: Work the handoffs](work-the-handoffs.md) | Has a receiving project check its repos' handoff issues and pick up the live ones, following decision 0012's pickup rules | verified |
 <!-- END GENERATED: folder-index -->
