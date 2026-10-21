@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import shutil
 import subprocess
@@ -870,3 +871,23 @@ class HandoffTests(unittest.TestCase):
                 out = handoffs.session_start(Path("."))
             self.assertIn("check this repo's open `handoff` issues", out)
             self.assertNotIn("no open", out)
+
+
+class EncodingTests(unittest.TestCase):
+    def test_every_text_open_names_utf8(self):
+        # Python before 3.15 opens text in the ANSI code page on Windows (PEP 686) unless told otherwise.
+        missing = []
+        for path in sorted(p for p in Path(__file__).resolve().parent.glob("*.py") if not p.name.startswith("test_")):
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                if not isinstance(node, ast.Call):
+                    continue
+                f = node.func
+                name = f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else ""
+                if name not in ("open", "read_text", "write_text"):
+                    continue
+                mode = next((a.value for a in node.args if isinstance(a, ast.Constant) and isinstance(a.value, str) and set(a.value) <= set("rwaxbt+")), "")
+                mode = next((k.value.value for k in node.keywords if k.arg == "mode" and isinstance(k.value, ast.Constant)), mode)
+                if "b" in str(mode) or any(k.arg == "encoding" for k in node.keywords):
+                    continue
+                missing.append(f"{path.name}:{node.lineno}")
+        self.assertEqual(missing, [], "text opens without encoding=\"utf-8\"")

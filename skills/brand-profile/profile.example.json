@@ -1,0 +1,156 @@
+{
+  "$schema": "./profile.schema.json",
+  "schemaVersion": 1,
+  "name": "example-brand",
+  "tagline": "One line on what the project does.",
+  "summary": "What the project is and who it is for, in one or two sentences.",
+  "visibility": "public",
+  "updated": "2026-01-01",
+  "sourceOfTruth": {
+    "tokens": "site/assets/brand.css",
+    "docs": "docs/design-system.md"
+  },
+  "release": {
+    "version": "1.0.0",
+    "tag": "brand-v1.0.0",
+    "repo": "https://github.com/example-owner/example-repo"
+  },
+  "colors": {
+    "--bg": {
+      "light": "#ffffff",
+      "dark": "#111418"
+    },
+    "--surface": {
+      "light": "#f4f5f7",
+      "dark": "#1a1e24"
+    },
+    "--text": {
+      "light": "#1a1d21",
+      "dark": "#e8eaed"
+    },
+    "--muted": {
+      "light": "#5c6370",
+      "dark": "#9aa1ac"
+    },
+    "--line": {
+      "light": "#d9dce1",
+      "dark": "#2c323a"
+    },
+    "--accent": {
+      "light": "#2457c5",
+      "dark": "#7ea6ff",
+      "use": "Links and text-weight accents."
+    },
+    "--on-accent": {
+      "light": "#ffffff",
+      "dark": "#0b0d10"
+    },
+    "--good": {
+      "light": "#1e7b3c",
+      "dark": "#5fd38a",
+      "use": "Results only, always with a word."
+    },
+    "--caution": {
+      "light": "#8a5a00",
+      "dark": "#f2c14e",
+      "use": "Results only, always with a word."
+    },
+    "--bad": {
+      "light": "#b42318",
+      "dark": "#ff7a6e",
+      "use": "Results only, always with a word."
+    },
+    "--info": {
+      "light": "#1d5fb8",
+      "dark": "#7eb6ff",
+      "use": "Results only, always with a word."
+    }
+  },
+  "roles": {
+    "background": "--bg",
+    "surface": "--surface",
+    "text": "--text",
+    "muted": "--muted",
+    "line": "--line",
+    "accent": "--accent",
+    "onAccent": "--on-accent"
+  },
+  "type": {
+    "display": {
+      "family": "Inter",
+      "fallback": "system-ui, sans-serif",
+      "weights": [
+        600
+      ],
+      "files": [
+        "site/assets/fonts/inter-600.woff2"
+      ],
+      "googleFonts": "Inter"
+    },
+    "body": {
+      "family": "Inter",
+      "fallback": "system-ui, sans-serif",
+      "weights": [
+        400,
+        600
+      ],
+      "files": [
+        "site/assets/fonts/inter-400.woff2",
+        "site/assets/fonts/inter-600.woff2"
+      ],
+      "googleFonts": "Inter"
+    }
+  },
+  "shape": {
+    "--radius": "8px",
+    "--gutter": "16px",
+    "--measure": "68ch"
+  },
+  "assets": [
+    {
+      "file": "brand/mark.svg",
+      "kind": "mark",
+      "background": "light",
+      "use": "The logo mark on light backgrounds."
+    },
+    {
+      "file": "brand/mark-white.svg",
+      "kind": "mark",
+      "background": "dark",
+      "use": "The logo mark on dark backgrounds."
+    },
+    {
+      "file": "brand/favicon.svg",
+      "kind": "favicon",
+      "background": "any",
+      "use": "Browser tab icon; use below 24px."
+    }
+  ],
+  "starters": {
+    "page": "templates/page.html",
+    "artifact": "templates/artifact.html"
+  },
+  "required": [
+    {
+      "id": "notice",
+      "text": "One-line notice every page carries.",
+      "where": "before the first section"
+    },
+    {
+      "id": "credit",
+      "text": "Credit line.",
+      "where": "last line of the footer"
+    }
+  ],
+  "voice": {
+    "language": "en-US",
+    "rules": [
+      "Plain, short sentences; say what a thing does, not how it is built."
+    ]
+  },
+  "rules": [
+    "Colors only through tokens; a new color becomes a token in the tokens file first, with light and dark values.",
+    "Use the logo files; never redraw, recolor or stretch the mark.",
+    "Pages never load the brand's website or a CDN at run time; repos take a pinned copy."
+  ]
+}

@@ -32,6 +32,10 @@ sources:
   - https://github.com/repository-settings/app
   - https://github.com/BetaHuhn/repo-file-sync-action
   - https://cli.github.com/manual/gh_ruleset_check
+  - https://github.com/timelinize/timelinize
+  - https://github.com/AgriciDaniel/claude-obsidian
+  - https://github.com/HKUDS/LightRAG
+  - https://github.com/urchade/GLiNER
 ---
 
 # Agents and Claude Code
@@ -432,6 +436,19 @@ overlapping triggers both fire on "lessons learned", so the older one gets turne
 one is installed. A setting, `private_layer`, decides whether public text may say the private
 layer exists; its contents stay private either way.
 
+## A brand skill that reads one file per project
+
+[brand-profile](../../../skills/brand-profile/README.md) makes pages, artifacts and images in a
+project's look by reading the project's `brand/profile.json` (format in the skill's
+`profile.schema.json`). A per-brand theme skill isn't needed on top of it: a profile's `starters`,
+`required` lines and `rules` carry what such a skill would say, so one skill serves every brand and
+none is the default. A profile is kept honest by a test in its own repo that checks it against
+the schema and the brand's token stylesheet (checked 2026-10-21).
+
+A skill the 2ndbrain template ships lives in this repo's `skills/` and is listed in
+`template/manifest.toml`; the template's weekly `template-sync` exports it. Adding one straight to
+the template repo doesn't last: the export replaces everything but `.git`, so the next sync deletes it.
+
 ## Skills that learn from use
 
 A skill can't rewrite its own files. In a claude.ai Project or cloud session, the synced skill
@@ -535,6 +552,39 @@ Constraints:
 - No official connector as of 2026-10-20: Anthropic's connectors help page doesn't list one, and
   says custom connectors reach your MCP server from Anthropic's cloud, not your device, so the web
   chat still can't open a local vault. Third-party Obsidian MCP plugins exist; they aren't official.
+
+### Building a graph of personal data
+
+A prior-art survey on 2026-10-20 looked for tools that turn scattered personal data (cloud drives,
+social exports, chat exports, notes) into one store with an Obsidian-style graph of files and of
+people, places and topics. Stars and licences were read from GitHub that day.
+
+- **No single tool does it.** Copying and dedupe are solved (rclone, czkawka, dupeGuru), a local
+  timeline of people and places is close to solved
+  ([timelinize/timelinize](https://github.com/timelinize/timelinize), AGPL-3.0, imports Takeout,
+  Facebook, Instagram, messages and GPS, merges contacts across sources, but has no graph view and
+  says upgrades can mean rebuilding), and the Obsidian graph over the data is the gap.
+- **The popular "LLM wiki" vault tools send your content to a cloud model.**
+  [AgriciDaniel/claude-obsidian](https://github.com/AgriciDaniel/claude-obsidian) (MIT, about 15.7k
+  stars), SamurAIGPT/llm-wiki-agent and Ar9av/obsidian-wiki file sources into linked pages through
+  Claude or another hosted model. Fine for your own notes; wrong for other people's messages or
+  children's data.
+- **Fully local entity graphs need a strong GPU.**
+  [HKUDS/LightRAG](https://github.com/HKUDS/LightRAG) (MIT, has a graph web UI) gives
+  Qwen3-30B-A3B as its minimum for local extraction and warns slow models time out. A small
+  named-entity model like [GLiNER](https://github.com/urchade/GLiNER) (Apache-2.0) runs on CPU but
+  finds mentions only, with no merging of "Mom" and a full name, so over chat logs it makes a
+  hairball. For chats, take people from sender and participant fields instead.
+- **A vault of cards beats a card per item.** One Markdown note per folder or notable document, with
+  front matter that Dataview and [ExcaliBrain](https://github.com/zsviczian/excalibrain) read, keeps
+  Obsidian's graph usable; the global graph slows past roughly 10,000 to 20,000 notes (community
+  reports, not measured here).
+- **Keep a private vault off every sync path.** On Windows, Windows Backup can sync Desktop,
+  Documents and Pictures to OneDrive, so a private vault belongs outside those folders. Allow only
+  the plugins you need: [Smart Connections](https://github.com/brianpetro/obsidian-smart-connections)
+  is source-available under its own licence, not open source, and bundles cloud chat features.
+- **File names leak.** When an agent writes the indexing script, test it on a made-up folder and
+  have the owner share counts, not logs, because paths carry family members' names.
 
 ## Giving Claude a paid media API through an MCP server
 

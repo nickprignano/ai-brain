@@ -16,6 +16,7 @@ Errors we've hit, what caused them and what fixed them. The table is generated f
 |---|---|---|---|
 | GitHub REST API calls fail from a Cloudflare Worker but work from a browser or curl | GitHub requires a User-Agent header, and fetch() in a Worker doesn't send one | Set a User-Agent header naming your app on every request | [README.md](../platforms/README.md#calling-githubs-api-from-cloudflare-workers) |
 | `disallowed_useragent` from Google sign-in inside an Android app | Google OAuth blocks sign-in in embedded WebViews | Wrap the web app as a Trusted Web Activity, or install it as a PWA from Chrome | [README.md](../platforms/README.md#google-sign-in-inside-android-app-wrappers) |
+| UnicodeDecodeError: 'charmap' codec can't decode byte ... (or mangled non-ASCII text) when a KB script reads or writes a file on Windows | Before Python 3.15 (PEP 686), open(), Path.read_text() and Path.write_text() without encoding= use the ANSI code page on Windows, not UTF-8. | Pass encoding="utf-8" to every text open; EncodingTests in scripts/kb/test_kb.py fails on one that doesn't. *(unverified)* | [link](https://peps.python.org/pep-0686/) |
 <!-- END GENERATED: known-errors -->
 
 ## Adding an entry

@@ -152,7 +152,7 @@ def finding(repo: str, check: str, text: str, fix: str = "", level: str = "drift
             "level": level, "data": data}
 
 
-def read_text(gh: Client, full: str, sha: str) -> str:
+def blob_text(gh: Client, full: str, sha: str) -> str:
     blob = gh.get(f"/repos/{full}/git/blobs/{sha}") or {}
     return base64.b64decode(blob.get("content", "")).decode("utf-8", "replace")
 
@@ -217,9 +217,9 @@ def audit_repo(gh: Client, repo: dict, paid: bool) -> list[dict]:
     cfg = {}
     for path in SETTINGS:
         if path in blobs:
-            cfg = tomllib.loads(read_text(gh, full, blobs[path]))
+            cfg = tomllib.loads(blob_text(gh, full, blobs[path]))
             break
-    agents = read_text(gh, full, blobs["AGENTS.md"]) if "AGENTS.md" in blobs else ""
+    agents = blob_text(gh, full, blobs["AGENTS.md"]) if "AGENTS.md" in blobs else ""
     if not cfg and "0014" not in agents:
         return [finding(name, "adopted", "not on the conventions yet",
                         "adopt through a handoff issue in that repo", level="info")]
