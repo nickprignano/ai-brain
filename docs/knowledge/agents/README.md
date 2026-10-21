@@ -390,6 +390,10 @@ project's look by reading the project's `brand/profile.json` (format in the skil
 none is the default. A profile is kept honest by a test in its own repo that checks it against
 the schema and the brand's token stylesheet (checked 2026-10-21).
 
+A skill the 2ndbrain template ships lives in this repo's `skills/` and is listed in
+`template/manifest.toml`; the template's weekly `template-sync` exports it. Adding one straight to
+the template repo doesn't last: the export replaces everything but `.git`, so the next sync deletes it.
+
 ## Skills that learn from use
 
 A skill can't rewrite its own files. In a claude.ai Project or cloud session, the synced skill
