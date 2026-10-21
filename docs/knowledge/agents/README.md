@@ -449,6 +449,20 @@ A skill the 2ndbrain template ships lives in this repo's `skills/` and is listed
 `template/manifest.toml`; the template's weekly `template-sync` exports it. Adding one straight to
 the template repo doesn't last: the export replaces everything but `.git`, so the next sync deletes it.
 
+
+## A plan for the days Claude is out
+
+[offline-plan](../../../skills/offline-plan/README.md) turns "I'm offline until Sunday" into a private phone
+sheet and, optionally, a public live checklist. Three facts it relies on:
+- **`mergeable_state` is lazy.** GitHub's pull request API says `unknown` on the first read after a push, so
+  read it twice before calling a pull request ready or conflicted.
+- **Anonymous reads are capped.** Unauthenticated calls get 60 requests an hour per network, and a network
+  shared by several sessions runs out fast. A page that checks for itself has to cache its answers, skip
+  merged pull requests and read `x-ratelimit-remaining` before each batch.
+- **Two settings are readable without signing in on a public repo:** the rules in force on a branch
+  (`/rules/branches/{branch}`) and private vulnerability reporting (`/private-vulnerability-reporting`).
+  Secret scanning status is not. Checked 2026-10-21.
+
 ## Skills that learn from use
 
 A skill can't rewrite its own files. In a claude.ai Project or cloud session, the synced skill
