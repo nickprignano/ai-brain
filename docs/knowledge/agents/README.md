@@ -449,7 +449,6 @@ A skill the 2ndbrain template ships lives in this repo's `skills/` and is listed
 `template/manifest.toml`; the template's weekly `template-sync` exports it. Adding one straight to
 the template repo doesn't last: the export replaces everything but `.git`, so the next sync deletes it.
 
-
 ## A plan for the days Claude is out
 
 [offline-plan](../../../skills/offline-plan/README.md) turns "I'm offline until Sunday" into a private phone
