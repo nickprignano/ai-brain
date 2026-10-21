@@ -28,7 +28,7 @@ belongs to instead of starting a new file.
 | [prompting/library/](prompting/library/README.md) | Reusable, generalized prompts for the work and research we do: paste one, fill its placeholders, run it | verified |
 | [evals/](evals/README.md) | Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks | plan |
 | [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors | partial |
-| [platforms/](platforms/README.md) | Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models | verified |
+| [platforms/](platforms/README.md) | Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume | verified |
 | [learning/](learning/README.md) | Courses, docs, cookbooks and people worth following to learn how to build with AI | plan |
 | [troubleshooting/](troubleshooting/README.md) | Errors hit with the Claude API, SDKs, agents and AI tooling: symptom, cause, fix and source | verified |
 | [curation.md](curation.md) | How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment | verified |

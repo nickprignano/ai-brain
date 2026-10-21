@@ -1,6 +1,6 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models"
+summary: "Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume"
 topic: platforms
 status: verified
 last_reviewed: 2026-10-21
@@ -11,6 +11,8 @@ sources:
   - https://willitrunai.com/blog/video-generation-gpu-guide-2026
   - https://rocm.blogs.amd.com/artificial-intelligence/comfyui-windows/README.html
   - https://tomshardware.com/pc-components/ram/ram-price-index-2026-lowest-price-on-ddr5-and-ddr4-memory-of-all-capacities
+  - https://developers.cloudflare.com/workers-ai/platform/pricing/
+  - https://docs.x.ai/developers/models
 ---
 
 # Platforms for AI apps
@@ -134,3 +136,26 @@ Checked 2026-10-20 for a Windows PC (ComfyUI, NVIDIA):
 - **ComfyUI's local HTTP API makes it an easy MCP backend.** A media MCP server can post a saved
   workflow to `127.0.0.1:8188` instead of calling a paid API, cost 0, with the same job-id polling as
   hosted video.
+
+## Paying for image, video and speech at low volume
+
+Checked 2026-10-20 for one person making a few images, short clips and a podcast a month:
+
+- **A usage-billed API's spend cap isn't its cost.** xAI's media API has no monthly fee (images from
+  $0.02, video from $0.02 a second, speech $15 per million characters,
+  [xAI models](https://docs.x.ai/developers/models)), so light use costs a few dollars a month
+  whatever the cap is. Before looking for a cheaper provider, price the actual volume.
+- **A free tier is the only bigger lever.** Workers AI gives 10,000 neurons a day free on both
+  Workers plans, enough for roughly 90 FLUX.2 klein 1024px images a day; overage needs Workers Paid
+  ([Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)). It has
+  image, speech and transcription models but no video, so a hosted video API stays in the kit.
+- **Workers AI doesn't need a Worker.** It has a plain REST API, so a script or skill with an API
+  token can call it; a Worker or MCP server is extra build for a personal tool.
+- **Transcribe podcasts locally.** Whisper (whisper.cpp or faster-whisper) runs free on a CPU on
+  Windows and macOS and keeps audio on the machine. Hosted transcription of an hour-long file has to
+  be chunked to fit request-size limits.
+- **Podcast cover art is 3000x3000.** Apple and Spotify want 3000 px (1400 minimum), above what image
+  models make by default. Generate a background, set the type as SVG, render to 3000 px locally.
+- **Hosted audio cleanup is another data processor.** Free web tools that enhance speech upload the
+  recording; keep them off any episode with a child's voice if the data rules forbid that.
+
