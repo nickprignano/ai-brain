@@ -27,4 +27,5 @@ the family numbers its own decisions; refer to a sibling's as `<project> 0012`, 
 | [0016](0016-secrets-handling.md) | Secrets: one password manager as the master copy, keys only in each service's own secret store | Accepted |
 | [0017](0017-outside-review-for-high-stakes-work.md) | Outside review: high-stakes work gets one pass from another company's model, through a file | Accepted |
 | [0018](0018-family-format-stronger-leak-check.md) | Family format: a stronger leak check and reviewed model-drafted entries | Proposed |
+| [0019](0019-family-format-hub-and-private-layer-by-default.md) | Family format: this hub and the private layer are the default home for every domain | Proposed |
 <!-- END GENERATED: decision-index -->

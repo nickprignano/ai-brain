@@ -70,6 +70,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0016. Secrets: one password manager as the master copy, keys only in each service's own secret store](docs/knowledge/decisions/0016-secrets-handling.md): accepted
 - [0017. Outside review: high-stakes work gets one pass from another company's model, through a file](docs/knowledge/decisions/0017-outside-review-for-high-stakes-work.md): accepted
 - [0018. Family format: a stronger leak check and reviewed model-drafted entries](docs/knowledge/decisions/0018-family-format-stronger-leak-check.md): proposed
+- [0019. Family format: this hub and the private layer are the default home for every domain](docs/knowledge/decisions/0019-family-format-hub-and-private-layer-by-default.md): proposed
 
 ## Related knowledge bases
 
