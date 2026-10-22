@@ -74,7 +74,7 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0017. Outside review: high-stakes work gets one pass from another company's model, through a file](docs/knowledge/decisions/0017-outside-review-for-high-stakes-work.md): accepted
 - [0018. Family format: a stronger leak check and reviewed model-drafted entries](docs/knowledge/decisions/0018-family-format-stronger-leak-check.md): proposed
 - [0020. Every repo Claude works in has an AGENTS.md with the four change rules](docs/knowledge/decisions/0020-agents-md-in-every-repo.md): accepted
-- [0021. A sandbox mode in the 2ndbrain template, for agents from other vendors](docs/knowledge/decisions/0021-sandbox-for-outside-agents.md): proposed
+- [0021. A sandbox mode in the 2ndbrain template, for agents from other vendors](docs/knowledge/decisions/0021-sandbox-for-outside-agents.md): accepted
 
 ## Related knowledge bases
 

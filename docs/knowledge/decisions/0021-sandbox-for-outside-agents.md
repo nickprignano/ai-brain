@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-10-22
 decision-makers: [maintainer]
 ---
@@ -79,7 +79,7 @@ rather than one folder. All four are fixed above. A fresh-Claude control review 
 file (decision 0017) then found that prompts, commit metadata and branch names escaped the seed
 rule, that the Codespace's devcontainer and account-wide Codespaces settings could widen its reach,
 that agents can disable the CI check, and that the first token check proved the wrong thing; those
-are fixed above too. The outside reviewer's pass is pending. Fable's red team of the local-container addendum found the
+are fixed above too. The owner accepted this on 2026-10-22 without the outside reviewer's pass, which never ran. Fable's red team of the local-container addendum found the
 VS Code credential sockets, git hooks planted through a bind-mounted folder, the need for Docker
 Desktop 4.44.3 or later, and that a Google sign-in gives the agent the owner's Google token; all are
 handled above or in the sandbox README. Revisit after six months of use, or when a vendor
