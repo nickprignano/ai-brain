@@ -41,7 +41,7 @@ class Kit(unittest.TestCase):
 
     def commit_all(self):
         subprocess.run(["git", "add", "-A"], cwd=self.root, check=True)
-        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "c"],
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "--no-verify", "-qm", "c"],
                        cwd=self.root, check=True)
 
     def make_sandbox(self):
@@ -187,6 +187,18 @@ class SandboxTests(Kit):
         self.assertEqual(pc.check_local(self.root, status=lambda r: 404), ([], []))
         errors, _ = pc.check_local(self.root, status=lambda r: 404, words=["bluebird"])
         self.assertIn("a private name", errors[0])
+
+    def test_sandbox_check_catches_names_in_history_and_wider_codespaces(self):
+        self.make_sandbox()
+        self.commit_all()
+        self.assertEqual(pc.check_local(self.root, status=lambda r: 404, words=["bluebird"]), ([], []))
+        subprocess.run(["git", "branch", "bluebird-notes"], cwd=self.root, check=True)
+        errors, _ = pc.check_local(self.root, status=lambda r: 404, words=["bluebird"])
+        self.assertIn("git history or a branch name", errors[0])
+        dc = self.root / ".devcontainer/devcontainer.json"
+        dc.parent.mkdir()
+        dc.write_text('{"customizations": {"codespaces": {"repositories": {"octo/vault": {}}}}}')
+        self.assertIn("other repos", pc.check_ci(True, False, self.root)[0])
 
 
 if __name__ == "__main__":

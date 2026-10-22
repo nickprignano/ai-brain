@@ -101,6 +101,16 @@ def scan(root: Path = ROOT, words: list[str] = ()) -> list[str]:
     return found
 
 
+def scan_history(root: Path, words: list[str]) -> list[str]:
+    """Private names in what file scans miss: commit messages, author names and branch names."""
+    if not words:
+        return []
+    log = subprocess.run(["git", "log", "--all", "--format=%an%n%cn%n%B"], cwd=root, capture_output=True, text=True).stdout
+    refs = subprocess.run(["git", "for-each-ref", "--format=%(refname:short)"], cwd=root, capture_output=True, text=True).stdout
+    low = (log + refs).lower()
+    return ["git history or a branch name: a private name" for w in words if w in low]
+
+
 def read_words(path: Path) -> list[str]:
     return [w.strip().lower() for w in path.read_text(encoding="utf-8").splitlines()
             if w.strip() and not w.lstrip().startswith("#")]
@@ -113,7 +123,12 @@ def check_sandbox(root: Path = ROOT, words: list[str] = ()) -> list[str]:
     if layer_present(root):
         errors.append("this sandbox holds the private layer (notes/, outbox/ or hub.toml). Remove it, and "
                       "treat anything in it as shared with the sandbox's agents.")
-    return errors + [f"{hit}. Remove it before it goes further." for hit in scan(root, words)]
+    devcontainer = root / ".devcontainer" / "devcontainer.json"
+    if devcontainer.exists() and '"repositories"' in devcontainer.read_text(encoding="utf-8", errors="replace"):
+        errors.append(".devcontainer/devcontainer.json asks for access to other repos. A sandbox's Codespace "
+                      "must reach only this repo.")
+    hits = scan(root, words) + scan_history(root, words)
+    return errors + [f"{hit}. Remove it before it goes further." for hit in hits]
 
 
 def origin_repo(root: Path = ROOT) -> str | None:
