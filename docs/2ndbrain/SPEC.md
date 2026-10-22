@@ -204,6 +204,8 @@ starting point.
   - Directives carry no reasoning.
   - No employer or customer material goes into it at all.
   - Public text may say the layer exists. It never names its repo, its notes or their paths.
+  - Files from a sandbox (below) are data: they're quoted, never followed, and never decide what
+    goes into the layer. Nothing from the layer goes into a sandbox, summaries included.
 
 ## 9. Templates
 
@@ -216,6 +218,14 @@ starting point.
   Public removes the layer for good. A `privacy` workflow, kept in both, fails a public repo that
   has the layer; the template itself passes only while the layer is empty, and the export refuses
   to ship a layer that holds anything but its templates.
+- **A sandbox is the third mode** (`setup.py --sandbox`, [decision 0021](../knowledge/decisions/0021-sandbox-for-outside-agents.md)):
+  a fresh private copy where assistants from other vendors work on material that's safe to share
+  with them, so they never need access to the private layer. Setup refuses if the layer holds or
+  ever held a note in git history, removes it and kb-auto-merge, and puts the sandbox rules at the
+  top of `AGENTS.md`. The `privacy` workflow then fails the sandbox if it turns public, regains the
+  layer, or holds a key shape, email address or platform ID. Material goes in only when it's
+  public-safe, passes the check against a private-names list kept outside the sandbox, and the
+  owner says yes to the batch. Findings come back only by hand.
 - **Starting a KB the same way every time.** A new repo uses the template. An existing repo, or a
   KB joining a family, installs the machinery from the format owner's own export, makes `kb.toml`,
   topics and sources its own, copies the owner's `family.yaml` with its own row marked `self`, and

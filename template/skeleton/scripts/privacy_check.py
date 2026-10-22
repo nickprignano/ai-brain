@@ -2,12 +2,19 @@
 
     python3 scripts/privacy_check.py                                   # before a commit
     python3 scripts/privacy_check.py --ci --private BOOL --template BOOL  # in CI
+    python3 scripts/privacy_check.py --words ../names.txt              # a sandbox, before seeding it
 
 The private layer is notes/, outbox/ and hub.toml. Before a commit, this asks GitHub (no token)
 whether the origin repo is world-readable, and refuses if it is and the layer is here. In CI it uses
 the repo's real visibility: a public repo fails if it has the layer at all, unless it is the
 template itself, and fails even then if the layer holds a real note or directive. The repo's
 visibility is the only setting that counts; there is no config switch to get wrong.
+
+A sandbox (set up with `setup.py --sandbox`, marked in AGENTS.md) must never hold the private layer,
+and every file in it is scanned for key and token shapes, email addresses and platform IDs. That
+scan is a backstop: the owner's yes to each batch is the control. `--words` adds a list of private
+names, one per line, from a file kept outside the sandbox, since the sandbox's agents read every
+file in it.
 
 Self-contained and standard library only: it stays in public KBs after setup removes the layer, so
 a notes/ folder that turns up later is still caught.
@@ -26,6 +33,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LAYER = ["notes", "outbox", "hub.toml"]
 TEMPLATE_FILES = {"_template.md"}
+SANDBOX_MARK = "<!-- sandbox rules -->"
+BINARY = {".pyc", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".zip", ".ico"}
+LEAKS = [
+    (re.compile(r"\b(sk-[\w-]{16,}|ghp_\w{20,}|gho_\w{20,}|github_pat_\w{20,}|xai-\w{16,}|AIza[\w-]{30,}|AKIA[0-9A-Z]{16})"),
+     "a key or token"),
+    (re.compile(r"\b(?!git@)[\w.+-]+@(?!(?:example\.(?:com|org|net)|contoso\.com)\b)[\w-]+(?:\.[\w-]+)*\.[A-Za-z]{2,}\b"),
+     "an email address"),
+    (re.compile(r"\b(env|trig|cse|session|chan|cmsg|skill|user|org|acct)_[0-9A-Za-z]{12,}"), "a platform ID"),
+]
 
 
 def layer_present(root: Path = ROOT) -> bool:
@@ -47,6 +63,72 @@ def real_content(root: Path = ROOT) -> list[str]:
     if outbox.is_dir():
         found += [p.relative_to(root).as_posix() for p in sorted(outbox.glob("*.toml"))]
     return found
+
+
+def is_private_path(rel: str) -> bool:
+    """A path a person wrote in the private layer, as opposed to the empty kit."""
+    parts = rel.split("/")
+    if parts[0] == "notes":
+        return len(parts) > 2 and parts[-1] not in TEMPLATE_FILES
+    return parts[0] == "outbox" and rel.endswith(".toml")
+
+
+def real_content_in_history(root: Path = ROOT) -> list[str]:
+    """Private-layer paths any commit ever held: a deleted note is still readable in history."""
+    r = subprocess.run(["git", "log", "--all", "--name-only", "--format=", "--", "notes", "outbox"],
+                       cwd=root, capture_output=True, text=True)
+    return sorted({rel for rel in r.stdout.split("\n") if rel and is_private_path(rel)})
+
+
+def is_sandbox(root: Path = ROOT) -> bool:
+    agents = root / "AGENTS.md"
+    return agents.exists() and SANDBOX_MARK in agents.read_text(encoding="utf-8", errors="replace")
+
+
+def scan(root: Path = ROOT, words: list[str] = ()) -> list[str]:
+    """Leak shapes and private names in a sandbox's files."""
+    found = []
+    for p in sorted(root.rglob("*")):
+        parts = p.relative_to(root).parts
+        if ".git" in parts or "__pycache__" in parts or not p.is_file() or p.suffix.lower() in BINARY:
+            continue
+        rel = p.relative_to(root).as_posix()
+        text = p.read_text(encoding="utf-8", errors="replace")
+        for n, line in enumerate(text.splitlines(), 1):
+            found += [f"{rel}:{n}: {what}" for rx, what in LEAKS if rx.search(line)]
+            low = line.lower()
+            found += [f"{rel}:{n}: a private name" for w in words if w in low]
+    return found
+
+
+def scan_history(root: Path, words: list[str]) -> list[str]:
+    """Private names in what file scans miss: commit messages, author names and branch names."""
+    if not words:
+        return []
+    log = subprocess.run(["git", "log", "--all", "--format=%an%n%cn%n%B"], cwd=root, capture_output=True, text=True).stdout
+    refs = subprocess.run(["git", "for-each-ref", "--format=%(refname:short)"], cwd=root, capture_output=True, text=True).stdout
+    low = (log + refs).lower()
+    return ["git history or a branch name: a private name" for w in words if w in low]
+
+
+def read_words(path: Path) -> list[str]:
+    return [w.strip().lower() for w in path.read_text(encoding="utf-8").splitlines()
+            if w.strip() and not w.lstrip().startswith("#")]
+
+
+def check_sandbox(root: Path = ROOT, words: list[str] = ()) -> list[str]:
+    if not is_sandbox(root):
+        return []
+    errors = []
+    if layer_present(root):
+        errors.append("this sandbox holds the private layer (notes/, outbox/ or hub.toml). Remove it, and "
+                      "treat anything in it as shared with the sandbox's agents.")
+    devcontainer = root / ".devcontainer" / "devcontainer.json"
+    if devcontainer.exists() and '"repositories"' in devcontainer.read_text(encoding="utf-8", errors="replace"):
+        errors.append(".devcontainer/devcontainer.json asks for access to other repos. A sandbox's Codespace "
+                      "must reach only this repo.")
+    hits = scan(root, words) + scan_history(root, words)
+    return errors + [f"{hit}. Remove it before it goes further." for hit in hits]
 
 
 def origin_repo(root: Path = ROOT) -> str | None:
@@ -71,6 +153,11 @@ def public_status(repo: str) -> int | None:
 
 
 def check_ci(private: bool, template: bool, root: Path = ROOT) -> list[str]:
+    sandbox = check_sandbox(root)
+    if is_sandbox(root) and not private:
+        sandbox.append("this sandbox is public. Make it private now and treat its contents as exposed.")
+    if sandbox:
+        return sandbox
     if private or not layer_present(root):
         return []
     content = real_content(root)
@@ -83,8 +170,11 @@ def check_ci(private: bool, template: bool, root: Path = ROOT) -> list[str]:
             "Make the repo private, or run `python3 scripts/setup.py --public` to remove the layer."]
 
 
-def check_local(root: Path = ROOT, status=public_status) -> tuple[list[str], list[str]]:
+def check_local(root: Path = ROOT, status=public_status, words: list[str] = ()) -> tuple[list[str], list[str]]:
     """(errors, warnings) before a commit."""
+    sandbox = check_sandbox(root, words)
+    if sandbox:
+        return sandbox, []
     if not layer_present(root):
         return [], []
     repo = origin_repo(root)
@@ -107,11 +197,12 @@ def main() -> int:
     ap.add_argument("--ci", action="store_true", help="use the visibility CI passes in instead of asking GitHub")
     ap.add_argument("--private", default="false", help="CI: github.event.repository.private")
     ap.add_argument("--template", default="false", help="CI: whether this repo is the template itself")
+    ap.add_argument("--words", type=Path, help="a sandbox: file of private names, one per line, kept outside it")
     args = ap.parse_args()
     if args.ci:
         errors, warnings = check_ci(flag(args.private), flag(args.template)), []
     else:
-        errors, warnings = check_local()
+        errors, warnings = check_local(words=read_words(args.words) if args.words else [])
     for w in warnings:
         print(f"warning: {w}")
     for e in errors:
