@@ -72,8 +72,10 @@ yourself on a fresh clone.
 - **Set no other Codespaces secrets for this repo.** An agent can read every environment variable.
 - **Commit with your GitHub noreply address** (Settings > Emails), so commit metadata doesn't carry
   your real one.
-- **On your own computer, only in a plain Docker terminal** (next section). Run directly on your
-  computer, an agent falls back to your stored GitHub login and can read any folder you can.
+- **On your own computer, only in a separate computer account** (for a desktop IDE such as
+  Antigravity, see [ANTIGRAVITY.md](ANTIGRAVITY.md)) **or a plain Docker terminal** (next section).
+  Run directly in your own account, an agent falls back to your stored GitHub login and can read
+  any folder you can.
 - **Stronger still: a second GitHub account** that owns only the sandbox. Its login, Codespaces
   settings and agent subscriptions can't reach your repos at all, and its pull requests aren't
   yours.
@@ -111,9 +113,10 @@ gh repo clone <you>/<sandbox>
 gh api repos/<you>/<a-private-repo> --silent; echo $?   # must fail with a 404
 ```
 
-`copilot` and `gemini` are installed. Copilot CLI uses gh's token. For Gemini CLI, use an API key
-from a separate Google Cloud project (`export GEMINI_API_KEY=...` inside the container) or a second
-Google account, not your main Google sign-in. Everything, the token included, stays in the
+`copilot` and `gemini` are installed. Copilot CLI uses gh's token. Gemini CLI no longer serves a
+Google sign-in on personal plans (unverified, see [ANTIGRAVITY.md](ANTIGRAVITY.md)), so give it a
+paid API key from a separate Google Cloud project (`export GEMINI_API_KEY=...` inside the
+container), never your main Google sign-in. Everything, the token included, stays in the
 `agent-sandbox` volume; `docker volume rm agent-sandbox` wipes it, and revoking the token cuts it
 off. Rebuild the image to pick up new CLI versions.
 
