@@ -40,7 +40,7 @@ PRIVATE_LAYER = [
     ".github/workflows/private-layer.yml",
     ".github/workflows/rollup.yml",
 ]
-SANDBOX = ["sandbox"]
+SANDBOX = ["sandbox", ".devcontainer"]
 # An agent's PR opened with the owner's token counts as the owner's, so a sandbox never auto-merges.
 SANDBOX_DROPS = [".github/workflows/kb-auto-merge.yml"]
 RULES = "sandbox/RULES.md"
