@@ -36,10 +36,13 @@ the unit tests, which export the template and check it.
 ## How to make a change
 
 Four rules after the community "Karpathy guidelines" (MIT), reworded for agents that work unattended.
+Every repo worked on with Claude carries this section, and its `CLAUDE.md` imports this file (hub
+decision 0019, [SPEC](docs/2ndbrain/SPEC.md)).
 
 - Say what you assumed. When the ask leaves a detail open, pick the reasonable default, say which,
   and keep going. Stop to ask only when the choice changes the goal, something the owner will
-  notice, or a step no one can undo. If a simpler way exists than the one asked for, say so.
+  notice, or a step no one can undo; if no one is there to answer, do the reversible part and leave
+  the question in the PR body. If a simpler way exists than the one asked for, say so.
 - Write the least code that does the job: no features, options or abstractions nobody asked for,
   and no handling for cases that can't happen.
 - Touch only what the task needs and match the style around it. Every changed line should trace

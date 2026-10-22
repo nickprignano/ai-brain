@@ -23,6 +23,7 @@ only as a close earlier version, or not yet. `status` keeps its usual meaning: t
 <!-- BEGIN GENERATED: folder-index (from front matter; run scripts/kb/build.py) -->
 | Page | What's in it | Status |
 |---|---|---|
+| [Prompt: Add an AGENTS.md to a repo](add-agents-md.md) | Has Claude give a repo an AGENTS.md with its guardrails and the four change rules, and make CLAUDE.md import it (decision 0019) | verified |
 | [Prompt: Adopt a hub decision in a sibling project](adopt-family-decision.md) | Asks a sibling project to record a hub decision as its own copy, install the machinery from the hub's export and pilot it | verified |
 | [Prompt: Apply red-team findings in another project](apply-red-team-fixes.md) | Hands a red-team findings file to the project that owns the design, to fix, accept or dispute each finding through pull requests | verified |
 | [Prompt: Back up a Claude project's setup as a note](back-up-project-setup.md) | Has a Claude project describe its own setup (instructions, repos, model, scheduled tasks, connectors) as one linked note, with secrets, IDs and private data left out | verified |

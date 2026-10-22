@@ -3,9 +3,10 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: partial
-last_reviewed: 2026-10-21
+last_reviewed: 2026-10-22
 sources:
   - https://code.claude.com/docs/en/costs
+  - https://code.claude.com/docs/en/memory
   - https://code.claude.com/docs/en/model-config
   - https://support.claude.com/en/articles/9797557-usage-limit-best-practices
   - https://www.sourcepulse.org/projects/28283027
@@ -521,8 +522,9 @@ What we learned getting them in:
 ### The "Karpathy guidelines"
 
 [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills)
-(MIT per its README; no LICENSE file) is a community distillation of Andrej Karpathy's January
-2026 post on LLM coding mistakes, not something he wrote. It is one CLAUDE.md with four rules:
+(MIT per its README; no LICENSE file) is a community distillation of
+[Andrej Karpathy's post of 2026-01-26](https://x.com/karpathy/status/2015883857489522876) on LLM
+coding mistakes, not something he wrote. It is one CLAUDE.md with four rules:
 think before coding, simplicity first, surgical changes, and goal-driven execution. Its own
 caveat is that the rules trade speed for caution.
 
@@ -533,6 +535,13 @@ out loud, and paired it with the rule threads already follow: pick the reasonabl
 which, and ask only when the answer changes the goal, a visible result or an irreversible step.
 The template's `AGENTS.md` now carries the four rules in that form, in our own words, under "How
 to make a change"; siblings pick it up on their next template sync.
+
+Since [0019](../decisions/0019-agents-md-in-every-repo.md) the rules are a floor for every repo
+the owner works on with Claude, not only the knowledge bases: each repo's `AGENTS.md` carries the
+section and its `CLAUDE.md` imports it (Claude Code reads `AGENTS.md` itself only when there's
+no `CLAUDE.md`, and not in every session: [docs](https://code.claude.com/docs/en/memory#agents-md)),
+and the repo audit flags a repo that lacks either. Repos outside the template start from the
+[Add an AGENTS.md prompt](../prompting/library/add-agents-md.md).
 
 Much of this already lives in Claude Code's own instructions (match the surrounding style, act
 when you have enough to act). Writing it into `AGENTS.md` still pays: other agents that read

@@ -583,9 +583,10 @@ class RepoAuditTests(unittest.TestCase):
     def gh(self, files=None, labels=("handoff", "handoff-proposed", "no-auto-merge"),
            checks=("auto-merge", "gitleaks"), rulesets=None, toml='auto_merge = "on"\n', extra=None):
         import base64
-        files = files if files is not None else [".claude/kb-capture.toml", "AGENTS.md",
+        files = files if files is not None else [".claude/kb-capture.toml", "AGENTS.md", "CLAUDE.md",
                                                   *repo_audit.AUTO_MERGE_FILES]
-        texts = {".claude/kb-capture.toml": toml, "AGENTS.md": "GitHub work follows decision 0014\n"}
+        texts = {".claude/kb-capture.toml": toml, "CLAUDE.md": "@AGENTS.md\n",
+                 "AGENTS.md": "GitHub work follows decision 0014\n\n## How to make a change\n\n- Say what you assumed.\n"}
         routes = {
             f"{self.R}/git/trees/main": {"tree": [{"path": p, "type": "blob", "sha": f"sha-{p}"} for p in files]},
             f"{self.R}/labels": [{"name": n} for n in labels],
@@ -606,11 +607,27 @@ class RepoAuditTests(unittest.TestCase):
     def test_adopted_public_repo_on_the_conventions_is_clean(self):
         self.assertEqual(self.audit(self.gh()), {})
 
-    def test_not_adopted_and_empty_repos_are_one_info_line(self):
+    def test_not_adopted_and_empty_repos_are_one_info_line_plus_the_change_rules(self):
         found = self.audit(self.gh(files=["README.md"]))
-        self.assertEqual(list(found), ["adopted"])
+        self.assertEqual(list(found), ["adopted", "change-rules"])
         self.assertEqual(found["adopted"]["level"], "info")
         self.assertEqual(list(self.audit(FakeGitHub({}))), ["empty"])
+
+    def test_change_rules_need_a_claude_md_to_import_agents_md(self):
+        files = [".claude/kb-capture.toml", "AGENTS.md", *repo_audit.AUTO_MERGE_FILES]
+        self.assertEqual(self.audit(self.gh(files=files)), {})
+        import base64
+
+        def claude_md(text, path="CLAUDE.md"):
+            return self.audit(self.gh(files=[*files, path], extra={
+                f"{self.R}/git/blobs/sha-{path}": {"content": base64.b64encode(text.encode()).decode()}}))
+        self.assertEqual(claude_md("AGENTS.md"), {})  # a symlink's blob is its target
+        self.assertEqual(claude_md("# Rules\n\n@AGENTS.md\n"), {})
+        for text, path in [("# Rules\n", "CLAUDE.md"), ("See AGENTS.md for history.\n", "CLAUDE.md"),
+                           ("# Rules\n", ".claude/CLAUDE.md")]:
+            found = claude_md(text, path)
+            self.assertEqual(list(found), ["change-rules"], text)
+            self.assertIn("CLAUDE.md", found["change-rules"]["text"])
 
     def test_each_drift_kind(self):
         gh = self.gh(files=[".claude/kb-capture.toml", repo_audit.AUTO_MERGE_FILES[0]],
@@ -618,7 +635,7 @@ class RepoAuditTests(unittest.TestCase):
         repo = self.repo(allow_auto_merge=False, security_and_analysis={
             "secret_scanning_push_protection": {"status": "disabled"}})
         found = self.audit(gh, repo)
-        for check in ["agents-md", "auto-merge-pair", "labels", "gitleaks", "auto-merge-setting",
+        for check in ["change-rules", "agents-md", "auto-merge-pair", "labels", "gitleaks", "auto-merge-setting",
                       "ruleset", "push-protection"]:
             self.assertEqual(found[check]["level"], "drift", check)
         self.assertEqual(found["labels"]["data"], ["handoff-proposed", "no-auto-merge"])

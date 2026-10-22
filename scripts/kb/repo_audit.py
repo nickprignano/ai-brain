@@ -12,10 +12,14 @@ The owner runs it with their own login; nothing is stored and the token is never
       Re-runs the audit and applies only the named findings. Typing the ids is the owner's yes.
 
 What it checks, for each owned repo that isn't archived, a fork, empty, or tagged with the topic
-`no-conventions-audit` (decisions 0011, 0012, 0014 and 0016):
+`no-conventions-audit` (decisions 0011, 0012, 0014, 0016 and 0019):
 
+  change-rules    every repo, adopted or not: the root AGENTS.md has the "How to make a change"
+                  section, and a root or .claude/ CLAUDE.md, if there is one, imports it (an
+                  `@AGENTS.md` line or a symlink): Claude Code reads AGENTS.md only when there's
+                  no CLAUDE.md.
   adopted         the repo has docs/knowledge/kb.toml or .claude/kb-capture.toml, or its AGENTS.md
-                  names decision 0014. A repo that hasn't is one line, not a list of failures.
+                  names decision 0014. A repo that hasn't gets this info line and change-rules only.
   agents-md       AGENTS.md exists and names decision 0014.
   labels          handoff and handoff-proposed; no-auto-merge with kb-auto-merge; no-kb with kb-capture.
   auto-merge-pair the kb-auto-merge workflow and auto_merge.py are copied together.
@@ -57,6 +61,9 @@ SKIP_TOPIC = "no-conventions-audit"
 SETTINGS = ["docs/knowledge/kb.toml", ".claude/kb-capture.toml"]
 AUTO_MERGE_FILES = (".github/workflows/kb-auto-merge.yml", "scripts/kb/auto_merge.py")
 CAPTURE_WORKFLOW = ".github/workflows/kb-capture.yml"
+CHANGE_RULES = ("## How to make a change", "Say what you assumed")
+CLAUDE_MDS = ["CLAUDE.md", ".claude/CLAUDE.md"]
+IMPORT_LINE = re.compile(r"^@AGENTS\.md\s*$", re.M)
 # Files repos copy unchanged from the template (none of them is a manifest `replace` target).
 COPIED = [*AUTO_MERGE_FILES, CAPTURE_WORKFLOW, "scripts/kb/capture_check.py",
           "scripts/kb/handoffs.py", ".github/workflows/secrets.yml"]
@@ -220,10 +227,17 @@ def audit_repo(gh: Client, repo: dict, paid: bool) -> list[dict]:
             cfg = tomllib.loads(blob_text(gh, full, blobs[path]))
             break
     agents = blob_text(gh, full, blobs["AGENTS.md"]) if "AGENTS.md" in blobs else ""
+    out = []
+    claudes = [blob_text(gh, full, blobs[p]) for p in CLAUDE_MDS if p in blobs]
+    if not all(s in agents for s in CHANGE_RULES):
+        out.append(finding(name, "change-rules", 'AGENTS.md is missing or has no "How to make a change"',
+                           "add it through a handoff issue (decision 0019)"))
+    elif any(not IMPORT_LINE.search(c) and c.strip() != "AGENTS.md" for c in claudes):
+        out.append(finding(name, "change-rules", "CLAUDE.md doesn't import AGENTS.md, so Claude Code skips it",
+                           "make CLAUDE.md the one line @AGENTS.md (decision 0019)"))
     if not cfg and "0014" not in agents:
         return [finding(name, "adopted", "not on the conventions yet",
-                        "adopt through a handoff issue in that repo", level="info")]
-    out = []
+                        "adopt through a handoff issue in that repo", level="info"), *out]
     if "0014" not in agents:
         out.append(finding(name, "agents-md", "AGENTS.md is missing or doesn't name decision 0014",
                            "add the conventions line through a handoff issue"))
