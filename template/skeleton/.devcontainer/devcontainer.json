@@ -1,0 +1,20 @@
+{
+  // For Codespaces. On your own computer, use plain `docker run` instead (sandbox/README.md):
+  // VS Code attached to a local container can hand the container your host GitHub login.
+  "name": "sandbox",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "node",
+  "customizations": {
+    "vscode": {
+      "extensions": [],
+      "settings": {
+        "dev.containers.copyGitConfig": false,
+        "dev.containers.gitCredentialHelperConfigLocation": "none",
+        "dev.containers.dockerCredentialHelper": false,
+        "git.terminalAuthentication": false,
+        "github.gitAuthentication": false,
+        "remote.autoForwardPorts": false
+      }
+    }
+  }
+}

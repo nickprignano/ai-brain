@@ -34,11 +34,14 @@ ROOT = Path(__file__).resolve().parents[1]
 LAYER = ["notes", "outbox", "hub.toml"]
 TEMPLATE_FILES = {"_template.md"}
 SANDBOX_MARK = "<!-- sandbox rules -->"
+# devcontainer.json keys that reach other repos, mount host paths, widen the container or run on the host.
+DEVCONTAINER_KEYS = ["repositories", "initializeCommand", "mounts", "workspaceMount", "runArgs",
+                     "dockerComposeFile", "privileged", "capAdd", "securityOpt"]
 BINARY = {".pyc", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".zip", ".ico"}
 LEAKS = [
     (re.compile(r"\b(sk-[\w-]{16,}|ghp_\w{20,}|gho_\w{20,}|github_pat_\w{20,}|xai-\w{16,}|AIza[\w-]{30,}|AKIA[0-9A-Z]{16})"),
      "a key or token"),
-    (re.compile(r"\b(?!git@)[\w.+-]+@(?!(?:example\.(?:com|org|net)|contoso\.com)\b)[\w-]+(?:\.[\w-]+)*\.[A-Za-z]{2,}\b"),
+    (re.compile(r"\b(?!git@)[\w.+-]+@(?!(?:example\.(?:com|org|net)|contoso\.com)\b)[\w-]+(?:\.[\w-]+)*\.[A-Za-z]{2,}\b(?<!\.md)"),
      "an email address"),
     (re.compile(r"\b(env|trig|cse|session|chan|cmsg|skill|user|org|acct)_[0-9A-Za-z]{12,}"), "a platform ID"),
 ]
@@ -123,10 +126,13 @@ def check_sandbox(root: Path = ROOT, words: list[str] = ()) -> list[str]:
     if layer_present(root):
         errors.append("this sandbox holds the private layer (notes/, outbox/ or hub.toml). Remove it, and "
                       "treat anything in it as shared with the sandbox's agents.")
-    devcontainer = root / ".devcontainer" / "devcontainer.json"
-    if devcontainer.exists() and '"repositories"' in devcontainer.read_text(encoding="utf-8", errors="replace"):
-        errors.append(".devcontainer/devcontainer.json asks for access to other repos. A sandbox's Codespace "
-                      "must reach only this repo.")
+    for dc in [root / ".devcontainer.json", *sorted((root / ".devcontainer").rglob("devcontainer.json"))]:
+        if dc.exists():
+            text = dc.read_text(encoding="utf-8", errors="replace")
+            keys = [k for k in DEVCONTAINER_KEYS if f'"{k}"' in text]
+            if keys:
+                errors.append(f"{dc.relative_to(root).as_posix()} sets {', '.join(keys)}: that reaches past this repo or "
+                              "runs on the host. A sandbox's container must see only this repo.")
     hits = scan(root, words) + scan_history(root, words)
     return errors + [f"{hit}. Remove it before it goes further." for hit in hits]
 

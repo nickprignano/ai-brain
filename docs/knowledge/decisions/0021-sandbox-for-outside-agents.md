@@ -51,7 +51,12 @@ layer, and public repos give the agents no place to write findings without openi
   reaches only that repo; a CLI gets a fine-grained token limited to the sandbox, checked by asking
   it for a private repo and getting a 404; no `gh auth login`, account-wide Codespaces secrets or
   private dotfiles in that Codespace; commits use the GitHub noreply address. Not on the owner's
-  own computer, where an agent falls back to the stored login. A second GitHub account that owns
+  own computer, where an agent falls back to the stored login, except in a plain `docker run`
+  terminal from the template's `.devcontainer/` image, with the repo cloned inside a Docker volume
+  and signed in there with the same scoped token. Not VS Code attached to a local container: it
+  leaves sockets that hand the container the host's GitHub login, whatever its settings say. The
+  `privacy` check fails a devcontainer that mounts host paths, runs host commands, widens the
+  container or reaches other repos. A second GitHub account that owns
   only the sandbox is the stronger option, left to the owner.
 
 ### Consequences
@@ -74,5 +79,8 @@ rather than one folder. All four are fixed above. A fresh-Claude control review 
 file (decision 0017) then found that prompts, commit metadata and branch names escaped the seed
 rule, that the Codespace's devcontainer and account-wide Codespaces settings could widen its reach,
 that agents can disable the CI check, and that the first token check proved the wrong thing; those
-are fixed above too. The outside reviewer's pass is pending. Revisit after six months of use, or when a vendor
+are fixed above too. The outside reviewer's pass is pending. Fable's red team of the local-container addendum found the
+VS Code credential sockets, git hooks planted through a bind-mounted folder, the need for Docker
+Desktop 4.44.3 or later, and that a Google sign-in gives the agent the owner's Google token; all are
+handled above or in the sandbox README. Revisit after six months of use, or when a vendor
 CLI supports repo-scoped login on its own.

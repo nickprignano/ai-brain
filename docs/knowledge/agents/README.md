@@ -41,6 +41,9 @@ sources:
   - https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli
   - https://geminicli.com/docs/cli/configuration
   - https://docs.github.com/en/codespaces/reference/security-in-github-codespaces
+  - https://github.com/microsoft/vscode-remote-release/issues/4426
+  - https://github.com/microsoft/vscode-remote-release/issues/9897
+  - https://code.visualstudio.com/docs/devcontainers/containers
 ---
 
 # Agents and Claude Code
@@ -384,6 +387,13 @@ What it rests on (checked 2026-10-22):
   own computer a local agent can read any folder you can.
 - **Treat the sandbox as shared with the vendor.** Keep the repo private so it isn't public on the
   web, but put nothing in it that you wouldn't hand that vendor.
+- **VS Code attached to a local dev container is not a boundary.** Even with
+  `dev.containers.gitCredentialHelperConfigLocation` set to `none`, it creates a credential-helper
+  socket a process in the container can ask for the host's GitHub credentials, and SSH agent and
+  `BROWSER` forwarding have no off switch; its maintainers say not to rely on it for untrusted code.
+  Run untrusted agents in a plain `docker run` terminal with the repo in a Docker volume, not a
+  bind-mounted folder, whose `.git` hooks and config would run on the host. Docker Desktop before
+  4.44.3 also exposed the engine API to every container (CVE-2025-9074).
 - **Converting a private repo leaks its history.** Deleting notes leaves them in git history, which
   any agent with a repo token can read, so setup refuses a repo whose history ever held a note.
 
