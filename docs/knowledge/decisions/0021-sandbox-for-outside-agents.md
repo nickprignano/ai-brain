@@ -29,7 +29,8 @@ layer, and public repos give the agents no place to write findings without openi
   private layer holds a note now or ever did in git history: a sandbox is a fresh copy of the
   template, never a converted private repo. It removes the private layer and kb-auto-merge (an
   agent's PR opened with the owner's token would count as the owner's), puts `sandbox/RULES.md`
-  at the top of `AGENTS.md`, and writes a `GEMINI.md` that imports `AGENTS.md`. A sandbox can't be
+  at the top of `AGENTS.md`, and writes the same rules to `GEMINI.md` (then an import of
+  `AGENTS.md`) and `.agents/rules/sandbox.md`, since Antigravity may not follow the import. A sandbox can't be
   switched to another mode.
 - **The `privacy` workflow** fails a sandbox that turns public, regains the private layer, asks its
   Codespace for access to other repos, or holds a key shape, email address or platform ID in any
