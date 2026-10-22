@@ -3,7 +3,7 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: partial
-last_reviewed: 2026-10-21
+last_reviewed: 2026-10-22
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/model-config
@@ -36,6 +36,10 @@ sources:
   - https://github.com/AgriciDaniel/claude-obsidian
   - https://github.com/HKUDS/LightRAG
   - https://github.com/urchade/GLiNER
+  - https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions
+  - https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli
+  - https://geminicli.com/docs/cli/configuration
+  - https://docs.github.com/en/codespaces/reference/security-in-github-codespaces
 ---
 
 # Agents and Claude Code
@@ -335,6 +339,32 @@ company's assistant through a single file the owner pastes: [decision 0017](../d
 - **Leave out your own red team's findings,** or the second pass anchors on the first.
 - **Paste by hand before building a tool.** xAI's text API costs about two cents a review, but a
   tool means a new connector to red team, and Claude would then choose what the owner sees.
+
+## A sandbox repo for other vendors' agents
+
+To try a coding agent from another vendor on real work without letting it near a private layer,
+the 2ndbrain template has a third setup mode, `setup.py --sandbox`
+([decision 0021](../decisions/0021-sandbox-for-outside-agents.md), [prompt](../prompting/library/sandbox-task.md)):
+a fresh private repo, seeded only with public-safe material, with findings coming back by hand.
+What it rests on (checked 2026-10-22):
+
+- **The agents read the same instruction file.** GitHub Copilot CLI reads `AGENTS.md` (repo root,
+  the working directory and folders on the path), and also `CLAUDE.md`, `GEMINI.md` and
+  `.github/copilot-instructions.md`. Gemini CLI reads `GEMINI.md` by default, and its `contextFileName`
+  setting can name other files; a one-line `GEMINI.md` that imports `AGENTS.md` avoids depending on
+  the setting's exact key.
+- **Instructions don't stop a token.** A CLI signed in with your GitHub login can read every repo
+  you can. Copilot CLI takes a token from `COPILOT_GITHUB_TOKEN`, then `GH_TOKEN`, then
+  `GITHUB_TOKEN`, then its stored login, then `gh`, and an environment variable silently wins. It
+  accepts a fine-grained personal token with the "Copilot Requests" account permission, so the
+  token can be limited to the sandbox repo.
+- **A Codespace's own token reaches only the repo it was opened on,** unless you authorize more.
+  Running the agents there, with no `gh auth login` inside, is the cheapest real boundary. On your
+  own computer a local agent can read any folder you can.
+- **Treat the sandbox as shared with the vendor.** Keep the repo private so it isn't public on the
+  web, but put nothing in it that you wouldn't hand that vendor.
+- **Converting a private repo leaks its history.** Deleting notes leaves them in git history, which
+  any agent with a repo token can read, so setup refuses a repo whose history ever held a note.
 
 ## What counts as the owner's yes
 
