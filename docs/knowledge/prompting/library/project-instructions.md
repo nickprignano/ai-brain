@@ -61,4 +61,4 @@ secret in chat.
   ([0006](../../decisions/0006-model-selection-convention.md)), enforced capture
   ([0011](../../decisions/0011-family-format-enforced-kb-capture.md)), handoff issues
   ([0012](../../decisions/0012-family-format-handoff-issues.md)) and the change rules
-  ([0019](../../decisions/0019-agents-md-in-every-repo.md)).
+  ([0020](../../decisions/0020-agents-md-in-every-repo.md)).

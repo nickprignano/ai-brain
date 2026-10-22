@@ -12,7 +12,7 @@ The owner runs it with their own login; nothing is stored and the token is never
       Re-runs the audit and applies only the named findings. Typing the ids is the owner's yes.
 
 What it checks, for each owned repo that isn't archived, a fork, empty, or tagged with the topic
-`no-conventions-audit` (decisions 0011, 0012, 0014, 0016 and 0019):
+`no-conventions-audit` (decisions 0011, 0012, 0014, 0016 and 0020):
 
   change-rules    every repo, adopted or not: the root AGENTS.md has the "How to make a change"
                   section, and a root or .claude/ CLAUDE.md, if there is one, imports it (an
@@ -231,10 +231,10 @@ def audit_repo(gh: Client, repo: dict, paid: bool) -> list[dict]:
     claudes = [blob_text(gh, full, blobs[p]) for p in CLAUDE_MDS if p in blobs]
     if not all(s in agents for s in CHANGE_RULES):
         out.append(finding(name, "change-rules", 'AGENTS.md is missing or has no "How to make a change"',
-                           "add it through a handoff issue (decision 0019)"))
+                           "add it through a handoff issue (decision 0020)"))
     elif any(not IMPORT_LINE.search(c) and c.strip() != "AGENTS.md" for c in claudes):
         out.append(finding(name, "change-rules", "CLAUDE.md doesn't import AGENTS.md, so Claude Code skips it",
-                           "make CLAUDE.md the one line @AGENTS.md (decision 0019)"))
+                           "make CLAUDE.md the one line @AGENTS.md (decision 0020)"))
     if not cfg and "0014" not in agents:
         return [finding(name, "adopted", "not on the conventions yet",
                         "adopt through a handoff issue in that repo", level="info"), *out]

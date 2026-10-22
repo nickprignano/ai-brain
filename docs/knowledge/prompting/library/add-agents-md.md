@@ -1,6 +1,6 @@
 ---
 title: "Prompt: Add an AGENTS.md to a repo"
-summary: "Has Claude give a repo an AGENTS.md with its guardrails and the four change rules, and make CLAUDE.md import it (decision 0019)"
+summary: "Has Claude give a repo an AGENTS.md with its guardrails and the four change rules, and make CLAUDE.md import it (decision 0020)"
 topic: prompting
 status: verified
 last_reviewed: 2026-10-22
@@ -27,7 +27,7 @@ handoff issue for the project that owns the repo.
 ## The prompt
 
 ````text
-Give {{REPO}} an AGENTS.md that follows decision 0019 (every repo has one, with the four change
+Give {{REPO}} an AGENTS.md that follows decision 0020 (every repo has one, with the four change
 rules), as one change made the way the repo's rules say (a pull request unless they say otherwise).
 
 1. Read the repo's existing CLAUDE.md, AGENTS.md, README and CONTRIBUTING, if any. Keep every rule
@@ -75,6 +75,6 @@ Four rules after the community "Karpathy guidelines" (MIT), reworded for agents 
   in its [project instructions](project-instructions.md) covers that.
 - **Wording.** The section is the template's, minus its knowledge-base lines. Keep the heading
   exactly, and the first rule's opening words: the repo audit looks for `## How to make a change`
-and "Say what you assumed".
-- Decision: [0019](../../decisions/0019-agents-md-in-every-repo.md). For a repo that will also run
+  and "Say what you assumed".
+- Decision: [0020](../../decisions/0020-agents-md-in-every-repo.md). For a repo that will also run
   the full conventions, use the [handoff issue](handoff-issue.md) and the 2ndbrain template instead.

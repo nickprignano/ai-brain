@@ -536,7 +536,7 @@ which, and ask only when the answer changes the goal, a visible result or an irr
 The template's `AGENTS.md` now carries the four rules in that form, in our own words, under "How
 to make a change"; siblings pick it up on their next template sync.
 
-Since [0019](../decisions/0019-agents-md-in-every-repo.md) the rules are a floor for every repo
+Since [0020](../decisions/0020-agents-md-in-every-repo.md) the rules are a floor for every repo
 the owner works on with Claude, not only the knowledge bases: each repo's `AGENTS.md` carries the
 section and its `CLAUDE.md` imports it (Claude Code reads `AGENTS.md` itself only when there's
 no `CLAUDE.md`, and not in every session: [docs](https://code.claude.com/docs/en/memory#agents-md)),

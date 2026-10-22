@@ -37,7 +37,7 @@ the unit tests, which export the template and check it.
 
 Four rules after the community "Karpathy guidelines" (MIT), reworded for agents that work unattended.
 Every repo worked on with Claude carries this section, and its `CLAUDE.md` imports this file (hub
-decision 0019, [SPEC](docs/2ndbrain/SPEC.md)).
+decision 0020, [SPEC](docs/2ndbrain/SPEC.md)).
 
 - Say what you assumed. When the ask leaves a detail open, pick the reasonable default, say which,
   and keep going. Stop to ask only when the choice changes the goal, something the owner will

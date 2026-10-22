@@ -81,7 +81,7 @@ is in `auto_merge_paths` (by default the KB) and none in a fixed deny list (deci
 schemas, workflows, scripts, agent settings, guardrails and code). The owner turns on "Allow
 auto-merge" and requires the `auto-merge`, `validate`, `gitleaks` and `kb-capture` checks.
 
-**An AGENTS.md in every repo (decision 0019).** Every repo the owner works on with Claude, KB or
+**An AGENTS.md in every repo (decision 0020).** Every repo the owner works on with Claude, KB or
 not, has an `AGENTS.md` with its guardrails and the four "How to make a change" rules, and a
 `CLAUDE.md` that imports it. The repo audit reports a repo without them as `change-rules` drift.
 

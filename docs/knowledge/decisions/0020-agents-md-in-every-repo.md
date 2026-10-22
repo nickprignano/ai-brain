@@ -4,7 +4,7 @@ date: 2026-10-22
 decision-makers: [maintainer]
 ---
 
-# 0019. Every repo Claude works in has an AGENTS.md with the four change rules
+# 0020. Every repo Claude works in has an AGENTS.md with the four change rules
 
 ## Context and Problem Statement
 
