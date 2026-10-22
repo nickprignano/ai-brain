@@ -137,7 +137,9 @@ class SandboxTests(Kit):
         agents = (self.root / "AGENTS.md").read_text()
         self.assertTrue(agents.startswith("# Instructions\n\n" + pc.SANDBOX_MARK))
         self.assertIn("The rest.", agents)
-        self.assertEqual((self.root / "GEMINI.md").read_text(), setup.GEMINI)
+        gemini = (self.root / setup.GEMINI).read_text()
+        self.assertTrue(gemini.startswith("x\n") and gemini.endswith("@AGENTS.md\n"))
+        self.assertTrue((self.root / setup.AG_RULES).read_text().startswith("x\n"))
         self.assertTrue(pc.is_sandbox(self.root))
         self.assertEqual(setup.setup_sandbox(self.root, status=lambda r: 404), [])  # again: no-op
         self.assertEqual(agents.count(pc.SANDBOX_MARK), 1)

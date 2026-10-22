@@ -11,7 +11,7 @@ deletes the private layer and its workflows, and refuses if the layer already ho
 Sandbox makes the same privacy check as private, then deletes the private layer like public, and
 refuses if the layer holds real notes now or ever did in git history: a sandbox starts as a fresh
 copy of the template, never a converted private repo. It also removes kb-auto-merge, adds
-sandbox/RULES.md to the top of AGENTS.md and writes a GEMINI.md that imports AGENTS.md. Private and public delete
+sandbox/RULES.md to the top of AGENTS.md, GEMINI.md and .agents/rules/sandbox.md. Private and public delete
 sandbox/. All three remove template-sync.yml, which only the template repo itself runs. Running the
 same mode again is safe; switching a sandbox to another mode is refused.
 """
@@ -44,7 +44,9 @@ SANDBOX = ["sandbox"]
 # An agent's PR opened with the owner's token counts as the owner's, so a sandbox never auto-merges.
 SANDBOX_DROPS = [".github/workflows/kb-auto-merge.yml"]
 RULES = "sandbox/RULES.md"
-GEMINI = "@AGENTS.md\n"
+# Antigravity may not follow GEMINI.md's @ import, so the rules go in full in both of the files it reads.
+GEMINI = "GEMINI.md"
+AG_RULES = ".agents/rules/sandbox.md"
 KB_TOML = "docs/knowledge/kb.toml"
 PRIVATE_IGNORE = 'capture_ignore = ["notes/**", "outbox/**", "hub.toml"]'
 HOOK = "#!/bin/sh\nexec python3 scripts/privacy_check.py\n"
@@ -133,7 +135,9 @@ def setup_sandbox(root: Path, status=privacy_check.public_status) -> list[str]:
     title, _, rest = text.partition("\n")
     rules = (root / RULES).read_text(encoding="utf-8").strip()
     agents.write_text(f"{title}\n\n{privacy_check.SANDBOX_MARK}\n{rules}\n{rest}", encoding="utf-8")
-    (root / "GEMINI.md").write_text(GEMINI, encoding="utf-8")
+    (root / AG_RULES).parent.mkdir(parents=True, exist_ok=True)
+    (root / AG_RULES).write_text(f"{rules}\n\nRead AGENTS.md before you start.\n", encoding="utf-8")
+    (root / GEMINI).write_text(f"{rules}\n\nRead AGENTS.md before you start.\n\n@AGENTS.md\n", encoding="utf-8")
     install_hook(root)
     return gone
 

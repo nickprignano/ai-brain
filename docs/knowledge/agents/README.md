@@ -354,6 +354,26 @@ What it rests on (checked 2026-10-22):
   `.github/copilot-instructions.md`. Gemini CLI reads `GEMINI.md` by default, and its `contextFileName`
   setting can name other files; a one-line `GEMINI.md` that imports `AGENTS.md` avoids depending on
   the setting's exact key.
+- **Gemini CLI is now Antigravity for personal plans** (checked 2026-10-22 against tech press and
+  third-party guides, not Google's own pages, so unverified until the sandbox evaluation in
+  `sandbox/ANTIGRAVITY.md` confirms it). Google stopped serving
+  Gemini CLI to free, AI Pro and Ultra accounts on 2026-06-18; its successor is the Antigravity
+  CLI (`agy`), next to the Antigravity desktop IDE ([The New Stack](https://thenewstack.io/gemini-cli-antigravity-replacement/),
+  [Toolsbase](https://toolsbase.dev/en/blog/gemini-cli-to-antigravity-migration)). Antigravity reads a
+  root `GEMINI.md`, `AGENTS.md` (IDE 1.20.5 and later) and rule files in `.agents/rules/` (limit
+  12,000 characters each); no published order says which wins on a conflict, and whether `@`
+  imports work inside `GEMINI.md` is unverified ([guide](https://thepromptshelf.dev/blog/google-antigravity-agents-md-rules-guide-2026),
+  [troubleshooting](https://agentpedia.codes/blog/antigravity-agents-md-not-working-fix)). So the
+  sandbox writes its rules in full to `GEMINI.md` and `.agents/rules/sandbox.md`, then imports
+  `AGENTS.md`; canary lines in each file show which ones a given version loads.
+- **Antigravity's guard rails are settings, not instructions** ([settings](https://antigravity.google/docs/settings?tab=ide)):
+  Strict mode (review before terminal commands, browser JavaScript and artifacts, workspace only,
+  terminal sandbox without network), Terminal command auto execution (*Request Review* or *Always
+  Proceed*, with allow and deny lists), Agent non-workspace file access (off by default), and on the
+  CLI `toolPermission` (`request-review` by default). As a desktop app it runs with the computer's
+  files and logins, and its browser can open `file://` addresses, so the sandbox runs it in a
+  separate local computer account with a second Google account, a browser profile signed in to
+  nothing, and no GitHub token: the agent commits and the owner pushes.
 - **Instructions don't stop a token.** A CLI signed in with your GitHub login can read every repo
   you can. Copilot CLI takes a token from `COPILOT_GITHUB_TOKEN`, then `GH_TOKEN`, then
   `GITHUB_TOKEN`, then its stored login, then `gh`, and an environment variable silently wins. It
