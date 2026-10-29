@@ -2,8 +2,8 @@
 title: "Privacy and safety"
 summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors"
 topic: privacy-and-safety
-status: partial
-last_reviewed: 2026-10-20
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://github.com/microsoft/PyRIT
   - https://github.com/promptfoo/promptfoo
@@ -120,11 +120,11 @@ pointed at your own app before a real one shows up.
   *(inf.)*). It has orchestrators built for multi-turn attacks, such as a long grooming-style
   conversation. The old `Azure/PyRIT` repo was archived on 2026-03-27; use `microsoft/PyRIT`.
 - **[promptfoo](https://github.com/promptfoo/promptfoo)** (MIT, ~24k stars). The easiest red-team to
-  run on every PR. It has been part of OpenAI since 2026-03-09 and is still MIT. Its red-team mode
-  generates attacks through promptfoo's cloud by default and sends the target's replies back there
-  for follow-up attacks
-  ([architecture](https://www.promptfoo.dev/docs/red-team/architecture/)), so run it against a test
-  deployment with synthetic users, or configure local attack and judge models.
+  run on every PR. It has been part of OpenAI since 2026-03-09 and is still MIT. Its red-team
+  client asks promptfoo's cloud service for each attack and builds follow-up probes from the
+  target's earlier replies ([architecture](https://www.promptfoo.dev/docs/red-team/architecture/),
+  checked 2026-10-29; the page doesn't say whether those replies leave your environment), so run it
+  against a test deployment with synthetic users, or configure local attack and judge models.
 - **[garak](https://github.com/NVIDIA/garak)** (NVIDIA, Apache-2.0) is a broad vulnerability scanner
   that gives a quick baseline. **[PurpleLlama](https://github.com/meta-llama/PurpleLlama)** (Meta)
   holds CyberSecEval, LlamaFirewall, Prompt Guard 2 and Llama Guard.
@@ -133,7 +133,8 @@ pointed at your own app before a real one shows up.
 ### Safety classifiers for apps children use
 
 - **Llama Guard 3 8B is the only safety model in the Cloudflare Workers AI catalog** (no Llama Guard
-  4, Prompt Guard, ShieldGemma or gpt-oss-safeguard as of this check). That makes it the default
+  4, Prompt Guard, ShieldGemma or gpt-oss-safeguard; [catalog](https://developers.cloudflare.com/workers-ai/models/)
+  re-checked 2026-10-29). That makes it the default
   gate when kids' data must stay inside one provider. Its limits: it judges one message at a time,
   covers 8 languages, and one incident-based child-safety evaluation measured roughly 48-51% recall
   for Llama Guard models on unsafe education prompts ([arXiv 2607.00395](https://arxiv.org/pdf/2607.00395)).

@@ -2,8 +2,8 @@
 title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
-status: partial
-last_reviewed: 2026-10-22
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/memory
@@ -137,8 +137,8 @@ What the run showed about the rule:
   "can't settle this", which the Opus pass reported itself. The escalation that happened (Opus
   names the questions, the user says go, a Fable worker answers, Opus checks) is case 1 above.
 - **The `high` step was skipped.** Both red teams ran at the thread default, `medium`, because
-  the convention isn't in the project instructions yet. *Unverified:* whether Opus at `high`
-  would have settled either question; no run tried it.
+  the convention isn't in the project instructions yet. No run has tried Opus at `high` on either
+  question, so whether it would have settled them is an open question, not a finding.
 - **The spot check missed a boundary.** Recomputing the figures confirmed them, except "a judge
   at exactly 95% trips about half the time": that is 32 to 38% if the alarm fires below 95%, and
   56 to 60% at or below, so the threshold's comparison needs stating.
@@ -158,7 +158,9 @@ question late in an all-day session pays for all of it. Start fresh when:
 - **You're back after a break** longer than the cache lifetime (an hour on a subscription, five
   minutes on an API key or once drawing on usage credits). The next message re-reads everything
   at full price anyway, so a fresh session with a short handoff is cheaper when the history is
-  long.
+  long. Since Claude Code v2.1.304, Pro and Max plans warn when resuming an inactive conversation
+  would use a noticeable share of the 5-hour limit, and offer a new conversation that can look up
+  the old one instead ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 Before starting fresh, write the handoff where the next session will find it: the state, the
 decisions and the next step, in the repo, the KB or project memory. In Claude Code, `/rename`
@@ -201,14 +203,24 @@ thread with that summary instead of carrying on.
   first, and by default re-adds any token the client drops later in a session
   (`HEADROOM_BETA_HEADER_STICKY`), and that it reads Claude Code's `cache_control` TTL. Its
   Unix-socket mode makes Claude Code treat the session as API-key auth, which fails a
-  subscription login, so use `ANTHROPIC_BASE_URL`. *Unverified:* a real run with a claude.ai
-  login.
+  subscription login, so use `ANTHROPIC_BASE_URL`. Anthropic's gateway docs confirm the
+  subscription side (checked 2026-10-29): `ANTHROPIC_BASE_URL` without a gateway credential
+  "doesn't replace the subscription", its limits and billing still apply, and a gateway passing the
+  traffic to Anthropic "must forward the OAuth capability in `anthropic-beta`"
+  ([LLM gateways](https://code.claude.com/docs/en/llm-gateway#subscriptions-and-gateways)). Not
+  yet run end to end with Headroom on a claude.ai login here; on a first run, check the `/usage`
+  cache line before trusting it. Claude Code itself now copes with gateways that reject newer
+  request fields: it resends without `context_management` (v2.1.304), without tool search
+  (v2.1.305) and without the `effort-2025-11-24` beta (v2.1.310), and stopped sending the
+  `prompt-caching-scope` beta behind a custom `ANTHROPIC_BASE_URL`, where it has no effect
+  (v2.1.307) ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 ### Check it's working
 
 - Claude Code `/usage`: session tokens and cost, a prompt-cache line (share of input served from
   cache, misses and their likely cause), and on a plan, what share went to subagents, skills or
-  MCP servers, with flags for long context or cache misses.
+  MCP servers, with flags for long context or cache misses. Since v2.1.305 each warning is a
+  one-line fix naming its source, and `f` applies the fixes ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 - `/insights`: a report on friction such as misunderstood requests.
 - Claude chat: Settings > Usage shows the session and weekly limits.
 - For the pilot, count per project: threads that needed a bump, sessions restarted because
@@ -357,15 +369,18 @@ What it rests on (checked 2026-10-22):
   `.github/copilot-instructions.md`. Gemini CLI reads `GEMINI.md` by default, and its `contextFileName`
   setting can name other files; a one-line `GEMINI.md` that imports `AGENTS.md` avoids depending on
   the setting's exact key.
-- **Gemini CLI is now Antigravity for personal plans** (checked 2026-10-22 against tech press and
-  third-party guides, not Google's own pages, so unverified until the sandbox evaluation in
-  `sandbox/ANTIGRAVITY.md` confirms it). Google stopped serving
-  Gemini CLI to free, AI Pro and Ultra accounts on 2026-06-18; its successor is the Antigravity
-  CLI (`agy`), next to the Antigravity desktop IDE ([The New Stack](https://thenewstack.io/gemini-cli-antigravity-replacement/),
-  [Toolsbase](https://toolsbase.dev/en/blog/gemini-cli-to-antigravity-migration)). Antigravity reads a
-  root `GEMINI.md`, `AGENTS.md` (IDE 1.20.5 and later) and rule files in `.agents/rules/` (limit
-  12,000 characters each); no published order says which wins on a conflict, and whether `@`
-  imports work inside `GEMINI.md` is unverified ([guide](https://thepromptshelf.dev/blog/google-antigravity-agents-md-rules-guide-2026),
+- **Gemini CLI is now Antigravity for personal plans** (checked 2026-10-29 against Google's own
+  pages). Google's developer blog (2026-05-19) says Gemini CLI and the Code Assist IDE extensions
+  "will stop serving requests for Google AI Pro and Ultra" on 2026-06-18, and for the free Code
+  Assist for individuals too; paid Gemini API keys and Enterprise licenses keep access
+  ([Google](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/)).
+  The successor is the Antigravity CLI, run as `agy`, next to the Antigravity desktop IDE; Google's
+  Flutter docs say it reads rules files such as `AGENTS.md` in the project, still supports a legacy
+  `GEMINI.md`, and recommend renaming that to `AGENTS.md`
+  ([Flutter docs](https://docs.flutter.cn/ai/antigravity-cli.md)). Third-party guides add rule
+  files in `.agents/rules/` (limit 12,000 characters each); no published order says which wins on a
+  conflict, and whether `@` imports work inside `GEMINI.md` is still open until the sandbox
+  evaluation in `sandbox/ANTIGRAVITY.md` runs ([guide](https://thepromptshelf.dev/blog/google-antigravity-agents-md-rules-guide-2026),
   [troubleshooting](https://agentpedia.codes/blog/antigravity-agents-md-not-working-fix)). So the
   sandbox writes its rules in full to `GEMINI.md` and `.agents/rules/sandbox.md`, then imports
   `AGENTS.md`; canary lines in each file show which ones a given version loads.
@@ -554,7 +569,7 @@ theme-factory, canvas-design and web-artifacts-builder. Worth adding on top:
 | webapp-testing | anthropics/skills, Apache-2.0 | Drives a local web app with Python Playwright, with a helper that starts and stops the dev servers. |
 | differential-review, supply-chain-risk-auditor, static-analysis (plugins; static-analysis bundles codeql, semgrep and sarif-parsing) | [trailofbits/skills](https://github.com/trailofbits/skills), CC-BY-SA-4.0 | Security review of a diff, a dependency tree, and CodeQL or Semgrep scans. |
 
-Not yet reviewed, for the next pass: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+Left for the next pass: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
 (MIT, about 106k stars, 25 engineering-lifecycle skills, installs as a Claude Code plugin
 marketplace; checked 2026-10-20).
 

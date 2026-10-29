@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import tomllib
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -25,6 +27,7 @@ def _user_agent() -> str:
 
 USER_AGENT = _user_agent()
 GITHUB_API = "https://api.github.com"
+RETRY_AFTER_SECONDS = 5  # one retry on a 5xx: feeds such as YouTube's return HTTP 500 now and then
 # Commit titles that never belong in a digest: merges and dependency bumps.
 NOISE = re.compile(r"^(Merge (pull request|branch|remote-tracking)|Bump |(build|chore)\(deps)", re.I)
 
@@ -39,9 +42,16 @@ class Item:
 
 
 def http_get(url: str, headers: dict | None = None) -> bytes:
+    """GET a URL, retrying once after a pause on an HTTP 5xx. 4xx errors and timeouts aren't retried."""
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return resp.read()
+    for attempt in (1, 2):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return resp.read()
+        except urllib.error.HTTPError as exc:
+            if exc.code < 500 or attempt == 2:
+                raise
+            time.sleep(RETRY_AFTER_SECONDS)
 
 
 def github(path: str, params: dict | None = None):

@@ -4,7 +4,8 @@ name: kb-freshness
 # reported broken or outdated in field-reports.yaml, or experts due for re-scoring (with each
 # tracked expert's yield from recent kb-digest issues), and sibling KBs on a different family
 # format version (family.yaml). Keeps one open issue labelled
-# kb-freshness up to date instead of opening a new one each month.
+# kb-freshness up to date instead of opening a new one each month, and closes it once a run with
+# the default settings finds nothing.
 
 on:
   schedule:
@@ -82,3 +83,14 @@ jobs:
           else
             gh issue create --label kb-freshness --title "KB freshness check" --body-file freshness.md
           fi
+      # Only a run with the default window may call the KB clean: a manual run with a longer
+      # max_age_days checks less.
+      - name: Close the freshness issue when nothing is left
+        if: steps.collect.outputs.items == '0' && (inputs.max_age_days || '90') == '90'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for n in $(gh issue list --label kb-freshness --state open --json number --jq '.[].number'); do
+            gh issue comment "$n" --body "Nothing left to review on $(date -u +%F). Closing; the next run reopens a new one if anything comes due."
+            gh issue close "$n" --reason completed
+          done

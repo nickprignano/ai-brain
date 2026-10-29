@@ -286,6 +286,162 @@ class CuratorTests(unittest.TestCase):
         self.assertEqual([s["name"] for s, _ in results], ["decisions"])
 
 
+class HttpRetryTests(unittest.TestCase):
+    def setUp(self):
+        import sources
+        self.sources = sources
+        self.sleep = mock.patch.object(sources.time, "sleep").start()
+        self.addCleanup(mock.patch.stopall)
+
+    def error(self, code):
+        return self.sources.urllib.error.HTTPError("https://x", code, "err", {}, None)
+
+    def response(self):
+        resp = mock.MagicMock()
+        resp.__enter__.return_value.read.return_value = b"ok"
+        return resp
+
+    def test_one_retry_on_5xx(self):
+        with mock.patch.object(self.sources.urllib.request, "urlopen",
+                               side_effect=[self.error(500), self.response()]) as urlopen:
+            self.assertEqual(self.sources.http_get("https://x"), b"ok")
+        self.assertEqual(urlopen.call_count, 2)
+        self.sleep.assert_called_once()
+
+    def test_second_5xx_and_any_4xx_raise(self):
+        with mock.patch.object(self.sources.urllib.request, "urlopen",
+                               side_effect=[self.error(503), self.error(500)]) as urlopen:
+            with self.assertRaises(self.sources.urllib.error.HTTPError):
+                self.sources.http_get("https://x")
+        self.assertEqual(urlopen.call_count, 2)
+        with mock.patch.object(self.sources.urllib.request, "urlopen",
+                               side_effect=[self.error(404)]) as urlopen:
+            with self.assertRaises(self.sources.urllib.error.HTTPError):
+                self.sources.http_get("https://x")
+        self.assertEqual(urlopen.call_count, 1)
+
+
+DIGEST_BODY = """New since 2026-10-18: **4** item(s) from 3 source(s). Tick what's worth adding to the KB, and note which page.
+
+### Tool: releases → `docs/knowledge/agents/README.md`
+- [x] [tool v2.0](https://example.com/rel/2) · 2026-10-23
+- [ ] [tool v1.9](https://example.com/rel/1) · 2026-10-20
+- [X] [Fix [docs] link (#12)](https://example.com/c/1) · 2026-10-21 (pre-release)
+
+### Spec: commits → `docs/knowledge/agents/README.md`
+- [x] [already linked](https://example.com/known) · 2026-10-22
+
+### Unpaged source
+- [ ] [nothing ticked here](https://example.com/u) · 2026-10-22
+
+<details><summary>Sources that failed this run</summary>
+
+- Blog: HTTPError: HTTP Error 500
+
+</details>
+"""
+
+
+class DigestTests(unittest.TestCase):
+    PAGE = "---\ntitle: x\n---\n\n# Agents\n\nSee https://example.com/known.\n"
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp)
+        (self.tmp / "agents").mkdir()
+        (self.tmp / "agents" / "README.md").write_text(self.PAGE, encoding="utf-8")
+        patch = mock.patch.object(feedback, "KB_DIR", self.tmp)
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def handle(self, body, number=73):
+        return feedback.handle({"number": number, "body": body, "labels": [{"name": "kb-digest"}]}, "2026-10-29")
+
+    def page(self):
+        return (self.tmp / "agents" / "README.md").read_text(encoding="utf-8")
+
+    def test_ticked_items_land_on_their_page(self):
+        title, body = self.handle(DIGEST_BODY)  # no public-safe box needed
+        self.assertEqual(title, "KB digest picks from #73")
+        self.assertIn("no-auto-merge", body)
+        page = self.page()
+        self.assertIn("## From the digest", page)
+        self.assertIn("- [tool v2.0](https://example.com/rel/2) (2026-10-23, #73)", page)
+        self.assertIn("- [Fix \\[docs\\] link (#12)](https://example.com/c/1) (2026-10-21, #73)", page)
+        self.assertNotIn("rel/1", page)  # not ticked
+        self.assertEqual(page.count("example.com/known"), 1)  # already linked
+        self.assertIn("skipped: 1", body)
+
+    def test_a_second_digest_appends_to_the_same_section(self):
+        self.handle(DIGEST_BODY)
+        (self.tmp / "agents" / "README.md").write_text(self.page() + "\n## Later\n\nText.\n", encoding="utf-8")
+        later = "### Tool: releases → `docs/knowledge/agents/README.md`\n- [x] [tool v2.1](https://example.com/rel/3) · 2026-10-30\n"
+        self.handle(later, number=80)
+        page = self.page()
+        self.assertEqual(page.count("## From the digest"), 1)
+        self.assertLess(page.index("rel/3"), page.index("## Later"))
+
+    def test_nothing_usable_is_an_error(self):
+        bad = {
+            "nothing ticked": DIGEST_BODY.replace("[x]", "[ ]").replace("[X]", "[ ]"),
+            "no page": "### Unpaged source\n- [x] [a](https://example.com/a) · 2026-10-22\n",
+            "unreadable line": "### T → `docs/knowledge/agents/README.md`\n- [x] just text\n",
+            "not https": "### T → `docs/knowledge/agents/README.md`\n- [x] [a](javascript:alert(1)) · 2026-10-22\n",
+            "outside the KB": "### T → `docs/knowledge/../../etc/passwd`\n- [x] [a](https://example.com/a) · 2026-10-22\n",
+            "all known": "### T → `docs/knowledge/agents/README.md`\n- [x] [k](https://example.com/known) · 2026-10-22\n",
+        }
+        for name, body in bad.items():
+            with self.subTest(name), self.assertRaises(feedback.FeedbackError):
+                self.handle(body)
+        self.assertEqual(self.page(), self.PAGE)
+
+
+class ExpertYieldTests(unittest.TestCase):
+    TODAY = date(2026, 12, 1)
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp)
+        experts = self.tmp / "experts.yaml"
+        experts.write_text(
+            "reviewed: '2026-10-01'\nexperts:\n- {id: ex, name: Ex, affiliation: x, status: tracked,"
+            " found_via: [x], links: {blog: 'https://example.com'}, reviewed: '2026-10-01'}\n", encoding="utf-8")
+        srcs = self.tmp / "sources.toml"
+        srcs.write_text('[[source]]\nname = "Ex blog"\nkind = "feed"\nurl = "https://example.com/f"\nexpert = "ex"\n',
+                        encoding="utf-8")
+        for name, path in (("EXPERTS", experts), ("SOURCES", srcs)):
+            patch = mock.patch.object(kblib, name, path)
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def yield_items(self, digests):
+        return freshness.expert_items(90, self.TODAY, digests)["Expert yield"]
+
+    def digest(self, day, body="### Other\n- [ ] [a](https://a) · 2026-10-01\n"):
+        return {"createdAt": f"{day}T13:00:00Z", "body": body}
+
+    def test_too_early_to_judge(self):
+        self.assertEqual(self.yield_items([]), [])  # new KB, no digests yet
+        self.assertEqual(self.yield_items([self.digest("2026-10-05")]), [])  # one digest since scored
+
+    def test_flagged_once_judged(self):
+        items = self.yield_items([self.digest("2026-10-05"), self.digest("2026-10-12")])
+        self.assertEqual(len(items), 1)
+        self.assertIn("nothing in the digests", items[0])
+
+    def test_failed_source_is_flagged_straight_away(self):
+        failed = self.digest("2026-10-05", "### Other\n<details><summary>Sources that failed this run</summary>\n\n"
+                                           "- Ex blog: HTTPError: HTTP Error 500\n\n</details>\n")
+        items = self.yield_items([failed])
+        self.assertEqual(len(items), 1)
+        self.assertIn("failed in 1 digest", items[0])
+
+    def test_failed_list_is_not_counted_as_items(self):
+        counts = freshness.digest_yield([{"createdAt": "2026-10-05T13:00:00Z", "body": DIGEST_BODY}], date(2026, 9, 1))
+        self.assertEqual(counts["Tool: releases"], [2, 3])
+        self.assertNotIn("Blog", counts)
+
+
 class DirectiveTests(unittest.TestCase):
     TODAY = date(2026, 10, 18)
     FAMILY = {"format_version": 1, "projects": [

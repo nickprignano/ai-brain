@@ -2,8 +2,8 @@
 title: "Prompt: Move sensitive OneNote notebooks to markdown safely"
 summary: "Has an organization-approved Claude walk you through backing up, converting with onenote-md-exporter and verifying OneNote notebooks, with no data lost or leaked"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-20
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Move sensitive OneNote notebooks to markdown safely
@@ -105,8 +105,10 @@ where the backup and vault live.
   [Obsidian Importer](https://obsidian.md/help/import/onenote) reads notebooks through a
   Microsoft account sign-in, which on a work account means consenting a third-party app in the
   organization's tenant; IT often blocks it. [onenote-md-exporter](https://github.com/alxnbl/onenote-md-exporter)
-  runs offline against the desktop apps. Its README lists Markdown and Joplin as formats, with
-  wikilinks by default, which Obsidian reads; it has no named Obsidian mode.
+  runs offline against the desktop apps (Windows with OneNote 2013 and Word 2013 or later; the
+  Store version of OneNote isn't supported; GPL-3.0). Its README lists Markdown and Joplin as
+  formats, with wikilinks by default, which Obsidian reads; it has no named Obsidian mode
+  (checked 2026-10-29).
 - **If DLP blocks the export.** [segunak/one-note-to-markdown](https://github.com/segunak/one-note-to-markdown)
   (MIT, a Windows desktop app) reads each page's XML over COM with `GetPageContent()` and, per
   its README, avoids OneNote's `Publish()` because DLP policies can block the intermediate files

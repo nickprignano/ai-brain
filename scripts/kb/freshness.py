@@ -11,7 +11,8 @@ Flags:
   - pages with unresolved "broke" or "outdated" field reports
   - known errors whose fix is still unverified
   - experts not re-scored in --max-age-days, and nominations waiting to be scored
-  - with --digests, each tracked expert's yield: digest items ticked as worth adding (experts.md)
+  - with --digests, each tracked expert's yield: digest items ticked as worth adding (experts.md),
+    once two digests have run since the expert was scored, and any source that failed in a digest
   - with --family, siblings on a different family format version, unreadable, or not linked yet
 
 Writes a Markdown checklist and, under GitHub Actions, items=<count> to GITHUB_OUTPUT.
@@ -46,6 +47,8 @@ def digest_yield(digests: list[dict], since: date) -> dict[str, list[int]]:
     for d in digests:
         if date.fromisoformat(d["createdAt"][:10]) < since:
             continue
+        if "<details>" in (d.get("body") or ""):  # the failed-sources list isn't a source's items
+            d = {**d, "body": d["body"].split("<details>", 1)[0]}
         current = None
         for line in (d.get("body") or "").splitlines():
             if m := DIGEST_HEADING.match(line):
@@ -55,6 +58,15 @@ def digest_yield(digests: list[dict], since: date) -> dict[str, list[int]]:
                 c[1] += 1
                 c[0] += m.group(1) != " "
     return counts
+
+
+def failed_runs(digests: list[dict], source: str, since: date) -> int:
+    """How many digests since a date list this source under "Sources that failed this run"."""
+    return sum(
+        1 for d in digests
+        if date.fromisoformat(d["createdAt"][:10]) >= since
+        and f"\n- {source}: " in (d.get("body") or "").partition("<details>")[2]
+    )
 
 
 def expert_items(max_age_days: int, today: date, digests: list[dict] | None) -> dict[str, list[str]]:
@@ -77,7 +89,15 @@ def expert_items(max_age_days: int, today: date, digests: list[dict] | None) -> 
         names = [s["name"] for s in sources if s.get("expert") == e["id"]]
         ticked = sum(counts.get(n, [0, 0])[0] for n in names)
         listed = sum(counts.get(n, [0, 0])[1] for n in names)
-        if listed == 0:
+        failed = sum(failed_runs(digests, n, since) for n in names)
+        # Too early to judge: fewer than two digests since the expert was scored (a new KB, or a
+        # newly tracked expert). A feed that failed is still reported.
+        judged = [d for d in digests if date.fromisoformat(d["createdAt"][:10]) >= max(since, date.fromisoformat(e["reviewed"]))]
+        if failed:
+            out["Expert yield"].append(f"{e['name']}: a source failed in {failed} digest(s) since {since}; check the feed")
+        elif len(judged) < 2:
+            continue
+        elif listed == 0:
             out["Expert yield"].append(f"{e['name']}: nothing in the digests since {since}; check the feed still works")
         elif ticked == 0:
             out["Expert yield"].append(f"{e['name']}: {listed} item(s) since {since}, none ticked; lower relevance or add keywords")
