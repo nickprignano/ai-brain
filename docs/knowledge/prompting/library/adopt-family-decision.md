@@ -3,7 +3,7 @@ title: "Prompt: Adopt a hub decision in a sibling project"
 summary: "Asks a sibling project to record a hub decision as its own copy, install the machinery from the hub's export and pilot it"
 topic: prompting
 status: verified
-last_reviewed: 2026-10-19
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Adopt a hub decision in a sibling project
@@ -61,6 +61,12 @@ label reason or a commit. [optional, for a pilot: At each checkpoint, add one fi
   the safe source.
 - **Pick the mode per sibling, and say why** in `{{MODE}}`, so the receiver doesn't second-guess
   it. Decision 0011 started some siblings in warn mode and others in block mode.
+- **Labels need no separate step.** Applying a label that doesn't exist yet (such as `no-kb`)
+  through the API creates it, so a repo can get it by putting it on its own adoption PR
+  ([field report from #54](../../field-reports.yaml), 2026-10-19).
+- **Open the PR with the `KB:` line or the `no-kb` label already set.** Otherwise the `opened` run of
+  `kb-capture` fails before either is added, and that red run stays in the check list beside the
+  green rerun.
 - **A dated demo or deadline comes first.** When a sibling has one, add a line that nothing in the
   deadline work may wait on the new check, and how to waive it meanwhile.
 - First used for [decision 0011](../../decisions/0011-family-format-enforced-kb-capture.md)

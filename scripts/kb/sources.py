@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import tomllib
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -40,6 +42,13 @@ class Item:
 
 def http_get(url: str, headers: dict | None = None) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read()
+    except urllib.error.HTTPError as exc:
+        if exc.code < 500:
+            raise
+    time.sleep(2)  # one retry: feeds such as YouTube's return a transient 5xx now and then
     with urllib.request.urlopen(req, timeout=30) as resp:
         return resp.read()
 

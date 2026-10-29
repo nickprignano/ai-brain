@@ -3,7 +3,7 @@ title: "Keeping the knowledge base current"
 summary: "How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment"
 topic: curation
 status: verified
-last_reviewed: 2026-10-20
+last_reviewed: 2026-10-29
 ---
 
 # Keeping the knowledge base current
@@ -17,7 +17,7 @@ this KB aligned with its siblings, and a sixth keeps it pointed at the upstream 
 
 [`.github/workflows/kb-curator.yml`](../../.github/workflows/kb-curator.yml) runs every Monday.
 It reads [sources.toml](sources.toml), collects anything new from the last 8 days and opens an
-issue labelled **kb-digest** with a checklist grouped by source. Each source names the KB page its
+issue labeled **kb-digest** with a checklist grouped by source. Each source names the KB page its
 findings belong on. Items whose URL is already linked from the KB are left out, and so are merge
 commits and dependency bumps; an item listed under one source isn't listed again under a later
 one. If nothing is new, no issue is opened.
@@ -32,7 +32,12 @@ Blog and newsletter feeds come next. Each one is added only once a curator run s
 people are chosen with the method in [experts.md](experts.md).
 
 Working a digest: for each ticked item, add what matters to the page named next to the source
-(facts, versions, fixes; not a link dump), then close the issue.
+(facts, versions, fixes; not a link dump), then close the issue. Or tick the items and label the
+issue **kb-accepted**: the [feedback loop](#feedback-loop-kb-feedback) adds each ticked item to its
+page under "Recent upstream updates", sets the page's `last_reviewed` and opens a pull request that
+closes the digest. Write → `docs/knowledge/<page>.md` after an item to send it to another page;
+fold anything that changes a claim into the page's own sections before merging. When the next
+digest opens, older open digests with nothing ticked are closed as superseded, with a link to it.
 
 To watch something else, add a `[[source]]` table to [sources.toml](sources.toml). Supported
 kinds: `github_releases`, `github_commits` (optionally limited to one `path`), `github_issues`,
@@ -44,7 +49,8 @@ GITHUB_TOKEN=$(gh auth token) python3 scripts/kb/curate.py --since-days 30
 ```
 
 A source that fails (rate limit, site down) is listed at the bottom of the digest and doesn't
-stop the others.
+stop the others. A 5xx is retried once first, since some feeds (YouTube's among them) return a
+transient `HTTP Error 500`.
 
 ## Prior-art check (`kb-prior-art`)
 
@@ -87,7 +93,7 @@ What it means for how we search:
   stars returned viewers and chat-stats scripts instead. Small tools often have vague names but
   have to spell out the field names in their code.
 - **Open every candidate before it goes in the KB.** Copilot's answers listed "checked on repo"
-  in place of licences, stars and dates, included one repo that wouldn't load, and passed off a
+  in place of licenses, stars and dates, included one repo that wouldn't load, and passed off a
   changelog section about 300 versions old as current. Its finds are leads until opened.
 - **Read the source for a digest.** Reading the changelog and release pages directly beat
   search-based summaries for "what changed this week".
@@ -96,9 +102,9 @@ What it means for how we search:
   **Actions > kb-prior-art** instead and read its log. The session's GitHub tools can search all
   of GitHub but only read commits and files in attached repos, so a freshness check that needs
   another repo's history has to attach it first.
-- **Batch licence lookups with `repo:` qualifiers.** In a cloud session, GitHub repo search with
+- **Batch license lookups with `repo:` qualifiers.** In a cloud session, GitHub repo search with
   several free-text terms plus a `stars:>N` filter often returned nothing (2026-10-20), while one
-  query of 20 `repo:owner/name` qualifiers returned stars, licence and last push for all of them in
+  query of 20 `repo:owner/name` qualifiers returned stars, license and last push for all of them in
   one call. Search broadly first, then batch the finalists that way.
 - **Copilot is worth a paste before publishing a survey list**, where one or two extra finds
   matter. It isn't worth automating: every item still has to be checked.
@@ -107,20 +113,21 @@ The digest and prior-art scripts use only the Python standard library (3.11+).
 
 ## Feedback loop (`kb-feedback`)
 
-Real results flow back into the KB through three issue forms:
+Real results flow back into the KB through three issue forms, and from the weekly digest:
 
 - **Knowledge base feedback:** what worked, broke, went out of date or is missing, for one page
   (label `kb-feedback`).
 - **Known error:** an error, its cause and fix, for the [troubleshooting catalog](troubleshooting/README.md)
   (label `kb-known-error`).
 - **Suggest an expert to follow:** a nomination for the [experts study](experts.md) (label `kb-source`).
+- **A weekly digest** with ticked `- [x]` items (label `kb-digest`, see [above](#weekly-digest-kb-curator)).
 
 Each form has a required public-safe tick box. A maintainer reviews the issue and, if it's useful
 and public-safe, labels it **kb-accepted**.
 [`.github/workflows/kb-feedback.yml`](../../.github/workflows/kb-feedback.yml) then appends it to
 [field-reports.yaml](field-reports.yaml), [known-errors.yaml](troubleshooting/known-errors.yaml) or
-[experts.yaml](experts.yaml), regenerates and validates the KB, and opens a pull request that closes
-the issue. If the form is incomplete or fails validation, the workflow comments on the issue instead.
+[experts.yaml](experts.yaml), or for a digest adds the ticked items to their pages, regenerates and
+validates the KB, and opens a pull request that closes the issue. If the form is incomplete or fails validation, the workflow comments on the issue instead.
 
 The label is the safety gate: issue text from anyone is only parsed as data, never executed, the PR
 still goes through review, and gitleaks and the KB checks run on it. Two one-time settings matter:
@@ -136,18 +143,50 @@ checks itself; close and reopen the PR to run the full CI before merging.
 ## Freshness check (`kb-freshness`)
 
 [`.github/workflows/kb-freshness.yml`](../../.github/workflows/kb-freshness.yml) runs on the 1st
-of each month and keeps one open issue labelled **kb-freshness** listing:
+of each month and keeps one open issue labeled **kb-freshness**, closing it on the first run that
+finds nothing, listing:
 
 - pages reported broken or outdated in field reports that aren't marked `resolved` yet
 - pages whose `last_reviewed` is more than 90 days old (pages with status `plan` are skipped)
 - pages with status `unverified` or `partial`, with the number of claims still marked *unverified*
 - known errors whose fix is still unverified
-- experts due for re-scoring, with each tracked expert's digest yield
+- experts due for re-scoring, with each tracked expert's digest yield (skipped until the KB has
+  digest issues, and for experts scored inside the review window)
 - sibling KBs on a different family format version, or whose `family.yaml` can't be read
 
 Work it by re-checking each item against a primary source or a real run, then updating the page's
-text, `last_reviewed` and `status`. Open claim re-checks as a pull request labelled
+text, `last_reviewed` and `status`. Open claim re-checks as a pull request labeled
 `no-auto-merge`: a wrong "still true" or "now false" changes what the KB tells people. Run it locally with `python3 scripts/kb/freshness.py --family`.
+
+The inline-marker count matches `*unverified`, `*not verified` and the plain phrase "not yet
+reviewed" anywhere outside code, so prose such as "Not yet reviewed, for the next pass" counts as a
+claim to check. Word open items another way ("Reviewed on <date> and left out", "No run has tried
+...") and keep *unverified* for claims that need a source. A claim nobody can check yet becomes a
+plain statement of what was and wasn't tried, not a marker that never clears.
+
+## Closing the issue loop
+
+Every workflow that opens an issue on a schedule needs a way for that issue to end, or the issue
+list fills with work nobody can finish. The rules the `kb-*` workflows follow, learned from issues
+that stayed open for weeks ([known errors](troubleshooting/README.md)):
+
+- **A clean run closes the issue.** Run the issue step on every run and branch inside it on the
+  item count: close the open issue with a comment when it's 0, otherwise edit or open it. A step
+  guarded by `if: items != '0'` can never close anything.
+- **Each actionable issue has a label path to a pull request.** A maintainer's `kb-accepted` label
+  turns feedback, known errors, nominations and ticked digests into a validated PR with
+  `Closes #<issue>`, so the label is the only manual step.
+- **A newer issue supersedes an untouched older one.** The curator closes earlier digests that have
+  nothing ticked; one with a ticked item stays open for the maintainer.
+- **An optional setting that isn't set yet skips cleanly.** When a scheduled job needs a secret,
+  variable or app ID the owner hasn't configured, check for it in a first step, skip the steps that
+  need it, write the setup instructions to `$GITHUB_STEP_SUMMARY` and close any open failure issue,
+  instead of failing every day until someone sets it.
+- **A new KB isn't judged on history it doesn't have.** Checks that count past digests start once
+  there are digests, and skip anything still inside its first review window.
+- **Match line starts explicitly in `gh --jq`.** `^` matches only the start of the string in jq and
+  gh's built-in gojq, with or without the `"m"` flag, so find a ticked box anywhere in a body with
+  `test("(^|\n)- \\[[xX]\\]")`.
 
 ## Staying aligned with the family
 
@@ -158,6 +197,9 @@ implementation. A sibling without a `repo` isn't linked yet. `build.py` turns th
 "Related knowledge bases" table in the [KB README](README.md#related-knowledge-bases) and a section
 in `llms.txt`. The schema and the family code in `scripts/kb/` are the same in every KB.
 
+- **Follow a sibling that moves.** When a sibling's KB moves to another repo, change its `repo` in
+  family.yaml and both of its sources; until then the freshness check reports its family.yaml as
+  unreadable, as if it were private.
 - **Watch each other.** Each set-up sibling gets two `github_commits` sources in
   [sources.toml](sources.toml): one with `path` set to its decisions folder, and one with `path` set
   to its KB folder. `validate.py` fails if either is missing for a sibling with a `repo`. A private sibling can't be read with

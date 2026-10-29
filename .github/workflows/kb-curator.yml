@@ -1,7 +1,8 @@
 name: kb-curator
 
 # Weekly digest of new releases, docs and community repos from docs/knowledge/sources.toml,
-# opened as an issue labelled kb-digest. On pull requests that touch the curator it runs as a
+# opened as an issue labeled kb-digest. Older open digests with nothing ticked are closed as
+# superseded; label a digest kb-accepted to turn its ticked items into a PR (kb-feedback). On pull requests that touch the curator it runs as a
 # dry run and writes the digest to the job summary instead.
 
 on:
@@ -55,10 +56,15 @@ jobs:
         run: python3 scripts/kb/curate.py --since-days "${{ inputs.since_days || '8' }}" --output digest.md
       - name: Job summary
         run: cat digest.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Open digest issue
+      - name: Open digest issue and supersede unticked older ones
         if: github.event_name != 'pull_request' && steps.collect.outputs.items != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh label create kb-digest --color 0e8a16 --description "Knowledge base curator digest" --force
-          gh issue create --label kb-digest --title "KB digest: $(date -u +%F)" --body-file digest.md
+          unticked=$(gh issue list --label kb-digest --state open --limit 100 --json number,body \
+            --jq '.[] | select((.body // "") | test("(^|\n)- \\[[xX]\\]") | not) | .number')
+          url=$(gh issue create --label kb-digest --title "KB digest: $(date -u +%F)" --body-file digest.md)
+          for n in $unticked; do
+            gh issue close "$n" --comment "Superseded by $url: nothing here was ticked."
+          done

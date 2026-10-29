@@ -1,6 +1,7 @@
 name: rollup
 
-# Weekly: read the public hub named in hub.toml and open an issue here listing what's new.
+# Weekly: read the public hub named in hub.toml and open an issue here listing what's new, closing
+# older open roll-ups that have nothing ticked.
 # On the first Monday of the month it also lists this repo's notes that are due for review.
 # Uses only this repo's GITHUB_TOKEN. It reads the hub (public) and writes issues here, nowhere else.
 # It runs only in a private repo with hub_repo set, so the template and public copies skip it.
@@ -50,4 +51,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh label create rollup --color 5319e7 --description "Weekly roll-up from the hub" 2>/dev/null || true
-          gh issue create --title "Roll-up $(date -u +%F)" --label rollup --body-file rollup.md
+          unticked=$(gh issue list --label rollup --state open --limit 100 --json number,body \
+            --jq '.[] | select((.body // "") | test("(^|\n)- \\[[xX]\\]") | not) | .number')
+          url=$(gh issue create --title "Roll-up $(date -u +%F)" --label rollup --body-file rollup.md)
+          for n in $unticked; do
+            gh issue close "$n" --comment "Superseded by $url: nothing here was ticked."
+          done

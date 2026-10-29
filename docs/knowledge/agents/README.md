@@ -2,12 +2,14 @@
 title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
-status: partial
-last_reviewed: 2026-10-22
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/memory
   - https://code.claude.com/docs/en/model-config
+  - https://code.claude.com/docs/en/llm-gateway
+  - https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
   - https://support.claude.com/en/articles/9797557-usage-limit-best-practices
   - https://www.sourcepulse.org/projects/28283027
   - https://lobehub.com/mcp/administrativetrick-obsidian-mcp
@@ -24,6 +26,7 @@ sources:
   - https://github.com/anthropics/skills
   - https://skills.sh/anthropics/skills
   - https://github.com/obra/superpowers
+  - https://github.com/addyosmani/agent-skills
   - https://github.com/trailofbits/skills
   - https://github.com/forrestchang/andrej-karpathy-skills
   - https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets
@@ -137,8 +140,8 @@ What the run showed about the rule:
   "can't settle this", which the Opus pass reported itself. The escalation that happened (Opus
   names the questions, the user says go, a Fable worker answers, Opus checks) is case 1 above.
 - **The `high` step was skipped.** Both red teams ran at the thread default, `medium`, because
-  the convention isn't in the project instructions yet. *Unverified:* whether Opus at `high`
-  would have settled either question; no run tried it.
+  the convention isn't in the project instructions yet. No run has tried `high` on either
+  question, so whether it would have settled them is still open.
 - **The spot check missed a boundary.** Recomputing the figures confirmed them, except "a judge
   at exactly 95% trips about half the time": that is 32 to 38% if the alarm fires below 95%, and
   56 to 60% at or below, so the threshold's comparison needs stating.
@@ -158,7 +161,9 @@ question late in an all-day session pays for all of it. Start fresh when:
 - **You're back after a break** longer than the cache lifetime (an hour on a subscription, five
   minutes on an API key or once drawing on usage credits). The next message re-reads everything
   at full price anyway, so a fresh session with a short handoff is cheaper when the history is
-  long.
+  long. Since Claude Code 2.1.299 the terminal compacts a conversation of 200K tokens or more that
+  sits idle for about 54 minutes, before its one-hour cache expires, so the cost is smaller there
+  but the summary may drop detail you wanted.
 
 Before starting fresh, write the handoff where the next session will find it: the state, the
 decisions and the next step, in the repo, the KB or project memory. In Claude Code, `/rename`
@@ -201,14 +206,20 @@ thread with that summary instead of carrying on.
   first, and by default re-adds any token the client drops later in a session
   (`HEADROOM_BETA_HEADER_STICKY`), and that it reads Claude Code's `cache_control` TTL. Its
   Unix-socket mode makes Claude Code treat the session as API-key auth, which fails a
-  subscription login, so use `ANTHROPIC_BASE_URL`. *Unverified:* a real run with a claude.ai
-  login.
+  subscription login, so use `ANTHROPIC_BASE_URL`. Claude Code's
+  [gateway page](https://code.claude.com/docs/en/llm-gateway) (checked 2026-10-29) confirms the
+  `ANTHROPIC_BASE_URL`-only setup keeps the claude.ai login as the credential and needs the
+  OAuth capability forwarded in `anthropic-beta`; since 2.1.310 Claude Code also retries without
+  the `effort-2025-11-24` beta value or mid-conversation system messages when a gateway rejects
+  them. No one in the family has run Headroom with a claude.ai login yet, so trial it before
+  relying on it.
 
 ### Check it's working
 
 - Claude Code `/usage`: session tokens and cost, a prompt-cache line (share of input served from
   cache, misses and their likely cause), and on a plan, what share went to subagents, skills or
-  MCP servers, with flags for long context or cache misses.
+  MCP servers, with flags for long context or cache misses. Since 2.1.299 it also warns about max
+  effort, workflows, always-on context and large tool results.
 - `/insights`: a report on friction such as misunderstood requests.
 - Claude chat: Settings > Usage shows the session and weekly limits.
 - For the pilot, count per project: threads that needed a bump, sessions restarted because
@@ -554,9 +565,11 @@ theme-factory, canvas-design and web-artifacts-builder. Worth adding on top:
 | webapp-testing | anthropics/skills, Apache-2.0 | Drives a local web app with Python Playwright, with a helper that starts and stops the dev servers. |
 | differential-review, supply-chain-risk-auditor, static-analysis (plugins; static-analysis bundles codeql, semgrep and sarif-parsing) | [trailofbits/skills](https://github.com/trailofbits/skills), CC-BY-SA-4.0 | Security review of a diff, a dependency tree, and CodeQL or Semgrep scans. |
 
-Not yet reviewed, for the next pass: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
-(MIT, about 106k stars, 25 engineering-lifecycle skills, installs as a Claude Code plugin
-marketplace; checked 2026-10-20).
+Reviewed 2026-10-29 and left out for now: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+(MIT, about 110k stars, 24 engineering-lifecycle skills plus a `using-agent-skills` router, installed
+as a Claude Code plugin marketplace with `/plugin marketplace add addyosmani/agent-skills`). Like
+Superpowers it is a methodology bundle that ships its own lifecycle hooks, so the rule below
+applies: take a single skill from it if one fills a gap, never the whole plugin.
 
 What we learned getting them in:
 
@@ -639,7 +652,7 @@ Constraints:
 
 A prior-art survey on 2026-10-20 looked for tools that turn scattered personal data (cloud drives,
 social exports, chat exports, notes) into one store with an Obsidian-style graph of files and of
-people, places and topics. Stars and licences were read from GitHub that day.
+people, places and topics. Stars and licenses were read from GitHub that day.
 
 - **No single tool does it.** Copying and dedupe are solved (rclone, czkawka, dupeGuru), a local
   timeline of people and places is close to solved
@@ -664,7 +677,7 @@ people, places and topics. Stars and licences were read from GitHub that day.
 - **Keep a private vault off every sync path.** On Windows, Windows Backup can sync Desktop,
   Documents and Pictures to OneDrive, so a private vault belongs outside those folders. Allow only
   the plugins you need: [Smart Connections](https://github.com/brianpetro/obsidian-smart-connections)
-  is source-available under its own licence, not open source, and bundles cloud chat features.
+  is source-available under its own license, not open source, and bundles cloud chat features.
 - **File names leak.** When an agent writes the indexing script, test it on a made-up folder and
   have the owner share counts, not logs, because paths carry family members' names.
 
@@ -697,7 +710,7 @@ project, prepaid credit with auto top-up off, and a key restricted to the media 
 keys take `acls` such as `api-key:endpoint:image` and per-key `qps`/`qpm`, and a $0 invoiced limit
 rejects requests once credit runs out. Caps in the server (per call, session, day, month) are a
 brake on mistakes, and the prepaid balance is the cap no bug can pass. Never retry a request the
-API has already accepted: async video jobs are billed even when cancelled.
+API has already accepted: async video jobs are billed even when canceled.
 
 **Claude's connector OAuth, in practice:**
 

@@ -2,15 +2,20 @@
 title: "Claude API"
 summary: "Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks"
 topic: claude-api
-status: partial
-last_reviewed: 2026-10-19
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://platform.claude.com/docs/en/about-claude/models/overview
   - https://platform.claude.com/docs/en/about-claude/pricing
+  - https://platform.claude.com/docs/en/about-claude/model-deprecations
+  - https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1
+  - https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5
+  - https://platform.claude.com/docs/en/api/migration-2026-10-21
   - https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry
   - https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models-quotas-limits
   - https://code.claude.com/docs/en/model-config
   - https://docs.x.ai/developers/models.md
+  - https://docs.x.ai/developers/model-capabilities/legacy/chat-completions
   - https://docs.x.ai/developers/faq/security
   - https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability
   - https://ai.google.dev/gemini-api/terms
@@ -45,7 +50,8 @@ workspace share all three, so keys alone don't stop one app from using up the ot
 
 The family's defaults per kind of job, the override rule and the fallbacks are in
 [decision 0006](../decisions/0006-model-selection-convention.md). This section holds the facts
-they rest on. Checked against Anthropic's docs on 2026-10-18; re-check before relying on a price.
+they rest on. Checked against Anthropic's models, pricing and deprecations pages on 2026-10-18 and
+again on 2026-10-29; re-check before relying on a price.
 
 | Model | ID | Input $/MTok | Output $/MTok | Cache read $/MTok | Default effort | Latency |
 |---|---|---|---|---|---|---|
@@ -57,23 +63,47 @@ they rest on. Checked against Anthropic's docs on 2026-10-18; re-check before re
 
 - All four have a 1M-token context window and 128K output tokens. Apart from Haiku 5.5, the
   whole window is billed at the standard rate.
-- The Batch API is half price. A 5-minute cache write costs 1.25 times the input price.
+- The Batch API is half price. A 5-minute cache write costs 1.25 times the input price, a 1-hour
+  write 2 times. Haiku 5.5's long-context tier applies to the whole request once its prompt,
+  cache reads and writes included, is over 100K tokens.
 - `inference_geo: "us"` costs 1.1 times the price.
 - Every model ID is a pinned snapshot. Pin the full ID in config; aliases (in Claude Code, for
   example) move to newer models and don't move the same way on every provider.
-- Opus 5.5 can't turn thinking off: lower `effort` instead. Sonnet 5.5 and Haiku 5.5 default to
+- Opus 5.5 can't turn thinking off: `thinking: {"type": "disabled"}` or a manual budget returns
+  a 400, so lower `effort` instead. Sonnet 5.5 and Haiku 5.5 default to
   different efforts, so set `effort` explicitly when comparing them.
-- Fable 5.1 needs 30-day data retention, so it isn't available under zero data retention.
+- Fable 5.1 carries 30-day data retention, so it isn't available under zero data retention unless
+  Anthropic expressly authorizes it.
 - Retirement is "not sooner than" 2027-09-01 (Fable 5.1), 2027-09-22 (Opus 5.5), 2027-09-28
   (Sonnet 5.5) and 2027-10-07 (Haiku 5.5).
+
+## API version 2026-10-21 and the 2.0 SDKs
+
+Checked against Anthropic's [migration guide](https://platform.claude.com/docs/en/api/migration-2026-10-21)
+on 2026-10-29. An SDK uses the API version that was current when its major version shipped, so
+upgrading `anthropic` to 2.0.0 (released 2026-10-21) moves every call to `2026-10-21`; a direct
+caller sets the `anthropic-version` header. Before upgrading:
+
+- **Sampling parameters are gone.** `temperature`, `top_p` or `top_k` returns a 400, even at the
+  default value, and nothing replaces a lower temperature.
+- **Messages API:** a `document` block in an `assistant` message, or a `text` block with
+  `citations` in a `user` message, returns a 400.
+- **The SDK sends the key as `Authorization: Bearer`,** not `X-Api-Key`, so a proxy that reads
+  `X-Api-Key` needs updating. Passing two credentials to one client raises `ValueError`.
+- **Python types:** `MessageParam` is a union by role; write messages as dict literals. `betas` moved
+  off the non-beta Models methods to `client.beta.models`.
+- **Admin API fields are renamed** (`workspace_id` on API keys becomes `scope`, among others), and
+  the SDKs move from MIT to Apache 2.0.
+- On Amazon Bedrock the new version works only with Claude 4.7 and later models.
 
 ## Claude on Microsoft Foundry
 
 Checked against Anthropic's Foundry page and Microsoft's quota page (updated 2026-09-22) on
-2026-10-18.
+2026-10-18, and again on 2026-10-29.
 
 - **Prices** are Anthropic's standard rates, billed through the Azure Marketplace in Claude
-  Consumption Units (100 CCU is 1 USD), metered hourly and invoiced monthly.
+  Consumption Units (one CCU is 0.01 USD), metered hourly and invoiced monthly. US Data Zone
+  Standard deployments cost 1.1 times, like `inference_geo: "us"`.
 - **Two hostings.** Hosted on Azure offers Opus 5.5, Opus 5, Opus 4.8, Sonnet 5.5, Sonnet 5,
   Haiku 5.5 and Haiku 4.5, in Global Standard or US Data Zone Standard. Hosted on Anthropic
   offers every model, Fable 5.1 included, in Global Standard only. Sonnet 5.5 is Global Standard
@@ -100,19 +130,21 @@ Checked against Anthropic's Foundry page and Microsoft's quota page (updated 202
   ([Foundry RBAC](https://learn.microsoft.com/en-us/azure/foundry/concepts/rbac-foundry), checked
   2026-10-18).
 - **Claude Code on Foundry:** its `opus`, `sonnet` and `haiku` aliases point at Opus 4.6,
-  Sonnet 4.5 and Haiku 4.5 there. Set `ANTHROPIC_DEFAULT_OPUS_MODEL` and its siblings to full IDs.
+  Sonnet 4.5 and Haiku 4.5 there (Claude Code's model config page, checked 2026-10-29). Set
+  `ANTHROPIC_DEFAULT_OPUS_MODEL` and its siblings to full IDs.
 
 ## Other model families
 
 Which second family the apps use, and for what, is
 [decision 0009](../decisions/0009-second-model-family.md). These are the facts behind it, checked on
-the providers' own pages on 2026-10-19; re-check before relying on them.
+the providers' own pages on 2026-10-19 (xAI and Gemini re-checked 2026-10-29); re-check before
+relying on them.
 
 - **What Claude doesn't do.** It reads images and PDFs but can't create or edit images, takes no
   video or audio, and has no embedding model (Anthropic points to Voyage).
-- **xAI.** Text models `grok-4.7` ($2/$6 per MTok) and `grok-4.3` ($1.25/$2.50); image, video
-  and speech models on the same API. No training on API data; requests kept 30 days by default,
-  with a zero-retention switch. Chat Completions is marked legacy in favour of the Responses API.
+- **xAI.** Text models `grok-4.7` ($2/$6 per MTok) and `grok-4.3` ($1.25/$2.50), both doubling
+  for prompts of 200K tokens or more; image, video and speech models on the same API. No training on API data; requests kept 30 days by default,
+  with a zero-retention switch. Chat Completions is filed under legacy in favor of the Responses API.
 - **Grok on Azure.** Foundry sells `grok-4.3`, `grok-4.6`, `grok-4.7` and `grok-4.20` (Global
   Standard in US, Canada and Brazil regions; Data Zone in US regions). Text only: no Grok Imagine.
 - **Ruled out for apps children use, by terms.** The Gemini API and Meta's own Model API (now

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Turn an accepted KB feedback or known-error issue into a change to the KB's YAML data.
+"""Turn an accepted KB feedback, known-error, source or digest issue into a change to the KB.
 
 Run by .github/workflows/kb-feedback.yml when a maintainer labels an issue kb-accepted. It reads
 the issue form, appends a field report (kb-feedback), a known error (kb-known-error) or an expert
-nomination (kb-source, to experts.yaml as status nominated, for a maintainer to score), and writes
-the branch name, PR title and PR body for the workflow to open a pull request.
+nomination (kb-source, to experts.yaml as status nominated, for a maintainer to score), or for a
+weekly digest (kb-digest) adds each ticked `- [x]` item to its target page and sets the page's
+`last_reviewed`. Then it writes the branch name, PR title and PR body for the workflow to open a
+pull request.
 
     python3 scripts/kb/feedback.py --event "$GITHUB_EVENT_PATH"
     python3 scripts/kb/feedback.py --issue-json issue.json      # {"number", "title", "body", "labels"}
@@ -185,8 +187,62 @@ def write(path: Path, data) -> None:
     path.write_text(kblib.yaml_header(path) + kblib.dump_yaml(data), encoding="utf-8")
 
 
+DIGEST_SECTION = re.compile(r"^### (.+?)(?:\s*→\s*`?docs/knowledge/([^`\s]+)`?)?\s*$")
+DIGEST_TICKED = re.compile(r"^- \[[xX]\] \[(.+?)\]\((https://[^)\s]+)\)(?:\s*·\s*(\d{4}-\d{2}-\d{2}))?(.*)$")
+PAGE_OVERRIDE = re.compile(r"→\s*`?([^`\s]+\.md)`?")
+UPDATES_HEADING = "## Recent upstream updates"
+
+
+def add_digest(issue: dict, today: str) -> tuple[str, str]:
+    """Add each ticked digest item to its section's page, or the page named after it with → `page`."""
+    page, source = None, "digest"
+    picked: dict[str, list[tuple[str, str]]] = {}
+    for line in (issue.get("body") or "").replace("\r\n", "\n").splitlines():
+        line = line.strip()
+        if m := DIGEST_SECTION.match(line):
+            source, page = m.group(1).strip(), m.group(2)
+        elif m := DIGEST_TICKED.match(line):
+            title, url, when, rest = m.group(1), m.group(2), m.group(3), m.group(4)
+            target = page
+            if o := PAGE_OVERRIDE.search(rest):
+                target, rest = o.group(1), PAGE_OVERRIDE.sub("", rest)
+            if not target:
+                raise FeedbackError(f"ticked item {title[:60]!r} has no target page; add → `docs/knowledge/<page>.md`")
+            note = rest.strip().strip("()").strip()
+            detail = ", ".join(x for x in (source, when) if x)
+            picked.setdefault(kb_target(target, "digest target"), []).append(
+                (url, f"- [{title}]({url}) ({detail})" + (f": {note}" if note else "")))
+    if not picked:
+        raise FeedbackError("no digest items are ticked (- [x])")
+
+    added = 0
+    for target, items in picked.items():
+        path = KB_DIR / target
+        text = path.read_text(encoding="utf-8")
+        new = [bullet for url, bullet in items if url not in text]
+        if not new:
+            continue
+        added += len(new)
+        text = re.sub(r"(?m)^last_reviewed:\s*\S+", f"last_reviewed: {today}", text, count=1)
+        if f"\n{UPDATES_HEADING}\n" in text:
+            head, tail = text.split(f"\n{UPDATES_HEADING}\n", 1)
+            text = f"{head}\n{UPDATES_HEADING}\n\n" + "\n".join(new) + "\n" + tail.lstrip("\n")
+        else:
+            text = text.rstrip("\n") + f"\n\n{UPDATES_HEADING}\n\n" + "\n".join(new) + "\n"
+        path.write_text(text, encoding="utf-8")
+    if not added:
+        raise FeedbackError("every ticked item is already linked from its page")
+    pages = ", ".join(f"`docs/knowledge/{t}`" for t in picked)
+    return (f"KB digest: add {added} item(s) from #{issue['number']}",
+            f"Adds {added} ticked item(s) from digest #{issue['number']} to {pages} under "
+            f"\"{UPDATES_HEADING[3:]}\", and sets `last_reviewed`.\n\n"
+            "Before merging, fold anything that changes a claim into the page's own sections.")
+
+
 def handle(issue: dict, today: str) -> tuple[str, str]:
     labels = {lbl["name"] if isinstance(lbl, dict) else lbl for lbl in issue.get("labels", [])}
+    if "kb-digest" in labels:
+        return add_digest(issue, today)
     fields = parse_form(issue.get("body") or "")
     public_safe(fields)
     if "kb-known-error" in labels:
@@ -195,7 +251,7 @@ def handle(issue: dict, today: str) -> tuple[str, str]:
         return add_nomination(issue, fields, today)
     if "kb-feedback" in labels:
         return add_field_report(issue, fields, today)
-    raise FeedbackError("the issue has none of the kb-feedback, kb-known-error or kb-source labels")
+    raise FeedbackError("the issue has none of the kb-feedback, kb-known-error, kb-source or kb-digest labels")
 
 
 def main() -> int:
