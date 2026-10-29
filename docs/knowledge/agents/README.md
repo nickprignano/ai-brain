@@ -2,12 +2,16 @@
 title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
-status: partial
-last_reviewed: 2026-10-22
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/memory
   - https://code.claude.com/docs/en/model-config
+  - https://code.claude.com/docs/en/llm-gateway
+  - https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
+  - https://antigravity.google/docs/rules
+  - https://antigravity.google/docs/cli/gcli-migration/
   - https://support.claude.com/en/articles/9797557-usage-limit-best-practices
   - https://www.sourcepulse.org/projects/28283027
   - https://lobehub.com/mcp/administrativetrick-obsidian-mcp
@@ -137,8 +141,9 @@ What the run showed about the rule:
   "can't settle this", which the Opus pass reported itself. The escalation that happened (Opus
   names the questions, the user says go, a Fable worker answers, Opus checks) is case 1 above.
 - **The `high` step was skipped.** Both red teams ran at the thread default, `medium`, because
-  the convention isn't in the project instructions yet. *Unverified:* whether Opus at `high`
-  would have settled either question; no run tried it.
+  the convention isn't in the project instructions yet. So this run says nothing about whether
+  Opus at `high` would have settled either question; an open question for the next design review,
+  not a finding.
 - **The spot check missed a boundary.** Recomputing the figures confirmed them, except "a judge
   at exactly 95% trips about half the time": that is 32 to 38% if the alarm fires below 95%, and
   56 to 60% at or below, so the threshold's comparison needs stating.
@@ -195,14 +200,17 @@ thread with that summary instead of carrying on.
   compare tokens per task and the `/usage` cache share with and without it. Claude Code supports a
   proxy set by `ANTHROPIC_BASE_URL` alone: the claude.ai login stays the credential, so the
   plan's limits still apply, as long as the proxy forwards the OAuth capability in the
-  `anthropic-beta` header. A proxy that strips the cache markers bills the whole history as
+  `anthropic-beta` header (Claude Code's [LLM gateway](https://code.claude.com/docs/en/llm-gateway)
+  page, "Subscriptions and gateways", checked 2026-10-29). Setting a gateway credential or
+  `apiKeyHelper` instead replaces the login and bills per token. A proxy that strips the cache markers bills the whole history as
   uncached input on every turn, so check the `/usage` cache line first. Headroom's docs (checked
   2026-10-20) say it merges the client's `anthropic-beta` tokens with its own, client tokens
   first, and by default re-adds any token the client drops later in a session
   (`HEADROOM_BETA_HEADER_STICKY`), and that it reads Claude Code's `cache_control` TTL. Its
   Unix-socket mode makes Claude Code treat the session as API-key auth, which fails a
-  subscription login, so use `ANTHROPIC_BASE_URL`. *Unverified:* a real run with a claude.ai
-  login.
+  subscription login, so use `ANTHROPIC_BASE_URL`. Both halves are from the vendors' docs; no
+  family session has run Headroom with a claude.ai login yet, so do the `/usage` check below on
+  the first one.
 
 ### Check it's working
 
@@ -213,6 +221,24 @@ thread with that summary instead of carrying on.
 - Claude chat: Settings > Usage shows the session and weekly limits.
 - For the pilot, count per project: threads that needed a bump, sessions restarted because
   quality slipped, and the cache share from `/usage`.
+
+### Claude Code changes that change how sessions behave
+
+From the changelog for 2.1.299 to 2.1.310 (2026-10-14 to 2026-10-23), the ones that change what a
+cloud or headless session does:
+
+- **Fork subagents are on by default** in `claude -p`, the Agent SDK, the desktop app and VS Code
+  (2.1.302), as in the terminal; `CLAUDE_CODE_FORK_SUBAGENT=0` turns them off. The desktop app and
+  VS Code also always run the main conversation's subagents in the background now.
+- **Headless sessions on third-party providers start in `default` permission mode** when none is
+  given (2.1.302); pass `--permission-mode auto` to keep auto.
+- **Tool search is on by default behind a custom `ANTHROPIC_BASE_URL`** (2.1.304), with a retry
+  without it on a 400 or 422, and requests a gateway rejects for the `effort` beta or a
+  mid-conversation system message are retried without them (2.1.310). Both matter for the token
+  proxy above.
+- **`sed -i` is a plain Bash call now** (2.1.309): it gets the normal Bash prompt and, like other
+  Bash edits, `/rewind` doesn't restore it.
+- Standalone Claude Design (claude.ai/design) closes by 2026-12-14 (notice added in 2.1.302).
 
 ## Swarms and multi-agent patterns
 
@@ -357,18 +383,22 @@ What it rests on (checked 2026-10-22):
   `.github/copilot-instructions.md`. Gemini CLI reads `GEMINI.md` by default, and its `contextFileName`
   setting can name other files; a one-line `GEMINI.md` that imports `AGENTS.md` avoids depending on
   the setting's exact key.
-- **Gemini CLI is now Antigravity for personal plans** (checked 2026-10-22 against tech press and
-  third-party guides, not Google's own pages, so unverified until the sandbox evaluation in
-  `sandbox/ANTIGRAVITY.md` confirms it). Google stopped serving
-  Gemini CLI to free, AI Pro and Ultra accounts on 2026-06-18; its successor is the Antigravity
-  CLI (`agy`), next to the Antigravity desktop IDE ([The New Stack](https://thenewstack.io/gemini-cli-antigravity-replacement/),
-  [Toolsbase](https://toolsbase.dev/en/blog/gemini-cli-to-antigravity-migration)). Antigravity reads a
-  root `GEMINI.md`, `AGENTS.md` (IDE 1.20.5 and later) and rule files in `.agents/rules/` (limit
-  12,000 characters each); no published order says which wins on a conflict, and whether `@`
-  imports work inside `GEMINI.md` is unverified ([guide](https://thepromptshelf.dev/blog/google-antigravity-agents-md-rules-guide-2026),
-  [troubleshooting](https://agentpedia.codes/blog/antigravity-agents-md-not-working-fix)). So the
-  sandbox writes its rules in full to `GEMINI.md` and `.agents/rules/sandbox.md`, then imports
-  `AGENTS.md`; canary lines in each file show which ones a given version loads.
+- **Gemini CLI is now Antigravity for personal plans.** Google's
+  [migration guide](https://antigravity.google/docs/cli/gcli-migration/) names the Antigravity CLI
+  (`agy`) as Gemini CLI's successor and imports a legacy Gemini CLI setup on its first run. The
+  cutoff date, 2026-06-18 for free, AI Pro and Ultra accounts, comes from the press
+  ([The New Stack](https://thenewstack.io/gemini-cli-antigravity-replacement/),
+  [Toolsbase](https://toolsbase.dev/en/blog/gemini-cli-to-antigravity-migration)); Google's pages
+  don't give it. Per Google's [rules page](https://antigravity.google/docs/rules) (checked
+  2026-10-29), Antigravity reads `AGENTS.md`, `GEMINI.md`, `.agents/AGENTS.md`,
+  `.agents/GEMINI.md` and the immediate `.md` children of `.agents/rules/` (plus global files under
+  `~/.gemini/`). Rules add up rather than replace each other; on a conflict the more specific
+  scope wins (directory, then workspace, then global). Each file is cut at 24,000 bytes after
+  includes expand. `@[label](path)` inlines a file; a bare `@filename` only rewrites the path and
+  inlines nothing. Third-party guides that said 12,000 characters and "no published order" are out
+  of date. The sandbox still writes its rules in full to `GEMINI.md` and
+  `.agents/rules/sandbox.md` and then points at `AGENTS.md`, so it doesn't depend on which import
+  syntax a version honours; canary lines in each file show which ones a given version loads.
 - **Antigravity's guard rails are settings, not instructions** ([settings](https://antigravity.google/docs/settings?tab=ide)):
   Strict mode (review before terminal commands, browser JavaScript and artifacts, workspace only,
   terminal sandbox without network), Terminal command auto execution (*Request Review* or *Always
@@ -554,9 +584,11 @@ theme-factory, canvas-design and web-artifacts-builder. Worth adding on top:
 | webapp-testing | anthropics/skills, Apache-2.0 | Drives a local web app with Python Playwright, with a helper that starts and stops the dev servers. |
 | differential-review, supply-chain-risk-auditor, static-analysis (plugins; static-analysis bundles codeql, semgrep and sarif-parsing) | [trailofbits/skills](https://github.com/trailofbits/skills), CC-BY-SA-4.0 | Security review of a diff, a dependency tree, and CodeQL or Semgrep scans. |
 
-Not yet reviewed, for the next pass: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
-(MIT, about 106k stars, 25 engineering-lifecycle skills, installs as a Claude Code plugin
-marketplace; checked 2026-10-20).
+Reviewed 2026-10-29, not adopted: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+(MIT; 25 engineering-lifecycle skills behind nine slash commands, `/spec` to `/ship`; installs as
+a Claude Code plugin or with `npx skills add`). Its plugin `/review` clashes with the built-in
+command (use `/agent-skills:review`), and its `/build auto` runs a whole plan after one approval,
+which overlaps the [finisher loop](../prompting/library/finisher-loop.md). Take single skills from it only when a task needs one.
 
 What we learned getting them in:
 

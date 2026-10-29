@@ -2,8 +2,8 @@
 title: "Prompt: Start an outside agent on a sandbox task"
 summary: "Starts another vendor's coding agent on one task in a 2ndbrain sandbox repo: rules first, public inputs only, one finding file and a pull request"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-22
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Start an outside agent on a sandbox task

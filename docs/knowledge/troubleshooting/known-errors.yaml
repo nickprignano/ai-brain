@@ -22,5 +22,55 @@ errors:
   cause: Before Python 3.15 (PEP 686), open(), Path.read_text() and Path.write_text() without encoding= use the ANSI code page on Windows, not UTF-8.
   fix: Pass encoding="utf-8" to every text open; EncodingTests in scripts/kb/test_kb.py fails on one that doesn't.
   source: https://peps.python.org/pep-0686/
-  status: unverified
+  applies_to: Python 3.14 and earlier on Windows (PEP 686 is Final, Python-Version 3.15; checked 2026-10-29)
+  status: verified
   added: '2026-10-21'
+- id: kb-digest-issues-pile-up
+  symptom: Weekly `kb-digest` issues stay open for weeks and pile up, and a ticked digest never becomes a pull request
+  cause: kb-curator only opened issues; nothing closed an unworked digest, and kb-feedback acted on kb-accepted for the issue forms but not for digests
+  fix: A new digest closes older open digests with no ticked item and no comment (`scripts/kb/digest.py supersede`); kb-accepted on a ticked digest adds its items to their pages and opens a PR that closes it (`digest.accept`)
+  source: curation.md#weekly-digest-kb-curator
+  applies_to: scripts/kb (family format 1)
+  status: verified
+  added: '2026-10-29'
+- id: kb-freshness-issue-never-closes
+  symptom: The `kb-freshness` issue stays open with items that were fixed long ago
+  cause: The workflow ran its issue step only when `items != 0`, so a clean run never touched the open issue; it also runs only monthly, so the body goes stale between runs
+  fix: An explicit clean branch closes the open issue when the check finds nothing; run the workflow by hand after a fix to refresh it
+  source: curation.md#freshness-check-kb-freshness
+  applies_to: .github/workflows/kb-freshness.yml
+  status: verified
+  added: '2026-10-29'
+- id: kb-expert-yield-false-positive-new-kb
+  symptom: The freshness check says a tracked expert has "nothing in the digests" on a new KB, or right after the expert was added
+  cause: Yield was counted over the whole 90-day window even when no digest, or none since the expert was scored, existed yet
+  fix: Count yield only over digests opened since the expert's `reviewed` date, and skip the expert when there are none
+  source: curation.md#freshness-check-kb-freshness
+  applies_to: scripts/kb/freshness.py
+  status: verified
+  added: '2026-10-29'
+- id: feed-transient-http-500
+  symptom: 'A digest lists a feed (often a YouTube channel feed) under "Sources that failed this run" with `HTTPError: HTTP Error 500`, and the next run works'
+  cause: The feed answered a transient 5xx and the fetcher had no retry for server errors
+  fix: '`http_get` retries a 5xx once after a short wait; a 4xx still fails at once'
+  source: curation.md#weekly-digest-kb-curator
+  applies_to: scripts/kb/sources.py
+  status: verified
+  added: '2026-10-29'
+- id: kb-freshness-sibling-not-linked
+  symptom: 'Every freshness run lists "<sibling>: repo not linked yet" or "couldn''t read its family.yaml (HTTPError)" for a sibling that has a working KB'
+  cause: The sibling's row in family.yaml had no `repo`, or still named a repo the KB had moved out of (here the AVD KB moved to another account and the Liquidware KB to a new repo)
+  fix: Point the row at the repo that holds the sibling's docs/knowledge/family.yaml, copy `owns` from the sibling's own row, and move its two sources in sources.toml with it
+  source: curation.md#staying-aligned-with-the-family
+  applies_to: docs/knowledge/family.yaml
+  status: verified
+  added: '2026-10-29'
+- id: kb-capture-red-first-run
+  symptom: A PR shows one failed `kb-capture` run next to a green one on the same commit
+  cause: The `opened` run checked the PR before its `KB:` line or `no-kb` label was added; the `labeled` or `edited` rerun passed, but the failed run stays listed
+  fix: Open the PR with the `KB:` line already in the body, or the `no-kb` label set at creation
+  source: curation.md#capture-check-kb-capture
+  applies_to: scripts/kb/capture_check.py
+  status: verified
+  added: '2026-10-29'
+  issue: 54

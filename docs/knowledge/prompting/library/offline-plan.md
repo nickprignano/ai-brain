@@ -2,8 +2,8 @@
 title: "Prompt: Fold in work done while Claude was away"
 summary: "Has Claude read the findings notes the owner wrote while off Claude, propose where each belongs, and fold them in after one yes"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-21
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Fold in work done while Claude was away

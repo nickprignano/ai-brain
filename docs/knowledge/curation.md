@@ -3,7 +3,7 @@ title: "Keeping the knowledge base current"
 summary: "How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment"
 topic: curation
 status: verified
-last_reviewed: 2026-10-20
+last_reviewed: 2026-10-29
 ---
 
 # Keeping the knowledge base current
@@ -31,8 +31,17 @@ Watched today:
 Blog and newsletter feeds come next. Each one is added only once a curator run shows it works, and
 people are chosen with the method in [experts.md](experts.md).
 
-Working a digest: for each ticked item, add what matters to the page named next to the source
-(facts, versions, fixes; not a link dump), then close the issue.
+Working a digest: tick the items worth adding (a `→ docs/knowledge/<page>.md` at the end of an
+item's line sends it to another page than its source's), then label the issue **kb-accepted**.
+[kb-feedback](#feedback-loop-kb-feedback) adds each ticked item to its page under "From the
+digest", marked *unverified*, and opens a pull request that closes the digest. Before merging, turn
+each link into what matters (facts, versions, fixes; not a link dump) with a primary source, and
+drop its marker. Or write it up by hand in your own PR with `Closes #<digest>`.
+
+A new digest closes the older open ones nobody ticked anything in or commented on, with a link to
+the new one, so unworked digests don't pile up. A digest with ticks stays open until it's accepted
+or closed by hand. A feed or API that answers 5xx gets one retry after a short wait before it
+counts as failed for that run.
 
 To watch something else, add a `[[source]]` table to [sources.toml](sources.toml). Supported
 kinds: `github_releases`, `github_commits` (optionally limited to one `path`), `github_issues`,
@@ -107,13 +116,14 @@ The digest and prior-art scripts use only the Python standard library (3.11+).
 
 ## Feedback loop (`kb-feedback`)
 
-Real results flow back into the KB through three issue forms:
+Real results flow back into the KB through three issue forms, and the weekly digest:
 
 - **Knowledge base feedback:** what worked, broke, went out of date or is missing, for one page
   (label `kb-feedback`).
 - **Known error:** an error, its cause and fix, for the [troubleshooting catalog](troubleshooting/README.md)
   (label `kb-known-error`).
 - **Suggest an expert to follow:** a nomination for the [experts study](experts.md) (label `kb-source`).
+- **A weekly digest** with ticked items (label `kb-digest`, see [above](#weekly-digest-kb-curator)).
 
 Each form has a required public-safe tick box. A maintainer reviews the issue and, if it's useful
 and public-safe, labels it **kb-accepted**.
@@ -142,8 +152,16 @@ of each month and keeps one open issue labelled **kb-freshness** listing:
 - pages whose `last_reviewed` is more than 90 days old (pages with status `plan` are skipped)
 - pages with status `unverified` or `partial`, with the number of claims still marked *unverified*
 - known errors whose fix is still unverified
-- experts due for re-scoring, with each tracked expert's digest yield
+- experts due for re-scoring, with each tracked expert's digest yield (counted only over digests
+  opened since the expert was last scored, so a new KB or a new expert isn't flagged before any
+  digest could list them)
 - sibling KBs on a different family format version, or whose `family.yaml` can't be read
+
+When the check comes back clean it closes the open issue instead of leaving it for next month.
+The issue's body is only as fresh as the last run, so run **Actions > kb-freshness** by hand after
+a fix lands. The inline check counts the literal words `*unverified` and `not yet reviewed`
+anywhere in prose, so rewording a fact that was checked is fine, but rewording only to dodge the
+pattern isn't.
 
 Work it by re-checking each item against a primary source or a real run, then updating the page's
 text, `last_reviewed` and `status`. Open claim re-checks as a pull request labelled
@@ -208,6 +226,13 @@ Code that changes without a KB entry loses what was learned, so two checks ask f
   PRs from the family's automation are exempt.
 - **A repo without its own KB** puts `capture_hook` and `kb_repos` in `.claude/kb-capture.toml`
   and passes with a `KB: <link>` line to the lesson in one of those KB repos.
+- **Open the PR ready to pass.** The `opened` run checks the body and labels as they are at that
+  moment, so a PR that gets its `KB:` line or `no-kb` label a minute later keeps one red run in its
+  check list even after the rerun goes green. Put the line in the body, or the label on the PR,
+  when you create it (seen when avd-swarm adopted 0011; #54).
+- **No step to create `no-kb`.** Applying a label that doesn't exist yet through the GitHub API
+  created it in that adoption, so a repo without a KB can create `no-kb` by applying it to its
+  adoption PR (observed, not documented in GitHub's REST reference).
 
 Paths in `capture_ignore` (and `llms.txt` and lockfiles) don't count as code.
 

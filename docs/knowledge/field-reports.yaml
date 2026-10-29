@@ -2,4 +2,27 @@
 # Appended by the kb-feedback workflow from accepted feedback issues. Schema: schema/field-reports.schema.json
 # The monthly freshness check flags pages with unresolved "broke" or "outdated" reports.
 
-reports: []
+reports:
+- date: '2026-10-29'
+  page: decisions/0011-family-format-enforced-kb-capture.md
+  outcome: worked
+  summary: >-
+    avd-swarm (a repo without its own KB) installed 0011 and 0012 from the template export, unchanged,
+    in nickprignano/avd-swarm#15 (merged). Everything worked. Two lessons, sent from the AVD project with
+    the owner's yes:
+
+
+    1. **Creating `no-kb` needs no separate step.** Applying a label that doesn't exist yet to an issue
+    or PR through the GitHub API creates it. A no-KB repo can create `no-kb` by applying it to its own
+    adoption PR. The adopt steps (and 0012's "creates the two labels by hand") could say so.
+
+    2. **The first push shows one red `kb-capture` run.** The `opened` run fails before the `no-kb` label
+    or the `KB:` line is added. The `labeled` or `edited` rerun goes green on the same commit, but the
+    red run stays in the PR's check list, which can look like an open failure. Options: say in the adopt
+    prompt to open the PR with the `KB:` line already in the body (or the label set at creation), or accept
+    it and mention it in 0011.
+  versions: capture_check.py from the template export at ai-brain 91a22f1.
+  evidence: >-
+    nickprignano/avd-swarm#15: one failed `kb-capture` run from `opened`, then a green run from `labeled`
+    on the same head.
+  issue: 54

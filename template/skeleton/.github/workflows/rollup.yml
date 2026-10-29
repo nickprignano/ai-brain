@@ -1,6 +1,7 @@
 name: rollup
 
-# Weekly: read the public hub named in hub.toml and open an issue here listing what's new.
+# Weekly: read the public hub named in hub.toml and open an issue here listing what's new. A new
+# roll-up closes older open ones nobody commented on, so they don't pile up.
 # On the first Monday of the month it also lists this repo's notes that are due for review.
 # Uses only this repo's GITHUB_TOKEN. It reads the hub (public) and writes issues here, nowhere else.
 # It runs only in a private repo with hub_repo set, so the template and public copies skip it.
@@ -50,4 +51,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh label create rollup --color 5319e7 --description "Weekly roll-up from the hub" 2>/dev/null || true
-          gh issue create --title "Roll-up $(date -u +%F)" --label rollup --body-file rollup.md
+          url=$(gh issue create --title "Roll-up $(date -u +%F)" --label rollup --body-file rollup.md)
+          new="${url##*/}"
+          for n in $(gh issue list --label rollup --state open --limit 100 --json number,comments \
+              --jq ".[] | select(.number < $new and (.comments | length) == 0) | .number"); do
+            gh issue close "$n" --reason "not planned" --comment "Superseded by #$new."
+          done
