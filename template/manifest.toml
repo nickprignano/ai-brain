@@ -152,7 +152,7 @@ count = 5
 
 [[replace]]
 file = "scripts/kb/test_kb.py"
-find = "learning/README.md"
+find = "evals/README.md"
 replace = "roadmap/README.md"
 
 [[replace]]
