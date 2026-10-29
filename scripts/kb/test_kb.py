@@ -128,6 +128,93 @@ class FeedbackTests(TempData):
             feedback.handle({"number": 10, "body": bad_page, "labels": ["kb-feedback"]}, "2026-10-16")
 
 
+
+
+DIGEST_BODY = """New since 2026-10-19: **3** item(s) from 2 source(s). Tick what's worth adding to the KB.
+
+### Tool releases → `docs/knowledge/page.md`
+- [x] [tool v2.0](https://example.com/v2) · 2026-10-20 (breaking)
+- [ ] [tool v1.9](https://example.com/v1.9) · 2026-10-19
+
+### Community repos
+- [X] [a repo](https://example.com/repo) · 2026-10-21 → `docs/knowledge/other.md`
+"""
+
+
+class DigestTests(unittest.TestCase):
+    def setUp(self):
+        self.kb = Path(tempfile.mkdtemp())
+        for name in ("page.md", "other.md"):
+            (self.kb / name).write_text("---\ntitle: T\nstatus: verified\nlast_reviewed: 2026-10-01\n---\n\n# T\n",
+                                        encoding="utf-8")
+        self.patch = mock.patch.object(feedback, "KB_DIR", self.kb)
+        self.patch.start()
+
+    def tearDown(self):
+        self.patch.stop()
+        shutil.rmtree(self.kb)
+
+    def test_ticked_items_go_to_their_pages(self):
+        title, body = feedback.handle({"number": 20, "body": DIGEST_BODY, "labels": ["kb-digest"]}, "2026-10-28")
+        self.assertEqual(title, "KB digest: add 2 item(s) from #20")
+        self.assertIn("`docs/knowledge/other.md`", body)
+        page = (self.kb / "page.md").read_text(encoding="utf-8")
+        self.assertIn("last_reviewed: 2026-10-28", page)
+        self.assertIn("## Recent upstream updates\n\n- [tool v2.0](https://example.com/v2) (Tool releases, 2026-10-20): breaking", page)
+        self.assertNotIn("v1.9", page)
+        self.assertIn("[a repo](https://example.com/repo) (Community repos, 2026-10-21)\n",
+                      (self.kb / "other.md").read_text(encoding="utf-8"))
+
+    def test_second_run_adds_to_the_same_section(self):
+        feedback.handle({"number": 20, "body": DIGEST_BODY, "labels": ["kb-digest"]}, "2026-10-28")
+        later = DIGEST_BODY.replace("https://example.com/v2", "https://example.com/v3")
+        feedback.handle({"number": 21, "body": later, "labels": ["kb-digest"]}, "2026-11-04")
+        page = (self.kb / "page.md").read_text(encoding="utf-8")
+        self.assertEqual(page.count("## Recent upstream updates"), 1)
+        self.assertLess(page.index("example.com/v3"), page.index("example.com/v2"))  # newest first
+
+    def test_rejects_nothing_ticked_already_linked_and_no_page(self):
+        issue = {"number": 22, "body": DIGEST_BODY, "labels": ["kb-digest"]}
+        feedback.handle(issue, "2026-10-28")
+        with self.assertRaises(feedback.FeedbackError):
+            feedback.handle(issue, "2026-10-28")  # every URL is already on its page
+        for bad in (DIGEST_BODY.replace("[x]", "[ ]").replace("[X]", "[ ]"),
+                    DIGEST_BODY.replace(" → `docs/knowledge/other.md`", ""),
+                    DIGEST_BODY.replace("other.md", "../../etc/passwd.md")):
+            with self.assertRaises(feedback.FeedbackError):
+                feedback.handle({"number": 23, "body": bad, "labels": ["kb-digest"]}, "2026-10-28")
+
+
+class RetryTests(unittest.TestCase):
+    def test_one_retry_on_a_5xx_only(self):
+        import urllib.error
+        import sources
+
+        class Resp:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def read(self):
+                return b"ok"
+
+        def error(code):
+            return urllib.error.HTTPError("https://x", code, "err", {}, None)
+
+        with mock.patch.object(sources.time, "sleep"):
+            with mock.patch.object(sources.urllib.request, "urlopen", side_effect=[error(500), Resp()]) as m:
+                self.assertEqual(sources.http_get("https://x"), b"ok")
+                self.assertEqual(m.call_count, 2)
+            with mock.patch.object(sources.urllib.request, "urlopen", side_effect=[error(503), error(500)]):
+                with self.assertRaises(urllib.error.HTTPError):
+                    sources.http_get("https://x")
+            with mock.patch.object(sources.urllib.request, "urlopen", side_effect=[error(404), Resp()]) as m:
+                with self.assertRaises(urllib.error.HTTPError):
+                    sources.http_get("https://x")
+                self.assertEqual(m.call_count, 1)
+
 NOMINATION_BODY = """### Name
 
 Example Person
@@ -197,6 +284,18 @@ class FreshnessTests(TempData):
         self.assertTrue(any("claude-api/README.md" in i for i in sections["Reported broken or outdated"]))
         self.assertTrue(sections["Stale"])
         self.assertFalse(any("learning/README.md" in i for i in sections["Stale"]))  # plan pages skip
+
+    def test_expert_yield_waits_for_digests_and_the_review_window(self):
+        sources_toml = self.tmp / "sources.toml"
+        sources_toml.write_text('[[source]]\nname = "Blog A"\nkind = "rss"\nexpert = "a"\n', encoding="utf-8")
+        experts = {"experts": [{"id": "a", "name": "A", "status": "tracked", "reviewed": "2026-10-20"}]}
+        digest = [{"createdAt": "2026-10-26T13:00:00Z", "body": "### Other\n- [ ] [x](https://x)\n"}]
+        with mock.patch.object(kblib, "SOURCES", sources_toml), \
+                mock.patch.object(kblib, "load_yaml", return_value=experts):
+            self.assertEqual(freshness.expert_items(90, date(2026, 10, 28), [])["Expert yield"], [])
+            self.assertEqual(freshness.expert_items(90, date(2026, 10, 28), digest)["Expert yield"], [])
+            later = [{"createdAt": "2027-01-26T13:00:00Z", "body": digest[0]["body"]}]
+            self.assertTrue(freshness.expert_items(90, date(2027, 2, 1), later)["Expert yield"])
 
 
 class BuildTests(unittest.TestCase):

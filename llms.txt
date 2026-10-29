@@ -10,34 +10,34 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 
 ## Knowledge base
 
-- [Knowledge base](docs/knowledge/README.md): What this knowledge base is, how it's organised, and how to add to it safely (status: verified)
+- [Knowledge base](docs/knowledge/README.md): What this knowledge base is, how it's organized, and how to add to it safely (status: verified)
 - [Upstream asks for Anthropic](docs/knowledge/anthropic/upstream-contributions.md): Gaps, API asks and doc fixes we could raise with Anthropic, with evidence (status: verified)
-- [Claude API](docs/knowledge/claude-api/README.md): Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks (status: partial)
-- [Agents and Claude Code](docs/knowledge/agents/README.md): Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act (status: partial)
-- [Prompting](docs/knowledge/prompting/README.md): System prompts, audience-specific prompts and structured output that held up in real apps (status: partial)
+- [Claude API](docs/knowledge/claude-api/README.md): Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks (status: verified)
+- [Agents and Claude Code](docs/knowledge/agents/README.md): Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act (status: verified)
+- [Prompting](docs/knowledge/prompting/README.md): System prompts, audience-specific prompts and structured output that held up in real apps (status: verified)
 - [Prompt library](docs/knowledge/prompting/library/README.md): Reusable, generalized prompts for the work and research we do: paste one, fill its placeholders, run it (status: verified)
 - [Prompt: Add an AGENTS.md to a repo](docs/knowledge/prompting/library/add-agents-md.md): Has Claude give a repo an AGENTS.md with its guardrails and the four change rules, and make CLAUDE.md import it (decision 0020) (status: verified)
 - [Prompt: Adopt a hub decision in a sibling project](docs/knowledge/prompting/library/adopt-family-decision.md): Asks a sibling project to record a hub decision as its own copy, install the machinery from the hub's export and pilot it (status: verified)
 - [Prompt: Apply red-team findings in another project](docs/knowledge/prompting/library/apply-red-team-fixes.md): Hands a red-team findings file to the project that owns the design, to fix, accept or dispute each finding through pull requests (status: verified)
 - [Prompt: Back up a Claude project's setup as a note](docs/knowledge/prompting/library/back-up-project-setup.md): Has a Claude project describe its own setup (instructions, repos, model, scheduled tasks, connectors) as one linked note, with secrets, IDs and private data left out (status: verified)
-- [Prompt: Summarize the weekly KB digest](docs/knowledge/prompting/library/digest-summary.md): Has a scheduled Claude routine turn the raw kb-digest issue into the handful of changes that matter, read from the sources, and open one PR of KB adds (status: partial)
+- [Prompt: Summarize the weekly KB digest](docs/knowledge/prompting/library/digest-summary.md): Has a scheduled Claude routine turn the raw kb-digest issue into the handful of changes that matter, read from the sources, and open one PR of KB adds (status: verified)
 - [Prompt: Finisher loop](docs/knowledge/prompting/library/finisher-loop.md): Has Claude sweep open PRs, handoffs and threads across the owner's repos and post one numbered list of what waits on them, answerable from chat (status: verified)
 - [Prompt: Draft a handoff issue for another project](docs/knowledge/prompting/library/handoff-issue.md): Has the sending project turn an ask into a decision-0012 handoff issue in the receiving repo, waiting for the owner's label (status: verified)
-- [Prompt: Survey a tool landscape for the KB](docs/knowledge/prompting/library/landscape-survey.md): Has Claude survey open-source and vendor tools in an area, check licences and dates, red team the result and add it to the KB (status: verified)
-- [Prompt: Fold in work done while Claude was away](docs/knowledge/prompting/library/offline-plan.md): Has Claude read the findings notes the owner wrote while off Claude, propose where each belongs, and fold them in after one yes (status: partial)
-- [Prompt: Move sensitive OneNote notebooks to markdown safely](docs/knowledge/prompting/library/onenote-to-markdown.md): Has an organization-approved Claude walk you through backing up, converting with onenote-md-exporter and verifying OneNote notebooks, with no data lost or leaked (status: partial)
-- [Prompt: Outside review request](docs/knowledge/prompting/library/outside-review.md): Has a thread write one self-contained file for another company's assistant to review a high-stakes design, then triage the reply (status: partial)
+- [Prompt: Survey a tool landscape for the KB](docs/knowledge/prompting/library/landscape-survey.md): Has Claude survey open-source and vendor tools in an area, check licenses and dates, red team the result and add it to the KB (status: verified)
+- [Prompt: Fold in work done while Claude was away](docs/knowledge/prompting/library/offline-plan.md): Has Claude read the findings notes the owner wrote while off Claude, propose where each belongs, and fold them in after one yes (status: verified)
+- [Prompt: Move sensitive OneNote notebooks to markdown safely](docs/knowledge/prompting/library/onenote-to-markdown.md): Has an organization-approved Claude walk you through backing up, converting with onenote-md-exporter and verifying OneNote notebooks, with no data lost or leaked (status: verified)
+- [Prompt: Outside review request](docs/knowledge/prompting/library/outside-review.md): Has a thread write one self-contained file for another company's assistant to review a high-stakes design, then triage the reply (status: verified)
 - [Prompt: Park an idea for later](docs/knowledge/prompting/library/park-an-idea.md): Has Claude file a researched side idea as one note in the owner's private parked-ideas folder, with findings, why it's parked and when to revisit (status: verified)
 - [Prompt: Standing instructions for a Claude project](docs/knowledge/prompting/library/project-instructions.md): Project-instruction lines the owner pastes into a new Claude project: model, red team, closeout, handoffs and guardrails (status: verified)
 - [Prompt: Red team a design or decision](docs/knowledge/prompting/library/red-team.md): Has a second model attack a design, spec or decision record, returning numbered findings with severity, a fix and what's acceptable as is (status: verified)
-- [Prompt: Act on a repo conventions audit](docs/knowledge/prompting/library/repo-audit.md): Has Claude turn the owner's pasted repo-audit summary into a numbered fix list: settings fixes the owner runs, handoff issues for file drift (status: partial)
+- [Prompt: Act on a repo conventions audit](docs/knowledge/prompting/library/repo-audit.md): Has Claude turn the owner's pasted repo-audit summary into a numbered fix list: settings fixes the owner runs, handoff issues for file drift (status: verified)
 - [Prompt: Research how a project could use a set of tools](docs/knowledge/prompting/library/research-proposal.md): Research-and-proposal only: evaluates candidate tools against a project's real architecture and threat model and returns a ranked recommendation (status: verified)
-- [Prompt: Start an outside agent on a sandbox task](docs/knowledge/prompting/library/sandbox-task.md): Starts another vendor's coding agent on one task in a 2ndbrain sandbox repo: rules first, public inputs only, one finding file and a pull request (status: partial)
-- [Prompt: Set up a brand profile in a repo](docs/knowledge/prompting/library/set-up-brand-profile.md): Has a project write brand/profile.json from the brand files its repo already has, with a test that keeps it equal to the stylesheet (status: partial)
+- [Prompt: Start an outside agent on a sandbox task](docs/knowledge/prompting/library/sandbox-task.md): Starts another vendor's coding agent on one task in a 2ndbrain sandbox repo: rules first, public inputs only, one finding file and a pull request (status: verified)
+- [Prompt: Set up a brand profile in a repo](docs/knowledge/prompting/library/set-up-brand-profile.md): Has a project write brand/profile.json from the brand files its repo already has, with a test that keeps it equal to the stylesheet (status: verified)
 - [Prompt: Thread closeout](docs/knowledge/prompting/library/thread-closeout.md): The closeout a thread runs before its final reply: lessons to the project KB, and to shared or private layers only after the owner's yes (status: verified)
 - [Prompt: Work the handoffs](docs/knowledge/prompting/library/work-the-handoffs.md): Has a receiving project check its repos' handoff issues and pick up the live ones, following decision 0012's pickup rules (status: verified)
 - [Evals and testing](docs/knowledge/evals/README.md): Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks (status: plan)
-- [Privacy and safety](docs/knowledge/privacy-and-safety/README.md): Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors (status: partial)
+- [Privacy and safety](docs/knowledge/privacy-and-safety/README.md): Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors (status: verified)
 - [Platforms for AI apps](docs/knowledge/platforms/README.md): Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume (status: verified)
 - [Learning AI](docs/knowledge/learning/README.md): Courses, docs, cookbooks and people worth following to learn how to build with AI (status: plan)
 - [Known errors](docs/knowledge/troubleshooting/README.md): Errors hit with the Claude API, SDKs, agents and AI tooling: symptom, cause, fix and source (status: verified)
@@ -79,8 +79,8 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 ## Related knowledge bases
 
 - [Nerdio HCL kit](https://github.com/nickprignano/nerdio-hcl/tree/main/docs/knowledge): Nerdio Manager on Azure Virtual Desktop, deployed with Terraform and Packer. Source of truth for: Nerdio Manager; the nerdio/nme provider; this kit's Terraform and Packer
-- AVD (repo not linked yet): Azure Virtual Desktop itself. Source of truth for: Azure Virtual Desktop platform; FSLogix; session host images in general
-- [Liquidware](https://github.com/nickprignano/avd-liquidware/tree/main/docs/knowledge): Liquidware products on virtual desktops. Source of truth for: Liquidware products
+- [AVD](https://github.com/avd-ops/avd-second-brain/tree/main/docs/knowledge): Azure Virtual Desktop itself. Source of truth for: Azure Virtual Desktop platform; FSLogix; session host images in general
+- [Liquidware](https://github.com/nickprignano/liquidware-ninja/tree/main/docs/knowledge): Liquidware products on virtual desktops. Source of truth for: Liquidware products
 - Private layer (repo not linked yet): The maintainer's private wisdom layer. It reads the family through this hub and sends directives here as pull requests; its contents stay private. Source of truth for: Directives to the family; through docs/knowledge/directives.yaml
 
 ## Optional

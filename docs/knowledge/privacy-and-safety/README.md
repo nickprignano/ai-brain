@@ -2,8 +2,8 @@
 title: "Privacy and safety"
 summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors"
 topic: privacy-and-safety
-status: partial
-last_reviewed: 2026-10-20
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://github.com/microsoft/PyRIT
   - https://github.com/promptfoo/promptfoo
@@ -106,7 +106,9 @@ Checks before flipping a private repo to public (2026-10-18):
 
 ## Open-source AI tools for fighting bad actors
 
-A survey of what exists on GitHub and the wider web, checked on 2026-10-19. Star counts and dates
+A survey of what exists on GitHub and the wider web, checked on 2026-10-19; the Workers AI
+catalog, the llm-guard archive, PyRIT's license and the Workers Builds token and preview rules were
+re-checked on 2026-10-29. Star counts and dates
 came from repo pages, because the GitHub API was blocked in that session. Years that the page left
 out are inferred and marked *(inf.)*. Nothing was installed or run, so maturity is judged from
 activity and adoption, not tested.
@@ -121,9 +123,10 @@ pointed at your own app before a real one shows up.
   conversation. The old `Azure/PyRIT` repo was archived on 2026-03-27; use `microsoft/PyRIT`.
 - **[promptfoo](https://github.com/promptfoo/promptfoo)** (MIT, ~24k stars). The easiest red-team to
   run on every PR. It has been part of OpenAI since 2026-03-09 and is still MIT. Its red-team mode
-  generates attacks through promptfoo's cloud by default and sends the target's replies back there
-  for follow-up attacks
-  ([architecture](https://www.promptfoo.dev/docs/red-team/architecture/)), so run it against a test
+  requests its attacks from promptfoo's cloud by default and builds follow-up attacks from the
+  target's earlier replies
+  ([architecture](https://www.promptfoo.dev/docs/red-team/architecture/), checked 2026-10-29; the
+  page doesn't say where those replies are judged, so assume they can leave). Run it against a test
   deployment with synthetic users, or configure local attack and judge models.
 - **[garak](https://github.com/NVIDIA/garak)** (NVIDIA, Apache-2.0) is a broad vulnerability scanner
   that gives a quick baseline. **[PurpleLlama](https://github.com/meta-llama/PurpleLlama)** (Meta)
@@ -158,7 +161,7 @@ pointed at your own app before a real one shows up.
 - **Microsoft's hosted Sentinel MCP server** (Preview) lets an agent explore and triage Sentinel
   data with Entra identities. Saved advanced-hunting KQL can be turned into custom tools, which is
   also the only way to reach Defender XDR tables; Microsoft has no Defender MCP server. It needs the
-  Sentinel data lake and Defender licences. Data lake tool calls bill per query, and Entity Analyzer
+  Sentinel data lake and Defender licenses. Data lake tool calls bill per query, and Entity Analyzer
   uses Security Copilot units. Security Reader can call tools; creating them needs Security Operator
   or Admin ([custom tools](https://learn.microsoft.com/en-us/azure/sentinel/datalake/sentinel-mcp-create-custom-tool)).
   Platform-specific use belongs in the sibling KB for that platform ([family.yaml](../family.yaml)).

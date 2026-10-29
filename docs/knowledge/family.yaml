@@ -25,12 +25,15 @@ projects:
   format_version: 1
 - id: avd
   name: AVD
+  repo: avd-ops/avd-second-brain
+  kb_path: docs/knowledge
   role: member
   focus: Azure Virtual Desktop itself
   owns: [Azure Virtual Desktop platform, FSLogix, session host images in general]
+  format_version: 1
 - id: liquidware
   name: Liquidware
-  repo: nickprignano/avd-liquidware
+  repo: nickprignano/liquidware-ninja
   kb_path: docs/knowledge
   role: member
   focus: Liquidware products on virtual desktops

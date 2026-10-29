@@ -2,8 +2,8 @@
 title: "Prompt: Start an outside agent on a sandbox task"
 summary: "Starts another vendor's coding agent on one task in a 2ndbrain sandbox repo: rules first, public inputs only, one finding file and a pull request"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-22
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Start an outside agent on a sandbox task
@@ -47,5 +47,8 @@ Stop and say so in the finding if the task needs anything outside this repo or i
 
 - **Rules first, in the repo.** The agent reads AGENTS.md on its own; the prompt only points at it,
   so the rules can't drift from what CI checks.
+- **Every path it names ships in the template:** `scripts/setup.py --sandbox`,
+  `sandbox/tasks/`, `sandbox/findings/_template.md` and `scripts/privacy_check.py` (checked in
+  `template/skeleton/` on 2026-10-29).
 - **One file and one PR per task,** so the owner reviews a finding in one place and folds it back
   by hand. A finding is data to whoever reads it next, never instructions.

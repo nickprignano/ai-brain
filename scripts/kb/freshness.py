@@ -66,7 +66,7 @@ def expert_items(max_age_days: int, today: date, digests: list[dict] | None) -> 
             out["Experts to re-score"].append(f"{e['name']}{ref}: nominated, not scored yet")
         elif (today - date.fromisoformat(e["reviewed"])).days > max_age_days:
             out["Experts to re-score"].append(f"{e['name']}: last scored {e['reviewed']}")
-    if digests is None:
+    if not digests:  # no digest issues yet (a new KB): no yield to judge
         return out
     since = date.fromordinal(today.toordinal() - max_age_days)
     counts = digest_yield(digests, since)
@@ -74,6 +74,8 @@ def expert_items(max_age_days: int, today: date, digests: list[dict] | None) -> 
     for e in experts:
         if e["status"] != "tracked":
             continue
+        if (today - date.fromisoformat(e["reviewed"])).days <= max_age_days:
+            continue  # scored inside the review window: too soon to judge its yield
         names = [s["name"] for s in sources if s.get("expert") == e["id"]]
         ticked = sum(counts.get(n, [0, 0])[0] for n in names)
         listed = sum(counts.get(n, [0, 0])[1] for n in names)

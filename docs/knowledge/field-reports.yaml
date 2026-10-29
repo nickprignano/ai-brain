@@ -2,4 +2,18 @@
 # Appended by the kb-feedback workflow from accepted feedback issues. Schema: schema/field-reports.schema.json
 # The monthly freshness check flags pages with unresolved "broke" or "outdated" reports.
 
-reports: []
+reports:
+- date: '2026-10-29'
+  page: decisions/0011-family-format-enforced-kb-capture.md
+  outcome: worked
+  summary: >-
+    A repo without a KB installed 0011 and 0012 from the template export unchanged, and both worked. Two
+    lessons: applying a missing label (no-kb) through the API created it, so no separate step is needed;
+    and the PR's 'opened' kb-capture run fails before the label or KB: line is added, leaving one red
+    run beside the green rerun.
+  versions: capture_check.py from the template export, 2026-10-19
+  evidence: >-
+    The adopting PR's runs: kb-capture failed on opened, no-kb was applied three seconds later, and the
+    reruns passed on the same head; the no-kb label carries GitHub's default color and no description.
+  issue: 54
+  resolved: true
