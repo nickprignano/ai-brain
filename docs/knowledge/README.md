@@ -22,12 +22,12 @@ belongs to instead of starting a new file.
 | Page | What's in it | Status |
 |---|---|---|
 | [anthropic/upstream-contributions.md](anthropic/upstream-contributions.md) | Gaps, API asks and doc fixes we could raise with Anthropic, with evidence | verified |
-| [claude-api/](claude-api/README.md) | Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks | partial |
-| [agents/](agents/README.md) | Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act | partial |
-| [prompting/](prompting/README.md) | System prompts, audience-specific prompts and structured output that held up in real apps | partial |
+| [claude-api/](claude-api/README.md) | Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks | verified |
+| [agents/](agents/README.md) | Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act | verified |
+| [prompting/](prompting/README.md) | System prompts, audience-specific prompts and structured output that held up in real apps | verified |
 | [prompting/library/](prompting/library/README.md) | Reusable, generalized prompts for the work and research we do: paste one, fill its placeholders, run it | verified |
 | [evals/](evals/README.md) | Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks | plan |
-| [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors | partial |
+| [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors | verified |
 | [platforms/](platforms/README.md) | Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume | verified |
 | [learning/](learning/README.md) | Courses, docs, cookbooks and people worth following to learn how to build with AI | plan |
 | [troubleshooting/](troubleshooting/README.md) | Errors hit with the Claude API, SDKs, agents and AI tooling: symptom, cause, fix and source | verified |
@@ -42,8 +42,8 @@ belongs to instead of starting a new file.
 | Knowledge base | Role | Focus | Source of truth for |
 |---|---|---|---|
 | [Nerdio HCL kit](https://github.com/nickprignano/nerdio-hcl/tree/main/docs/knowledge) | member | Nerdio Manager on Azure Virtual Desktop, deployed with Terraform and Packer | Nerdio Manager; the nerdio/nme provider; this kit's Terraform and Packer |
-| AVD (repo not linked yet) | member | Azure Virtual Desktop itself | Azure Virtual Desktop platform; FSLogix; session host images in general |
-| [Liquidware](https://github.com/nickprignano/avd-liquidware/tree/main/docs/knowledge) | member | Liquidware products on virtual desktops | Liquidware products |
+| [AVD](https://github.com/avd-ops/avd-second-brain/tree/main/docs/knowledge) | member | Azure Virtual Desktop itself, across its lifecycle (assess, inventory, deploy, operate) | Azure Virtual Desktop platform; FSLogix; session host images in general; the AVD landing zone and its operations |
+| [Liquidware](https://github.com/nickprignano/liquidware-ninja/tree/main/docs/knowledge) | member | Liquidware products across virtual and physical desktops | Liquidware products (Stratusphere UX, ProfileUnity, FlexApp, CommandCTRL) |
 | Private layer (repo not linked yet) | observer | The maintainer's private wisdom layer. It reads the family through this hub and sends directives here as pull requests; its contents stay private | Directives to the family; through docs/knowledge/directives.yaml |
 <!-- END GENERATED: family -->
 

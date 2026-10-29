@@ -25,16 +25,19 @@ projects:
   format_version: 1
 - id: avd
   name: AVD
-  role: member
-  focus: Azure Virtual Desktop itself
-  owns: [Azure Virtual Desktop platform, FSLogix, session host images in general]
-- id: liquidware
-  name: Liquidware
-  repo: nickprignano/avd-liquidware
+  repo: avd-ops/avd-second-brain
   kb_path: docs/knowledge
   role: member
-  focus: Liquidware products on virtual desktops
-  owns: [Liquidware products]
+  focus: Azure Virtual Desktop itself, across its lifecycle (assess, inventory, deploy, operate)
+  owns: [Azure Virtual Desktop platform, FSLogix, session host images in general, the AVD landing zone and its operations]
+  format_version: 1
+- id: liquidware
+  name: Liquidware
+  repo: nickprignano/liquidware-ninja
+  kb_path: docs/knowledge
+  role: member
+  focus: Liquidware products across virtual and physical desktops
+  owns: ['Liquidware products (Stratusphere UX, ProfileUnity, FlexApp, CommandCTRL)']
   format_version: 1
 - id: private-layer
   name: Private layer

@@ -2,12 +2,17 @@
 title: "Claude API"
 summary: "Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks"
 topic: claude-api
-status: partial
-last_reviewed: 2026-10-19
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://platform.claude.com/docs/en/about-claude/models/overview
   - https://platform.claude.com/docs/en/about-claude/pricing
   - https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry
+  - https://platform.claude.com/docs/en/build-with-claude/workspaces
+  - https://platform.claude.com/docs/en/api/versioning
+  - https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md
+  - https://legal.mistral.ai/terms/commercial-terms-of-service
+  - https://elevenlabs.io/terms-of-use
   - https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/claude-models-quotas-limits
   - https://code.claude.com/docs/en/model-config
   - https://docs.x.ai/developers/models.md
@@ -36,8 +41,9 @@ workspace share all three, so keys alone don't stop one app from using up the ot
   `APPNAME_ANTHROPIC_API_KEY`), so a key can't be shared by accident.
 - Checked against Anthropic's [workspaces](https://platform.claude.com/docs/en/build-with-claude/workspaces)
   and [Usage and Cost API](https://platform.claude.com/docs/en/build-with-claude/usage-cost-api)
-  docs on 2026-10-18: spend limits and rate limits are set per workspace (never per key), can't be
-  set on the Default Workspace, and can't exceed the organization's. Token usage can be filtered
+  docs on 2026-10-18 and again on 2026-10-29: spend limits and rate limits are set per workspace
+  (never per key) and can't exceed the organization's; spend limits can't be set on the Default
+  Workspace. Token usage can be filtered
   and grouped by API key, but the cost report groups by workspace, so a workspace per app is still
   the way to see and cap each app's spend. Prompt caches are also per workspace.
 
@@ -45,7 +51,7 @@ workspace share all three, so keys alone don't stop one app from using up the ot
 
 The family's defaults per kind of job, the override rule and the fallbacks are in
 [decision 0006](../decisions/0006-model-selection-convention.md). This section holds the facts
-they rest on. Checked against Anthropic's docs on 2026-10-18; re-check before relying on a price.
+they rest on. Checked against Anthropic's models overview and pricing pages on 2026-10-29; re-check before relying on a price.
 
 | Model | ID | Input $/MTok | Output $/MTok | Cache read $/MTok | Default effort | Latency |
 |---|---|---|---|---|---|---|
@@ -67,10 +73,29 @@ they rest on. Checked against Anthropic's docs on 2026-10-18; re-check before re
 - Retirement is "not sooner than" 2027-09-01 (Fable 5.1), 2027-09-22 (Opus 5.5), 2027-09-28
   (Sonnet 5.5) and 2027-10-07 (Haiku 5.5).
 
+## API version 2026-10-21
+
+The first new `anthropic-version` since 2023-06-01, on the Claude API, Claude Platform on AWS,
+Claude Models on Google Cloud (Anthropic managed) and Foundry
+([versions](https://platform.claude.com/docs/en/api/versioning), checked 2026-10-29). What breaks:
+
+- **Messages:** `temperature`, `top_p` and `top_k` are gone; sending any of them is a 400 on every
+  model. A `document` block in an `assistant` message, or a user `text` block with non-empty
+  `citations`, is also a 400.
+- **Admin API:** fields renamed, among them API keys' `workspace_id` (now `scope.workspace_id`,
+  which gives the Default Workspace's real ID) and rate-limit entries' `group_type` (now
+  `group.type`).
+- **The Python SDK moved with it.** `anthropic` 2.0.0 (2026-10-21) is the breaking release that adds
+  the new version; pin `<2` until an app's calls are checked. Claude Code 2.1.307 added
+  `/claude-api api-version` to move code to it.
+- Also new in the SDK this month: native OpenTelemetry spans once the app registers a global
+  tracer provider (1.14.0), the `speed` parameter (1.15.0), and usage and cost reports by
+  dimension, with the older reports marked legacy (2.2.0).
+
 ## Claude on Microsoft Foundry
 
-Checked against Anthropic's Foundry page and Microsoft's quota page (updated 2026-09-22) on
-2026-10-18.
+Checked against Anthropic's Foundry page and Microsoft's quota page on 2026-10-18, and again on
+2026-10-29.
 
 - **Prices** are Anthropic's standard rates, billed through the Azure Marketplace in Claude
   Consumption Units (100 CCU is 1 USD), metered hourly and invoiced monthly.
@@ -86,7 +111,8 @@ Checked against Anthropic's Foundry page and Microsoft's quota page (updated 202
   don't count toward the input limit. More quota goes through Microsoft's request form and isn't
   guaranteed: one trial tenant's requests were denied (nerdio-hcl 0020).
 - **Missing on Foundry:** the Batch API, server-side fallbacks (use the SDK's client-side
-  fallback), the Models API, the Admin API, Managed Agents and the advisor tool. Deployments
+  fallback), the Models API, the Admin API, the Compliance API, Managed Agents, the advisor tool,
+  and the `computer_toolset_20260801` and `browser_toolset_20260801` toolsets. Deployments
   hosted on Azure also lack code execution, the Files API, Agent Skills, programmatic tool
   calling and web tools newer than `web_search_20250305` and `web_fetch_20250910`; they return
   400.
@@ -106,19 +132,21 @@ Checked against Anthropic's Foundry page and Microsoft's quota page (updated 202
 
 Which second family the apps use, and for what, is
 [decision 0009](../decisions/0009-second-model-family.md). These are the facts behind it, checked on
-the providers' own pages on 2026-10-19; re-check before relying on them.
+the providers' own pages on 2026-10-19 and again on 2026-10-29; re-check before relying on them.
 
 - **What Claude doesn't do.** It reads images and PDFs but can't create or edit images, takes no
   video or audio, and has no embedding model (Anthropic points to Voyage).
-- **xAI.** Text models `grok-4.7` ($2/$6 per MTok) and `grok-4.3` ($1.25/$2.50); image, video
-  and speech models on the same API. No training on API data; requests kept 30 days by default,
-  with a zero-retention switch. Chat Completions is marked legacy in favour of the Responses API.
+- **xAI.** Text models `grok-4.7` ($2/$6 per MTok) and `grok-4.3` ($1.25/$2.50), both doubling
+  for prompts of 200K tokens or more; image, video and speech models on the same API. No training
+  on API data without permission; requests kept 30 days by default, with a team-wide
+  zero-retention switch that turns off stored-data features (stateful Responses, Files, Batch).
 - **Grok on Azure.** Foundry sells `grok-4.3`, `grok-4.6`, `grok-4.7` and `grok-4.20` (Global
   Standard in US, Canada and Brazil regions; Data Zone in US regions). Text only: no Grok Imagine.
 - **Ruled out for apps children use, by terms.** The Gemini API and Meta's own Model API (now
   serving Meta's Muse models) both require users to be 18 and bar products aimed at or likely used
-  by under-18s. ElevenLabs requires 18. OpenAI bars personal data of under-13s without zero
-  retention, which needs sales approval. Mistral bars personal data of under-13s.
+  by under-18s. ElevenLabs requires 18. OpenAI bars personal data of under-13s unless zero
+  data retention is in place first. Mistral's commercial terms (2.2(c)) bar personal data of
+  under-13s and minors' use without a parent's or guardian's consent.
 - **Retired lately.** OpenAI's Sora 2 and Videos API (2026-09-24); Imagen 4 on the Gemini API
   (2026-08-17); the Gemini API's Veo 3.1 previews (2026-10-22). Check deprecation pages first.
 - **Cloudflare Workers AI** doesn't train on or keep request data unless AI Gateway logging is on,

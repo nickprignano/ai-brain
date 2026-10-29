@@ -2,8 +2,8 @@
 title: "Prompt: Move sensitive OneNote notebooks to markdown safely"
 summary: "Has an organization-approved Claude walk you through backing up, converting with onenote-md-exporter and verifying OneNote notebooks, with no data lost or leaked"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-20
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Move sensitive OneNote notebooks to markdown safely

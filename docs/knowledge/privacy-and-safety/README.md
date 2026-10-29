@@ -2,12 +2,13 @@
 title: "Privacy and safety"
 summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors"
 topic: privacy-and-safety
-status: partial
-last_reviewed: 2026-10-20
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://github.com/microsoft/PyRIT
   - https://github.com/promptfoo/promptfoo
   - https://www.promptfoo.dev/docs/red-team/architecture/
+  - https://www.promptfoo.dev/docs/red-team/configuration/
   - https://github.com/NVIDIA/garak
   - https://github.com/meta-llama/PurpleLlama
   - https://developers.cloudflare.com/workers-ai/models/
@@ -77,8 +78,10 @@ it. What that means in practice:
 - **Leave branch builds off on a Worker that holds real keys.** A Workers Builds build runs the
   branch's own build scripts with the build token, which by default is a user token that can edit
   every Worker, KV namespace, R2 bucket and route on the account, so any pushed branch could
-  deploy to production or copy the token. Workers connected before Worker Previews (September
-  2026) also build branches with production secrets until a one-time, irreversible switch. Test
+  deploy to production or copy the token (the default token edits Workers Scripts, KV, R2 and
+  every zone's Workers Routes; Workers Builds configuration page, checked 2026-10-29). Workers
+  connected before Worker Previews (September 2026) keep the previous preview model, which uses
+  production settings, until a one-time switch that can't be undone (build branches page). Test
   with `wrangler dev` and dev keys; if branch previews are worth it, build them in a second
   account that holds only dev keys.
 - **Rotate without an outage.** Create and deploy the new key, check it, then revoke the old one;
@@ -106,7 +109,9 @@ Checks before flipping a private repo to public (2026-10-18):
 
 ## Open-source AI tools for fighting bad actors
 
-A survey of what exists on GitHub and the wider web, checked on 2026-10-19. Star counts and dates
+A survey of what exists on GitHub and the wider web, checked on 2026-10-19. The claims the advice
+rests on (the Workers AI catalog, Anthropic's child-safety guidance, promptfoo's cloud default)
+were checked again on 2026-10-29; star counts and archive dates are the 2026-10-19 snapshot. Star counts and dates
 came from repo pages, because the GitHub API was blocked in that session. Years that the page left
 out are inferred and marked *(inf.)*. Nothing was installed or run, so maturity is judged from
 activity and adoption, not tested.
@@ -124,7 +129,10 @@ pointed at your own app before a real one shows up.
   generates attacks through promptfoo's cloud by default and sends the target's replies back there
   for follow-up attacks
   ([architecture](https://www.promptfoo.dev/docs/red-team/architecture/)), so run it against a test
-  deployment with synthetic users, or configure local attack and judge models.
+  deployment with synthetic users, or keep generation local: set
+  `PROMPTFOO_DISABLE_REDTEAM_REMOTE_GENERATION=true` and name a local model in `redteam.provider`
+  ([configuration](https://www.promptfoo.dev/docs/red-team/configuration/), checked 2026-10-29;
+  local attack quality is low with most models).
 - **[garak](https://github.com/NVIDIA/garak)** (NVIDIA, Apache-2.0) is a broad vulnerability scanner
   that gives a quick baseline. **[PurpleLlama](https://github.com/meta-llama/PurpleLlama)** (Meta)
   holds CyberSecEval, LlamaFirewall, Prompt Guard 2 and Llama Guard.
@@ -133,7 +141,7 @@ pointed at your own app before a real one shows up.
 ### Safety classifiers for apps children use
 
 - **Llama Guard 3 8B is the only safety model in the Cloudflare Workers AI catalog** (no Llama Guard
-  4, Prompt Guard, ShieldGemma or gpt-oss-safeguard as of this check). That makes it the default
+  4, Prompt Guard, ShieldGemma or gpt-oss-safeguard; still true on 2026-10-29). That makes it the default
   gate when kids' data must stay inside one provider. Its limits: it judges one message at a time,
   covers 8 languages, and one incident-based child-safety evaluation measured roughly 48-51% recall
   for Llama Guard models on unsafe education prompts ([arXiv 2607.00395](https://arxiv.org/pdf/2607.00395)).

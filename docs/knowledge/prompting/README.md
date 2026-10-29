@@ -2,8 +2,8 @@
 title: "Prompting"
 summary: "System prompts, audience-specific prompts and structured output that held up in real apps"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-19
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompting
@@ -16,7 +16,8 @@ Reusable prompts for the family's own work (handoffs, red teams, research, close
 ## Rewriting text into a person's own voice
 
 Lessons from building a personal skill that makes Claude's drafts sound like one specific writer
-(and, in reverse, makes text not sound like them). Built 2026-10-18.
+(and, in reverse, makes text not sound like them). Built 2026-10-18; each point below checked
+against the shipped skill's instructions on 2026-10-29.
 
 - **Strip the model's tells first.** Most of the gap between "sounds like Claude" and "sounds like
   a person" is removing habits, not adding them: stock openers and closers, inflated vocabulary,
