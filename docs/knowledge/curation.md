@@ -3,7 +3,7 @@ title: "Keeping the knowledge base current"
 summary: "How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment"
 topic: curation
 status: verified
-last_reviewed: 2026-10-20
+last_reviewed: 2026-10-29
 ---
 
 # Keeping the knowledge base current
@@ -22,6 +22,9 @@ findings belong on. Items whose URL is already linked from the KB are left out, 
 commits and dependency bumps; an item listed under one source isn't listed again under a later
 one. If nothing is new, no issue is opened.
 
+Each new digest closes the older open ones that nobody ticked, except last week's, which stays open
+one more week, with a "Superseded by" comment linking the new one. A ticked digest stays open.
+
 Watched today:
 
 - Anthropic's Claude Code and Python SDK releases, and the Anthropic cookbook and courses repos
@@ -31,8 +34,12 @@ Watched today:
 Blog and newsletter feeds come next. Each one is added only once a curator run shows it works, and
 people are chosen with the method in [experts.md](experts.md).
 
-Working a digest: for each ticked item, add what matters to the page named next to the source
-(facts, versions, fixes; not a link dump), then close the issue.
+Working a digest: tick what's worth adding and label the issue **kb-accepted**. The feedback
+workflow (below) adds each ticked link to a "From the digest" section on the page named next to its
+source, skipping links the page already has, and opens a pull request labelled `no-auto-merge`
+that closes the digest. Before merging, rewrite each line into what matters (facts, versions,
+fixes; not a link dump) and delete it. A ticked line it can't read, or a source with no page, is
+reported on the issue instead.
 
 To watch something else, add a `[[source]]` table to [sources.toml](sources.toml). Supported
 kinds: `github_releases`, `github_commits` (optionally limited to one `path`), `github_issues`,
@@ -44,7 +51,8 @@ GITHUB_TOKEN=$(gh auth token) python3 scripts/kb/curate.py --since-days 30
 ```
 
 A source that fails (rate limit, site down) is listed at the bottom of the digest and doesn't
-stop the others.
+stop the others. An HTTP 5xx is retried once after five seconds first: YouTube's feeds return
+`HTTP Error 500` now and then. A 4xx or a timeout isn't retried.
 
 ## Prior-art check (`kb-prior-art`)
 
@@ -107,13 +115,14 @@ The digest and prior-art scripts use only the Python standard library (3.11+).
 
 ## Feedback loop (`kb-feedback`)
 
-Real results flow back into the KB through three issue forms:
+Real results flow back into the KB through three issue forms, and the weekly digest:
 
 - **Knowledge base feedback:** what worked, broke, went out of date or is missing, for one page
   (label `kb-feedback`).
 - **Known error:** an error, its cause and fix, for the [troubleshooting catalog](troubleshooting/README.md)
   (label `kb-known-error`).
 - **Suggest an expert to follow:** a nomination for the [experts study](experts.md) (label `kb-source`).
+- **Weekly digest:** the ticked items, as links on their pages (label `kb-digest`, see above).
 
 Each form has a required public-safe tick box. A maintainer reviews the issue and, if it's useful
 and public-safe, labels it **kb-accepted**.
@@ -130,8 +139,9 @@ still goes through review, and gitleaks and the KB checks run on it. Two one-tim
 - Turn on **Settings > Actions > General > Allow GitHub Actions to create and approve pull
   requests**. Without it, the workflow pushes the branch and asks you to open the PR.
 
-Pull requests opened by the workflow's own token don't start other workflows. The job runs the KB
-checks itself; close and reopen the PR to run the full CI before merging.
+Pull requests opened by the workflow's own token don't start other workflows, so the required
+checks never report and the PR can't merge until someone closes and reopens it; the workflow's
+comment on the issue says so. The job runs the KB checks itself before pushing.
 
 ## Freshness check (`kb-freshness`)
 
@@ -149,12 +159,27 @@ Work it by re-checking each item against a primary source or a real run, then up
 text, `last_reviewed` and `status`. Open claim re-checks as a pull request labelled
 `no-auto-merge`: a wrong "still true" or "now false" changes what the KB tells people. Run it locally with `python3 scripts/kb/freshness.py --family`.
 
+When a run with the default 90-day window finds nothing, it closes the open issue with a comment;
+the next run that finds something opens a new one. A manual run with a longer window never closes
+it, since it checks less.
+
+- **Expert yield waits for data.** An expert is judged only once two digests have run since they
+  were scored, so a new KB (no digests yet) or a newly tracked expert isn't flagged for zero yield.
+  A source listed under "Sources that failed" in any digest is flagged straight away.
+- **The unverified count is a regex.** It counts `*unverified`, `*not verified` and "not yet
+  reviewed" anywhere in a page's prose, so a sentence like "Not yet reviewed, for the next pass"
+  counts as an open claim. Reword prose that isn't a claim ("Left for the next pass").
+- **`partial` means inline markers.** The page schema defines `partial` as "some claims are still
+  marked unverified inline". A `partial` page with no markers is listed with "re-check and update
+  the status"; prompt library pages keep whether they've been run on their **Run so far** line,
+  not in `status`.
+
 ## Staying aligned with the family
 
 [family.yaml](family.yaml) lists every KB in the family, this one included (`self: true`): its
 repo, KB path, role, focus, what it's the source of truth for (`owns`) and the family format version.
-This KB is the hub: it owns the AI knowledge the others use. nerdio-hcl is the format's reference
-implementation. A sibling without a `repo` isn't linked yet. `build.py` turns the file into the
+This KB is the hub: it owns the AI knowledge the others use, and it is the format's reference
+([decision 0007](decisions/0007-family-format-ai-brain-as-format-source.md)). A sibling without a `repo` isn't linked yet. `build.py` turns the file into the
 "Related knowledge bases" table in the [KB README](README.md#related-knowledge-bases) and a section
 in `llms.txt`. The schema and the family code in `scripts/kb/` are the same in every KB.
 
@@ -171,6 +196,18 @@ in `llms.txt`. The schema and the family code in `scripts/kb/` are the same in e
   all of them have merged. The freshness check flags a sibling whose version differs.
 - **Cross-project decisions.** A decision that affects more than one project is recorded in each
   affected KB, and each copy says "Also recorded in ..." with links.
+
+Where the siblings stand, from the digests of 2026-10-19 and 2026-10-26:
+
+- **Liquidware** adopted enforced capture in warn mode and handoff issues from the export
+  ([commit](https://github.com/nickprignano/avd-liquidware/commit/41f4edfac45c705a0ceda836905ee36476437ec1)),
+  and the GitHub work conventions with auto-merge off for now
+  ([commit](https://github.com/nickprignano/avd-liquidware/commit/0dda99eb9d6bbb5e5b01addb0cc559d730f91a09)).
+- **Nerdio HCL kit** proposed keeping its GitHub settings in Terraform with a daily read-only drift
+  check ([commit](https://github.com/nickprignano/nerdio-hcl/commit/7e881b283dffd5deb35e64f780ba18ddbfa34c6a)).
+  This KB has no settings-as-code; [repo_audit.py](../../scripts/kb/repo_audit.py) covers the
+  same settings by hand. A scheduled drift check that needs a token or App ID nobody has set up
+  should skip with a setup note in the job summary and close its failure issue, not fail daily.
 
 ## Upstream: link out, check against, give back
 
@@ -210,6 +247,16 @@ Code that changes without a KB entry loses what was learned, so two checks ask f
   and passes with a `KB: <link>` line to the lesson in one of those KB repos.
 
 Paths in `capture_ignore` (and `llms.txt` and lockfiles) don't count as code.
+
+From the first repo without a KB to adopt it (field report from #54):
+
+- **The `no-kb` label needs no separate step.** Applying a label that doesn't exist yet to an issue
+  or PR through the GitHub API creates it, so the adoption PR can create it by using it.
+- **The first push can show one red run.** The `opened` run fails before the label or the `KB:`
+  line is added; the `labeled` or `edited` rerun goes green on the same commit, but the red run
+  stays in the check list. Put the `KB:` line (or the `No KB entry:` reason) in the body when
+  opening the PR. A label added by `gh pr create --label` is applied after the PR opens, so the
+  `no-kb` route can still show one red run first.
 
 ## Checks on every change (`kb-validate`)
 

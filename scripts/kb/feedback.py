@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Turn an accepted KB feedback or known-error issue into a change to the KB's YAML data.
+"""Turn an accepted KB feedback, known-error, nomination or digest issue into a change to the KB.
 
 Run by .github/workflows/kb-feedback.yml when a maintainer labels an issue kb-accepted. It reads
 the issue form, appends a field report (kb-feedback), a known error (kb-known-error) or an expert
-nomination (kb-source, to experts.yaml as status nominated, for a maintainer to score), and writes
-the branch name, PR title and PR body for the workflow to open a pull request.
+nomination (kb-source, to experts.yaml as status nominated, for a maintainer to score), or adds a
+weekly digest's ticked items to the pages they belong on (kb-digest), and writes the branch name,
+PR title, PR body and any PR labels for the workflow to open a pull request.
 
     python3 scripts/kb/feedback.py --event "$GITHUB_EVENT_PATH"
     python3 scripts/kb/feedback.py --issue-json issue.json      # {"number", "title", "body", "labels"}
@@ -34,6 +35,9 @@ OUTCOMES = {
     "Missing (the KB should cover this)": "missing",
 }
 MAX_FIELD = 2000
+# A digest heading names its source and, when the source has one, the page its items belong on.
+DIGEST_HEADING = re.compile(r"^### (.+?)(?: → `docs/knowledge/([^`]+)`)?\s*$")
+DIGEST_SECTION = "## From the digest"
 
 
 class FeedbackError(Exception):
@@ -181,12 +185,99 @@ def add_nomination(issue: dict, fields: dict[str, str], today: str) -> tuple[str
             "freshness check will list them as waiting.")
 
 
+def parse_digest_item(line: str) -> tuple[str, str, str]:
+    """Split a rendered digest line "[title](url) · date (note)" into (title, url, date).
+
+    Feed titles can hold "](" or ")" themselves, so split on the last "](" and the last " · ".
+    """
+    head, sep, tail = line.rpartition(" · ")
+    when = tail.split(" ", 1)[0]
+    cut = head.rfind("](")
+    if not sep or cut < 1 or not head.startswith("[") or not head.endswith(")") \
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", when):
+        raise FeedbackError(f"can't read the ticked line {line[:120]!r}")
+    title, url = head[1:cut], head[cut + 2:-1]
+    if not re.fullmatch(r"https://[^\s<>\"]+", url):
+        raise FeedbackError(f"the ticked line {line[:120]!r} has no https:// link")
+    title = re.sub(r"([\[\]])", r"\\\1", " ".join(title.split()))
+    return title, url, when
+
+
+def ticked_digest_items(body: str) -> dict[str, list[tuple[str, str, str]]]:
+    """Ticked items per target page (relative to docs/knowledge/), in digest order."""
+    picks: dict[str, list[tuple[str, str, str]]] = {}
+    source = page = None
+    for line in body.replace("\r\n", "\n").splitlines():
+        if m := DIGEST_HEADING.match(line):
+            source, page = m.group(1), m.group(2)
+        elif m := re.match(r"^- \[[xX]\] (.*)$", line):
+            if source is None:
+                raise FeedbackError("a ticked item comes before any source heading")
+            if page is None:
+                raise FeedbackError(f"no page named for {source}; add kb_page to it in sources.toml")
+            target = kb_target(page, f"page for {source}")
+            if not (KB_DIR / target).resolve().is_relative_to(KB_DIR.resolve()):
+                raise FeedbackError(f"page for {source} is outside docs/knowledge/")
+            picks.setdefault(target, []).append(parse_digest_item(m.group(1).strip()))
+    if not picks:
+        raise FeedbackError("no items are ticked; tick the ones worth adding, then re-add kb-accepted")
+    return picks
+
+
+def add_to_section(text: str, lines: list[str]) -> str:
+    """Append lines to the page's "From the digest" section, creating it at the end if missing."""
+    rows = text.rstrip("\n").split("\n")
+    if DIGEST_SECTION in rows:
+        end = rows.index(DIGEST_SECTION) + 1
+        while end < len(rows) and not rows[end].startswith("## "):
+            end += 1
+        while rows[end - 1] == "":
+            end -= 1
+        rows[end:end] = lines
+    else:
+        rows += ["", DIGEST_SECTION, "",
+                 "Picked from the weekly digest; fold each into the page's own text, then delete it.", ""]
+        rows += lines
+    return "\n".join(rows) + "\n"
+
+
+def add_digest_picks(issue: dict, body: str) -> tuple[str, str]:
+    added: dict[str, int] = {}
+    skipped = []
+    for page, items in ticked_digest_items(body).items():
+        path = KB_DIR / page
+        text = path.read_text(encoding="utf-8")
+        lines = []
+        for title, url, when in items:
+            if url in text or any(url in ln for ln in lines):
+                skipped.append(url)
+                continue
+            lines.append(f"- [{title}]({url}) ({when}, #{issue['number']})")
+        if lines:
+            path.write_text(add_to_section(text, lines), encoding="utf-8")
+            added[page] = len(lines)
+    if not added:
+        raise FeedbackError("every ticked item is already linked from its page")
+    summary = "\n".join(f"- `docs/knowledge/{p}`: {n} item(s)" for p, n in added.items())
+    note = f"\n\nAlready on the page, skipped: {len(skipped)}." if skipped else ""
+    return (f"KB digest picks from #{issue['number']}",
+            f"Adds the items ticked in #{issue['number']} to the pages their sources name:\n\n{summary}{note}\n\n"
+            "Before merging, fold each item into the page's own text (the fact, version or fix, not a "
+            "link dump), delete the line, and set `last_reviewed` on pages you re-checked. This PR is "
+            "labelled `no-auto-merge` for that reason. Another digest PR open at the same time may "
+            "touch the same section.")
+
+
 def write(path: Path, data) -> None:
     path.write_text(kblib.yaml_header(path) + kblib.dump_yaml(data), encoding="utf-8")
 
 
 def handle(issue: dict, today: str) -> tuple[str, str]:
     labels = {lbl["name"] if isinstance(lbl, dict) else lbl for lbl in issue.get("labels", [])}
+    if "kb-digest" in labels:
+        # The curator writes digests: there's no form and no public-safe box, and the items are
+        # links the curator already published in this repo's issue.
+        return add_digest_picks(issue, issue.get("body") or "")
     fields = parse_form(issue.get("body") or "")
     public_safe(fields)
     if "kb-known-error" in labels:
@@ -195,7 +286,7 @@ def handle(issue: dict, today: str) -> tuple[str, str]:
         return add_nomination(issue, fields, today)
     if "kb-feedback" in labels:
         return add_field_report(issue, fields, today)
-    raise FeedbackError("the issue has none of the kb-feedback, kb-known-error or kb-source labels")
+    raise FeedbackError("the issue has none of the kb-feedback, kb-known-error, kb-source or kb-digest labels")
 
 
 def main() -> int:
@@ -224,6 +315,7 @@ def main() -> int:
         with open(gh_out, "a", encoding="utf-8") as f:
             f.write(f"branch=kb-feedback/issue-{issue['number']}\n")
             f.write("title=" + " ".join(title.split()) + "\n")
+            f.write("labels=" + ("no-auto-merge" if title.startswith("KB digest picks") else "") + "\n")
     print(title)
     return 0
 

@@ -2,4 +2,18 @@
 # Appended by the kb-feedback workflow from accepted feedback issues. Schema: schema/field-reports.schema.json
 # The monthly freshness check flags pages with unresolved "broke" or "outdated" reports.
 
-reports: []
+reports:
+- date: '2026-10-29'
+  page: decisions/0011-family-format-enforced-kb-capture.md
+  outcome: worked
+  summary: >-
+    avd-swarm (a repo without its own KB) installed 0011 and 0012 from the template export, unchanged,
+    in nickprignano/avd-swarm#15 (merged). Everything worked. Two lessons: creating `no-kb` needs no separate
+    step, because applying a label that doesn't exist yet through the GitHub API creates it; and the first
+    push shows one red `kb-capture` run from `opened` before the label or `KB:` line is added, which the
+    `labeled` or `edited` rerun turns green on the same commit. Both are now in curation.md (Capture check).
+  versions: capture_check.py from the template export at ai-brain 91a22f1.
+  evidence: >-
+    nickprignano/avd-swarm#15: one failed `kb-capture` run from `opened`, then a green run from `labeled`
+    on the same head.
+  issue: 54

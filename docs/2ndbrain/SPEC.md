@@ -59,10 +59,10 @@ a person reviews.
 
 | Loop | When | What it does |
 |---|---|---|
-| Weekly digest (`kb-curator`) | Mondays | Reads `sources.toml` (releases, commits, issues, feeds) and opens one checklist issue of new items, leaving out anything the KB already links |
+| Weekly digest (`kb-curator`) | Mondays | Reads `sources.toml` (releases, commits, issues, feeds) and opens one checklist issue of new items, leaving out anything the KB already links, and closes older unticked ones |
 | Prior-art check (`kb-prior-art`) | Before building anything | Searches this KB, the sibling KBs, then GitHub, and records what it finds on the topic page |
-| Feedback (`kb-feedback`) | When someone reports a result | Issue forms (feedback, known error, expert nomination). A maintainer's `kb-accepted` label turns one into a PR that appends to the YAML |
-| Freshness (`kb-freshness`) | The 1st of each month | One issue listing stale pages, open unverified claims, unresolved field reports, experts due for re-scoring, and sibling drift |
+| Feedback (`kb-feedback`) | When someone reports a result | Issue forms (feedback, known error, expert nomination). A maintainer's `kb-accepted` label turns one, or a digest with ticked items, into a PR |
+| Freshness (`kb-freshness`) | The 1st of each month | One issue listing stale pages, open unverified claims, unresolved field reports, experts due for re-scoring, and sibling drift; closes it when a run finds nothing |
 
 On every PR, `kb-validate` runs `build.py --check`, `validate.py` (schemas, MADR sections, links and
 anchors, leak patterns, family checks) and the unit tests, and gitleaks scans for secrets.

@@ -22,5 +22,47 @@ errors:
   cause: Before Python 3.15 (PEP 686), open(), Path.read_text() and Path.write_text() without encoding= use the ANSI code page on Windows, not UTF-8.
   fix: Pass encoding="utf-8" to every text open; EncodingTests in scripts/kb/test_kb.py fails on one that doesn't.
   source: https://peps.python.org/pep-0686/
-  status: unverified
+  status: verified
   added: '2026-10-21'
+- id: kb-digest-issues-pile-up
+  symptom: Open kb-digest issues pile up week after week, and ticking items in one does nothing
+  cause: kb-curator opened a new digest every Monday but nothing closed the old ones, and kb-feedback only handled the issue forms, so a ticked digest had no path to a pull request
+  fix: The curator closes older unticked digests (keeping last week's open one more week); kb-accepted on a digest opens a no-auto-merge PR that adds the ticked links to their pages and closes it
+  source: curation.md#weekly-digest-kb-curator
+  status: verified
+  added: '2026-10-29'
+- id: kb-freshness-issue-never-closes
+  symptom: The kb-freshness issue stays open with an old list after every item was fixed
+  cause: The workflow's issue step ran only when items != 0, so a clean run never touched the open issue
+  fix: Add an items == 0 step that closes the open issue, only on a run with the default window
+  source: curation.md#freshness-check-kb-freshness
+  status: verified
+  added: '2026-10-29'
+- id: expert-yield-flagged-on-new-kb
+  symptom: 'Every tracked expert is flagged "nothing in the digests" on a newly set-up KB'
+  cause: The yield check counted digests in the whole window, so zero digests (or an expert scored after the last one) read as a dead feed
+  fix: Judge yield only after two digests since the expert was scored, and flag a source straight away when a digest lists it as failed
+  source: curation.md#freshness-check-kb-freshness
+  status: verified
+  added: '2026-10-29'
+- id: feed-transient-http-500
+  symptom: 'A feed source (often a YouTube channel feed) shows "HTTPError: HTTP Error 500" under Sources that failed, then works next week'
+  cause: The feed host returns a transient 5xx and the curator didn't retry
+  fix: sources.http_get retries once after five seconds on a 5xx; 4xx and timeouts still fail at once
+  source: curation.md#weekly-digest-kb-curator
+  status: verified
+  added: '2026-10-29'
+- id: jq-caret-only-matches-string-start
+  symptom: 'A jq test("^- \\[x\\]"; "m") filter misses a ticked checkbox in an issue body'
+  cause: In jq 1.7, tried on a two-line body, ^ matched only at the start of the string, with or without the "m" flag
+  fix: 'Match a line start with (^|\n) instead, as kb-curator.yml does'
+  source: curation.md#weekly-digest-kb-curator
+  status: verified
+  added: '2026-10-29'
+- id: workflow-token-pr-never-runs-checks
+  symptom: A pull request opened by a workflow waits forever on required checks that never start
+  cause: Events caused by a workflow's GITHUB_TOKEN don't trigger other workflows, so pull_request checks never run on the PR it opens
+  fix: Close and reopen the PR once (a person's reopen starts them); kb-feedback's issue comment says so
+  source: https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows
+  status: verified
+  added: '2026-10-29'

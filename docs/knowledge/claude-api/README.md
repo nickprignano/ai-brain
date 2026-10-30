@@ -2,8 +2,8 @@
 title: "Claude API"
 summary: "Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks"
 topic: claude-api
-status: partial
-last_reviewed: 2026-10-19
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://platform.claude.com/docs/en/about-claude/models/overview
   - https://platform.claude.com/docs/en/about-claude/pricing
@@ -36,16 +36,25 @@ workspace share all three, so keys alone don't stop one app from using up the ot
   `APPNAME_ANTHROPIC_API_KEY`), so a key can't be shared by accident.
 - Checked against Anthropic's [workspaces](https://platform.claude.com/docs/en/build-with-claude/workspaces)
   and [Usage and Cost API](https://platform.claude.com/docs/en/build-with-claude/usage-cost-api)
-  docs on 2026-10-18: spend limits and rate limits are set per workspace (never per key), can't be
-  set on the Default Workspace, and can't exceed the organization's. Token usage can be filtered
-  and grouped by API key, but the cost report groups by workspace, so a workspace per app is still
-  the way to see and cap each app's spend. Prompt caches are also per workspace.
+  docs on 2026-10-29: spend and rate limits are set per workspace (the docs name no per-key
+  limit), can't be higher than the organization's, and a spend limit can't be set on the Default
+  Workspace. Token usage can be filtered and grouped by API key, but the cost report groups only
+  by workspace or description, so a workspace per app is still the way to see and cap each app's
+  spend. Prompt caches are per workspace on the Claude API and Foundry (per organization on
+  Bedrock and Google Cloud).
+- The Python SDK went to 2.0.0 on 2026-10-21 for API version `2026-10-21`, its one breaking
+  change; 2.2.0 added usage and cost reports by dimension
+  ([changelog](https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md)). Pin
+  the SDK's major version and read the changelog before a major bump.
 
 ## Choosing a model
 
 The family's defaults per kind of job, the override rule and the fallbacks are in
 [decision 0006](../decisions/0006-model-selection-convention.md). This section holds the facts
-they rest on. Checked against Anthropic's docs on 2026-10-18; re-check before relying on a price.
+they rest on. Checked against Anthropic's [models](https://platform.claude.com/docs/en/about-claude/models/overview),
+[pricing](https://platform.claude.com/docs/en/about-claude/pricing) and
+[deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations) pages on
+2026-10-29; re-check before relying on a price.
 
 | Model | ID | Input $/MTok | Output $/MTok | Cache read $/MTok | Default effort | Latency |
 |---|---|---|---|---|---|---|
@@ -70,13 +79,15 @@ they rest on. Checked against Anthropic's docs on 2026-10-18; re-check before re
 ## Claude on Microsoft Foundry
 
 Checked against Anthropic's Foundry page and Microsoft's quota page (updated 2026-09-22) on
-2026-10-18.
+2026-10-29.
 
-- **Prices** are Anthropic's standard rates, billed through the Azure Marketplace in Claude
-  Consumption Units (100 CCU is 1 USD), metered hourly and invoiced monthly.
+- **Prices** are Anthropic's standard rates, billed on the Azure bill in Claude Consumption
+  Units, metered hourly and invoiced monthly in arrears; CCUs aren't prepaid credits. The CCU
+  price is on Anthropic's separate Foundry pricing page.
 - **Two hostings.** Hosted on Azure offers Opus 5.5, Opus 5, Opus 4.8, Sonnet 5.5, Sonnet 5,
   Haiku 5.5 and Haiku 4.5, in Global Standard or US Data Zone Standard. Hosted on Anthropic
-  offers every model, Fable 5.1 included, in Global Standard only. Sonnet 5.5 is Global Standard
+  offers every model on Foundry, Fable 5.1 included (Mythos models are limited availability), in
+  Global Standard only. Sonnet 5.5 is Global Standard
   only.
 - **The model parameter is the deployment name.** It defaults to the model ID and can't be
   renamed later; keep it equal to the ID so config is the same on both paths.
@@ -94,13 +105,16 @@ Checked against Anthropic's Foundry page and Microsoft's quota page (updated 202
   Azure Monitor.
 - **Keyless sign-in:** turn on Entra ID for the resource and use a token provider for the scope
   `https://ai.azure.com/.default` with `AnthropicFoundry`. Anthropic's page names Foundry User
-  (formerly Azure AI User) or Cognitive Services User; without one, calls return 403. Use
+  (formerly Azure AI User) or Cognitive Services User. Use
   Foundry User on the Foundry resource: Microsoft's Foundry RBAC page calls it the
   least-privilege role and advises against roles starting with "Cognitive Services" for Foundry
   ([Foundry RBAC](https://learn.microsoft.com/en-us/azure/foundry/concepts/rbac-foundry), checked
-  2026-10-18).
+  2026-10-18). Anthropic's page gives the two roles as examples ("such as") and says a 403 means
+  the account "might lack" permissions.
 - **Claude Code on Foundry:** its `opus`, `sonnet` and `haiku` aliases point at Opus 4.6,
-  Sonnet 4.5 and Haiku 4.5 there. Set `ANTHROPIC_DEFAULT_OPUS_MODEL` and its siblings to full IDs.
+  Sonnet 4.5 and Haiku 4.5 there (Bedrock and Google Cloud: Opus 5.5, Sonnet 4.5, Haiku 4.5;
+  [model config](https://code.claude.com/docs/en/model-config), checked 2026-10-29). Set
+  `ANTHROPIC_DEFAULT_OPUS_MODEL` and its siblings to full IDs.
 
 ## Other model families
 
@@ -110,7 +124,9 @@ the providers' own pages on 2026-10-19; re-check before relying on them.
 
 - **What Claude doesn't do.** It reads images and PDFs but can't create or edit images, takes no
   video or audio, and has no embedding model (Anthropic points to Voyage).
-- **xAI.** Text models `grok-4.7` ($2/$6 per MTok) and `grok-4.3` ($1.25/$2.50); image, video
+- **xAI.** Text models `grok-4.7` ($2/$6 per MTok; also `grok-4.6` and `grok-4.5` at that price)
+  and `grok-4.3` ($1.25/$2.50), each doubling for prompts of 200K tokens or more (checked
+  2026-10-29); image, video
   and speech models on the same API. No training on API data; requests kept 30 days by default,
   with a zero-retention switch. Chat Completions is marked legacy in favour of the Responses API.
 - **Grok on Azure.** Foundry sells `grok-4.3`, `grok-4.6`, `grok-4.7` and `grok-4.20` (Global
