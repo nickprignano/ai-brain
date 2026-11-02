@@ -64,6 +64,8 @@ help-center docs on 2026-10-18.
 - Project chat, quick questions and triage: Claude Sonnet 5.5 at `low`.
 - Workers or subagents that read, search or summarize: Haiku 5.5 or Sonnet 5.5 at `low`.
   In Claude Code, set `model: haiku` in the subagent's definition, or `CLAUDE_CODE_SUBAGENT_MODEL`.
+  Since v2.1.316, `CLAUDE_CODE_SUBAGENT_EFFORT` sets the effort subagents run at when nothing else
+  names one, instead of inheriting the session's ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 ### Scale up or down
 
@@ -75,6 +77,12 @@ Change effort first, then the model, one step at a time.
 - **Down** (`low`, or Sonnet 5.5): mechanical edits, renames, formatting, lookups, and summaries
   of text you supply.
 - On Opus 5.5, Sonnet 5.5 and Haiku 5.5, thinking can't be turned off; lower the effort instead.
+- `ultrathink` in a prompt is a one-turn step up: since v2.1.311 it runs that turn at `xhigh` on
+  Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.1 through Anthropic's API, and typed mid-turn it
+  raises the rest of the turn. `CLAUDE_CODE_DISABLE_ULTRATHINK` turns the keyword off (v2.1.316)
+  ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
+- Fast mode on Opus 4.8 is deprecated as of 2026-10-30 and removed on 2026-11-30, after which
+  those requests error instead of falling back; fast mode continues on Opus 5.5 (v2.1.316).
 - Switch at a task boundary, not mid-task. Prompt caches are per model, so a model switch makes
   the next request re-read the whole conversation at full input price. Changing effort keeps
   the cache on Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.1 with an API key or a Claude
@@ -175,6 +183,11 @@ thread with that summary instead of carrying on.
   prefer a CLI (`gh`, `az`) to an MCP server when both exist.
 - Send noisy work (test runs, logs, doc fetches, wide searches) to a subagent so only its summary
   comes back. A hook can filter test or log output to the failures before Claude reads it.
+  Since v2.1.314, in long headless and SDK turns, the parent no longer holds each subagent's tool
+  results until the turn ends, and
+  since v2.1.312 a subagent's `autoCompactWindow` can lower (never raise) the window set by
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW`. Prompt and agent hooks run at most 24 at a time per session,
+  subagents included, and a `timeout` under 1 second counts as 1 second (v2.1.312) ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 - Ask specific questions that name the file and function, and give a check to pass (a test, an
   expected output). Vague asks make Claude scan widely.
 - Use plan mode for anything complex, and stop early (Escape, then `/rewind`) when it heads the
@@ -333,6 +346,20 @@ What a cloud session can't do on GitHub (seen in real runs, 2026-10-19):
   asking the owner to review fails ("Review cannot be requested from pull request author");
   assign the PR instead. The PR itself is still created (checked 2026-10-20).
 
+What changed for cloud sessions in Claude Code v2.1.311 to v2.1.316 (2026-10-26 to 10-31)
+([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)):
+
+- **Scheduled tasks** that run in Anthropic's cloud load the plugins enabled on the claude.ai
+  account (v2.1.314), and a routine's model picker now takes an effort level (v2.1.312).
+- **A failing setup script no longer blocks the session:** sessions from the web, desktop and
+  mobile apps start even when it exits with an error (v2.1.314), so check its output rather than
+  assuming a started session has its tools.
+- **MCP forms:** when an MCP server asks for a form, the session shows a card to fill in or
+  decline, where the request used to be canceled unseen (v2.1.316).
+- **Writes outside the repo:** `permissions.blockWritesOutsideWorkingDirectories` makes Write,
+  Edit and NotebookEdit refuse paths outside the working directories in every permission mode
+  (v2.1.314).
+
 **Check merge state before pushing more to a PR.** Three times in one day a PR merged a moment
 before the next push, and the new commit was stranded on a merged branch and needed its own PR.
 Related traps:
@@ -341,6 +368,31 @@ Related traps:
   ones.
 - Archiving a repo leaves comparison checks that read it silently green. Repoint anything that
   depends on it first.
+
+## Keeping up with the MCP specification
+
+What changed in the spec's process and extensions in late October 2026, read from the spec repo's
+commits:
+
+- **Release cycle** ([SEP-3398](https://modelcontextprotocol.io/seps/3398-release-cycle-updates),
+  accepted 2026-10-14): spec releases come every six months, generally on the last Tuesday of
+  March and September, each with an eight-month cycle and a soft freeze 2.5 months before
+  release. The December 2026 target moves to late March 2027.
+- **Extension lifecycle** ([SEP-3392](https://modelcontextprotocol.io/seps/3392-extension-lifecycle),
+  Final 2026-10-27): an extension goes Experimental, Beta, then Stable or into the core spec, and
+  the folder in its `ext-<area>` repo (`specification/experimental/`, `beta/`, `stable/`) shows the
+  stage. Experimental and Beta may break; a Stable extension changes only with a new core protocol
+  revision.
+- **Tasks extension:** the spec's client matrix lists Claude Code and Claude on the web as
+  supporting [Tasks](https://modelcontextprotocol.io/extensions/tasks/overview) (2026-10-28,
+  [commit](https://github.com/modelcontextprotocol/modelcontextprotocol/commit/f44325dc6718e974b90159df84996f03bf26a3d8)).
+- **Enterprise-managed authorization** (the company's identity provider issues an ID-JAG that the
+  MCP server's authorization server swaps for an access token): the
+  [docs](https://modelcontextprotocol.io/extensions/auth/enterprise-managed-authorization) now list
+  vendor support (2026-10-30). Okta, Ping Identity and Descope list both roles as available;
+  Auth0 and WorkOS accept only in early access; Keycloak only experimentally. Cloudflare's
+  `workers-oauth-provider` has an experimental `enterpriseManagedAuthorization` option since
+  0.7.0. Vendors track different drafts of the IETF ID-JAG spec, so check the revision.
 
 ## Outside review from another company's model
 
