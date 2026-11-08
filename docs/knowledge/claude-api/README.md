@@ -3,8 +3,9 @@ title: "Claude API"
 summary: "Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks"
 topic: claude-api
 status: verified
-last_reviewed: 2026-10-29
+last_reviewed: 2026-11-08
 sources:
+  - https://github.com/CSSLab/maia2
   - https://platform.claude.com/docs/en/about-claude/models/overview
   - https://platform.claude.com/docs/en/about-claude/pricing
   - https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry
@@ -47,6 +48,25 @@ workspace share all three, so keys alone don't stop one app from using up the ot
   ([changelog](https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md)). Pin
   the SDK's major version and read the changelog before a major bump.
 
+### A hard cap inside the app
+
+A workspace spend limit is the backstop, but it stops every caller at once and only after the
+money is gone. For an app with a small budget (the chess coach spec, `nickprignano/chess`, caps
+Claude at $10 a month), add a budget in the app itself:
+
+- **Reserve, then settle.** Before each call, reserve the worst case (`max_tokens` plus the input
+  size at list price) in one serialized counter, such as a Cloudflare Durable Object. After the
+  call, settle the real cost from the response's `usage`. If you only count after the call,
+  many requests sent at once all pass the check.
+- **Fail closed.** If the counter can't be reached, turn the AI feature off and fall back to
+  something free, rather than calling Claude unmetered.
+- **Size per-user limits from the daily cap**, and work out how many users at their maximum fit.
+  On a stronger model the same cap buys far fewer calls: at 2026-10 list prices, a 6,000-in and
+  1,500-out review costs about $0.0014 on Haiku 5.5 and $0.027 on Sonnet 5.5.
+- **Spend Claude where it adds the most.** In the chess spec, hints during the game come free from
+  the engine and templates, and Claude writes only the post-game review and on-demand
+  explanations.
+
 ## Choosing a model
 
 The family's defaults per kind of job, the override rule and the fallbacks are in
@@ -75,6 +95,16 @@ they rest on. Checked against Anthropic's [models](https://platform.claude.com/d
 - Fable 5.1 needs 30-day data retention, so it isn't available under zero data retention.
 - Retirement is "not sooner than" 2027-09-01 (Fable 5.1), 2027-09-22 (Opus 5.5), 2027-09-28
   (Sonnet 5.5) and 2027-10-07 (Haiku 5.5).
+
+### Pair Claude with a specialist engine
+
+For a task a dedicated engine does far better, let the engine decide and let Claude explain.
+Chess is the clear case. An LLM playing alone is weak and inconsistent, and it sometimes tries
+illegal moves. Stockfish (GPL-3) is far stronger and free. [Maia-2](https://github.com/CSSLab/maia2)
+(MIT code; check the weights' license separately) plays like a human at a chosen rating, which
+suits "play at my level". Claude then turns the engine's lines and scores into an explanation at
+the player's level. A Lichess blog post reports running Maia-2 in the browser with ONNX Runtime
+Web. Rating conversions between sites are approximate, and differ for rapid and blitz.
 
 ## Claude on Microsoft Foundry
 

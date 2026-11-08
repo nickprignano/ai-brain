@@ -3,7 +3,7 @@ title: "Privacy and safety"
 summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors"
 topic: privacy-and-safety
 status: verified
-last_reviewed: 2026-10-29
+last_reviewed: 2026-11-08
 sources:
   - https://github.com/microsoft/PyRIT
   - https://github.com/promptfoo/promptfoo
@@ -153,6 +153,22 @@ pointed at your own app before a real one shows up.
   space. Other mature pieces: Meta's ThreatExchange (PDQ hashing, Hasher-Matcher-Actioner), Thorn's
   `perception` (hash matching; it needs NCMEC or Thorn hash lists), detoxify (toxicity) and nsfwjs
   (image classifier in JavaScript).
+
+### Structured-only input for an AI feature kids use
+
+The simplest guard against prompt injection in a kids' app is to give the user no text that
+reaches the model. The chess coach spec (`nickprignano/chess`) does it this way:
+
+- There is no chat box. The browser sends a move list, a level from three values, and a "style
+  card" with a fixed schema (opening codes, percentages and set values, no free text).
+- The server replays every move and every engine line with a rules library, and checks that
+  scores are in range, before anything reaches Claude. PGN headers and comments are never
+  accepted, because they are free text.
+- The output goes through a JSON schema with a length cap, is rendered as plain text, and is
+  labelled as written by AI.
+- Sign-in sits behind a closed allowlist (Cloudflare Access with an email-code fallback for a
+  child whose Google account can't sign in to other sites). A hashed account ID is still a
+  persistent identifier, so it counts as personal data and must be deletable.
 
 ### Agents in security operations
 
