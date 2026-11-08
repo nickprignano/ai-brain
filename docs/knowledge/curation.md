@@ -17,7 +17,7 @@ this KB aligned with its siblings, and a sixth keeps it pointed at the upstream 
 
 [`.github/workflows/kb-curator.yml`](../../.github/workflows/kb-curator.yml) runs every Monday.
 It reads [sources.toml](sources.toml), collects anything new from the last 8 days and opens an
-issue labelled **kb-digest** with a checklist grouped by source. Each source names the KB page its
+issue labeled **kb-digest** with a checklist grouped by source. Each source names the KB page its
 findings belong on. Items whose URL is already linked from the KB are left out, and so are merge
 commits and dependency bumps; an item listed under one source isn't listed again under a later
 one. If nothing is new, no issue is opened.
@@ -36,7 +36,7 @@ people are chosen with the method in [experts.md](experts.md).
 
 Working a digest: tick what's worth adding and label the issue **kb-accepted**. The feedback
 workflow (below) adds each ticked link to a "From the digest" section on the page named next to its
-source, skipping links the page already has, and opens a pull request labelled `no-auto-merge`
+source, skipping links the page already has, and opens a pull request labeled `no-auto-merge`
 that closes the digest. Before merging, rewrite each line into what matters (facts, versions,
 fixes; not a link dump) and delete it. A ticked line it can't read, or a source with no page, is
 reported on the issue instead.
@@ -146,7 +146,7 @@ comment on the issue says so. The job runs the KB checks itself before pushing.
 ## Freshness check (`kb-freshness`)
 
 [`.github/workflows/kb-freshness.yml`](../../.github/workflows/kb-freshness.yml) runs on the 1st
-of each month and keeps one open issue labelled **kb-freshness** listing:
+of each month and keeps one open issue labeled **kb-freshness** listing:
 
 - pages reported broken or outdated in field reports that aren't marked `resolved` yet
 - pages whose `last_reviewed` is more than 90 days old (pages with status `plan` are skipped)
@@ -156,7 +156,7 @@ of each month and keeps one open issue labelled **kb-freshness** listing:
 - sibling KBs on a different family format version, or whose `family.yaml` can't be read
 
 Work it by re-checking each item against a primary source or a real run, then updating the page's
-text, `last_reviewed` and `status`. Open claim re-checks as a pull request labelled
+text, `last_reviewed` and `status`. Open claim re-checks as a pull request labeled
 `no-auto-merge`: a wrong "still true" or "now false" changes what the KB tells people. Run it locally with `python3 scripts/kb/freshness.py --family`.
 
 When a run with the default 90-day window finds nothing, it closes the open issue with a comment;
@@ -183,6 +183,9 @@ This KB is the hub: it owns the AI knowledge the others use, and it is the forma
 "Related knowledge bases" table in the [KB README](README.md#related-knowledge-bases) and a section
 in `llms.txt`. The schema and the family code in `scripts/kb/` are the same in every KB.
 
+- **Follow a sibling that moves.** When a sibling's KB moves to another repo, change its `repo` in
+  family.yaml and both of its sources; until then the freshness check reports its family.yaml as
+  unreadable, as if it were private.
 - **Watch each other.** Each set-up sibling gets two `github_commits` sources in
   [sources.toml](sources.toml): one with `path` set to its decisions folder, and one with `path` set
   to its KB folder. `validate.py` fails if either is missing for a sibling with a `repo`. A private sibling can't be read with

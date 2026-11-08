@@ -3,7 +3,7 @@ name: kb-freshness
 # Monthly check for KB pages that need a look: not reviewed in 90 days, still marked unverified,
 # reported broken or outdated in field-reports.yaml, or experts due for re-scoring (with each
 # tracked expert's yield from recent kb-digest issues), and sibling KBs on a different family
-# format version (family.yaml). Keeps one open issue labelled
+# format version (family.yaml). Keeps one open issue labeled
 # kb-freshness up to date instead of opening a new one each month, and closes it once a run with
 # the default settings finds nothing.
 

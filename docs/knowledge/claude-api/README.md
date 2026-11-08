@@ -43,8 +43,8 @@ workspace share all three, so keys alone don't stop one app from using up the ot
   by workspace or description, so a workspace per app is still the way to see and cap each app's
   spend. Prompt caches are per workspace on the Claude API and Foundry (per organization on
   Bedrock and Google Cloud).
-- The Python SDK went to 2.0.0 on 2026-10-21 for API version `2026-10-21`, its one breaking
-  change; 2.2.0 added usage and cost reports by dimension
+- The Python SDK went to 2.0.0 on 2026-10-21 for API version `2026-10-21` (breaking changes
+  below); 2.2.0 added usage and cost reports by dimension
   ([changelog](https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md)). Pin
   the SDK's major version and read the changelog before a major bump.
 
@@ -105,6 +105,25 @@ illegal moves. Stockfish (GPL-3) is far stronger and free. [Maia-2](https://gith
 suits "play at my level". Claude then turns the engine's lines and scores into an explanation at
 the player's level. A Lichess blog post reports running Maia-2 in the browser with ONNX Runtime
 Web. Rating conversions between sites are approximate, and differ for rapid and blitz.
+
+## API version 2026-10-21 and the 2.0 SDKs
+
+Checked against Anthropic's [migration guide](https://platform.claude.com/docs/en/api/migration-2026-10-21)
+on 2026-10-29. An SDK uses the API version that was current when its major version shipped, so
+upgrading `anthropic` to 2.0.0 moves every call to `2026-10-21`; a direct caller sets the
+`anthropic-version` header. Before upgrading:
+
+- **Sampling parameters are gone.** `temperature`, `top_p` or `top_k` returns a 400, even at the
+  default value, and nothing replaces a lower temperature.
+- **Messages API:** a `document` block in an `assistant` message, or a `text` block with
+  `citations` in a `user` message, returns a 400.
+- **The SDK sends the key as `Authorization: Bearer`,** not `X-Api-Key`, so a proxy that reads
+  `X-Api-Key` needs updating. Passing two credentials to one client raises `ValueError`.
+- **Python types:** `MessageParam` is a union by role; write messages as dict literals. `betas` moved
+  off the non-beta Models methods to `client.beta.models`.
+- **Admin API fields are renamed** (`workspace_id` on API keys becomes `scope`, among others), and
+  the SDKs move from MIT to Apache 2.0.
+- On Amazon Bedrock the new version works only with Claude 4.7 and later models.
 
 ## Claude on Microsoft Foundry
 

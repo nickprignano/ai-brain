@@ -42,8 +42,8 @@ belongs to instead of starting a new file.
 | Knowledge base | Role | Focus | Source of truth for |
 |---|---|---|---|
 | [Nerdio HCL kit](https://github.com/nickprignano/nerdio-hcl/tree/main/docs/knowledge) | member | Nerdio Manager on Azure Virtual Desktop, deployed with Terraform and Packer | Nerdio Manager; the nerdio/nme provider; this kit's Terraform and Packer |
-| AVD (repo not linked yet) | member | Azure Virtual Desktop itself | Azure Virtual Desktop platform; FSLogix; session host images in general |
-| [Liquidware](https://github.com/nickprignano/avd-liquidware/tree/main/docs/knowledge) | member | Liquidware products on virtual desktops | Liquidware products |
+| [AVD](https://github.com/avd-ops/avd-second-brain/tree/main/docs/knowledge) | member | Azure Virtual Desktop itself | Azure Virtual Desktop platform; FSLogix; session host images in general |
+| [Liquidware](https://github.com/nickprignano/liquidware-ninja/tree/main/docs/knowledge) | member | Liquidware products on virtual desktops | Liquidware products |
 | Private layer (repo not linked yet) | observer | The maintainer's private wisdom layer. It reads the family through this hub and sends directives here as pull requests; its contents stay private | Directives to the family; through docs/knowledge/directives.yaml |
 <!-- END GENERATED: family -->
 
