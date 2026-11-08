@@ -24,7 +24,7 @@ page, another company's assistant, a free course) and what "done" looks like.
 | `{{NOTES_REPO}}` | The private repo with the inbox, `owner/name` | example/notes |
 | `{{INBOX}}` | The inbox folder, with a `_template.md` that has `status: new` or `folded` | notes/offline-plan/inbox |
 | `{{DESTINATIONS}}` | Where findings usually go | a parked-ideas note, a setup backup, a public KB page, a follow-up thread |
-| `{{CHECKS}}` | The notes repo's own checks | leak_check.py and stale_check.py |
+| `{{CHECKS}}` | The notes repo's own checks | privacy_check.py and stale_check.py |
 
 ## The prompt
 

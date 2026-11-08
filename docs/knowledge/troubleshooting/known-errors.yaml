@@ -66,3 +66,10 @@ errors:
   source: https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows
   status: verified
   added: '2026-10-29'
+- id: sibling-family-yaml-unreadable-after-kb-moved
+  symptom: The freshness check reports a sibling with "couldn't read its family.yaml (HTTPError); private repo, or not set up yet" although the sibling's KB is public
+  cause: The sibling moved its KB to another repo, and family.yaml and sources.toml still named the old one
+  fix: Point the sibling's repo in family.yaml and its two sources.toml entries at the repo that now holds docs/knowledge/family.yaml
+  source: curation.md#staying-aligned-with-the-family
+  status: verified
+  added: '2026-11-08'
