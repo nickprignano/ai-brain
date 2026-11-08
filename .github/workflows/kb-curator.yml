@@ -3,6 +3,10 @@ name: kb-curator
 # Weekly digest of new releases, docs and community repos from docs/knowledge/sources.toml,
 # opened as an issue labelled kb-digest. On pull requests that touch the curator it runs as a
 # dry run and writes the digest to the job summary instead.
+#
+# Each new digest supersedes the older ones nobody ticked: it closes every open kb-digest issue
+# older than the previous one that has no ticked item, so last week's stays open for a week more.
+# A ticked digest stays open until kb-accepted turns it into a pull request (kb-feedback.yml).
 
 on:
   schedule:
@@ -61,4 +65,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh label create kb-digest --color 0e8a16 --description "Knowledge base curator digest" --force
-          gh issue create --label kb-digest --title "KB digest: $(date -u +%F)" --body-file digest.md
+          url=$(gh issue create --label kb-digest --title "KB digest: $(date -u +%F)" --body-file digest.md)
+          new="${url##*/}"
+          # jq's ^ matches only at the start of the string, not of each line, hence (^|\n).
+          gh issue list --label kb-digest --state open --limit 100 --json number,body \
+            | jq --argjson new "$new" '[.[] | select(.number < $new)] | sort_by(.number) | .[:-1][]
+                | select((.body // "") | test("(^|\n)- \\[[xX]\\]") | not) | .number' \
+            | while read -r old; do
+                gh issue comment "$old" --body "Superseded by #$new. Nothing here was ticked. To keep an item, tick it, reopen this issue and label it kb-accepted."
+                gh issue close "$old" --reason "not planned"
+              done

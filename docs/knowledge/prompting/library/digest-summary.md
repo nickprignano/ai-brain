@@ -2,8 +2,8 @@
 title: "Prompt: Summarize the weekly KB digest"
 summary: "Has a scheduled Claude routine turn the raw kb-digest issue into the handful of changes that matter, read from the sources, and open one PR of KB adds"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-20
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Summarize the weekly KB digest

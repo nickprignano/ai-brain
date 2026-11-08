@@ -76,10 +76,12 @@ def check_forbidden(manifest: dict, out: Path) -> None:
 
 def check_private_layer_empty(out: Path) -> None:
     """The template's private layer ships empty: only `_template.md` files and the capture rules,
-    index (with no entries) and instructions. Anything else would be someone's note."""
+    index (with no entries) and instructions. Anything else would be someone's note. The sandbox's
+    tasks and findings ship as templates only, too."""
     notes, outbox = out / "notes", out / "outbox"
     hits = [p for p in sorted(notes.glob("*/**/*")) if p.is_file() and p.name != "_template.md"]
     hits += [p for p in sorted(outbox.glob("*")) if p.is_file() and p.name != "README.md"]
+    hits += [p for p in sorted((out / "sandbox").glob("*/**/*")) if p.is_file() and p.name != "_template.md"]
     index = notes / "index.md"
     if index.exists() and any(line.lstrip().startswith(("- ", "* ")) for line in index.read_text(encoding="utf-8").splitlines()):
         hits.append(index)

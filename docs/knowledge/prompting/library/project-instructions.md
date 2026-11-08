@@ -3,7 +3,7 @@ title: "Prompt: Standing instructions for a Claude project"
 summary: "Project-instruction lines the owner pastes into a new Claude project: model, red team, closeout, handoffs and guardrails"
 topic: prompting
 status: verified
-last_reviewed: 2026-10-19
+last_reviewed: 2026-10-22
 ---
 
 # Prompt: Standing instructions for a Claude project
@@ -44,6 +44,10 @@ and labeled `handoff` are live; never add that label yourself. Work for another 
 it as a handoff issue in its repo, not a prompt for me to paste. [optional, for a private project
 or repos it can't reach: Draft the issue text and I'll open it by hand.]
 
+Change rules: every repo gets an AGENTS.md with the four "How to make a change" rules, and
+CLAUDE.md imports it. In work with no repo, follow the same four: say what you assumed, write the
+least that does the job, touch only what the task needs, and name the check that proves it's done.
+
 Guardrails: changes are pull requests I merge. No employer, customer or private-project names,
 account IDs, domains, emails or secrets in any repo, issue, PR or commit, and never ask me for a
 secret in chat.
@@ -55,5 +59,6 @@ secret in chat.
   lines in chat reach only that thread.
 - Each line points at a family convention: model selection
   ([0006](../../decisions/0006-model-selection-convention.md)), enforced capture
-  ([0011](../../decisions/0011-family-format-enforced-kb-capture.md)) and handoff issues
-  ([0012](../../decisions/0012-family-format-handoff-issues.md)).
+  ([0011](../../decisions/0011-family-format-enforced-kb-capture.md)), handoff issues
+  ([0012](../../decisions/0012-family-format-handoff-issues.md)) and the change rules
+  ([0020](../../decisions/0020-agents-md-in-every-repo.md)).

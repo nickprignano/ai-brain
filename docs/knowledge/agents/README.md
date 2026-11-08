@@ -2,10 +2,11 @@
 title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
-status: partial
-last_reviewed: 2026-10-21
+status: verified
+last_reviewed: 2026-10-29
 sources:
   - https://code.claude.com/docs/en/costs
+  - https://code.claude.com/docs/en/memory
   - https://code.claude.com/docs/en/model-config
   - https://support.claude.com/en/articles/9797557-usage-limit-best-practices
   - https://www.sourcepulse.org/projects/28283027
@@ -36,6 +37,13 @@ sources:
   - https://github.com/AgriciDaniel/claude-obsidian
   - https://github.com/HKUDS/LightRAG
   - https://github.com/urchade/GLiNER
+  - https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions
+  - https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli
+  - https://geminicli.com/docs/cli/configuration
+  - https://docs.github.com/en/codespaces/reference/security-in-github-codespaces
+  - https://github.com/microsoft/vscode-remote-release/issues/4426
+  - https://github.com/microsoft/vscode-remote-release/issues/9897
+  - https://code.visualstudio.com/docs/devcontainers/containers
 ---
 
 # Agents and Claude Code
@@ -56,6 +64,8 @@ help-center docs on 2026-10-18.
 - Project chat, quick questions and triage: Claude Sonnet 5.5 at `low`.
 - Workers or subagents that read, search or summarize: Haiku 5.5 or Sonnet 5.5 at `low`.
   In Claude Code, set `model: haiku` in the subagent's definition, or `CLAUDE_CODE_SUBAGENT_MODEL`.
+  Since v2.1.316, `CLAUDE_CODE_SUBAGENT_EFFORT` sets the effort subagents run at when nothing else
+  names one, instead of inheriting the session's ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 ### Scale up or down
 
@@ -67,6 +77,12 @@ Change effort first, then the model, one step at a time.
 - **Down** (`low`, or Sonnet 5.5): mechanical edits, renames, formatting, lookups, and summaries
   of text you supply.
 - On Opus 5.5, Sonnet 5.5 and Haiku 5.5, thinking can't be turned off; lower the effort instead.
+- `ultrathink` in a prompt is a one-turn step up: since v2.1.311 it runs that turn at `xhigh` on
+  Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.1 through Anthropic's API, and typed mid-turn it
+  raises the rest of the turn. `CLAUDE_CODE_DISABLE_ULTRATHINK` turns the keyword off (v2.1.316)
+  ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
+- Fast mode on Opus 4.8 is deprecated as of 2026-10-30 and removed on 2026-11-30, after which
+  those requests error instead of falling back; fast mode continues on Opus 5.5 (v2.1.316).
 - Switch at a task boundary, not mid-task. Prompt caches are per model, so a model switch makes
   the next request re-read the whole conversation at full input price. Changing effort keeps
   the cache on Opus 5.5, Sonnet 5.5, Haiku 5.5 and Fable 5.1 with an API key or a Claude
@@ -129,8 +145,8 @@ What the run showed about the rule:
   "can't settle this", which the Opus pass reported itself. The escalation that happened (Opus
   names the questions, the user says go, a Fable worker answers, Opus checks) is case 1 above.
 - **The `high` step was skipped.** Both red teams ran at the thread default, `medium`, because
-  the convention isn't in the project instructions yet. *Unverified:* whether Opus at `high`
-  would have settled either question; no run tried it.
+  the convention isn't in the project instructions yet. No run has tried Opus at `high` on either
+  question, so whether it would have settled them is an open question, not a finding.
 - **The spot check missed a boundary.** Recomputing the figures confirmed them, except "a judge
   at exactly 95% trips about half the time": that is 32 to 38% if the alarm fires below 95%, and
   56 to 60% at or below, so the threshold's comparison needs stating.
@@ -150,7 +166,9 @@ question late in an all-day session pays for all of it. Start fresh when:
 - **You're back after a break** longer than the cache lifetime (an hour on a subscription, five
   minutes on an API key or once drawing on usage credits). The next message re-reads everything
   at full price anyway, so a fresh session with a short handoff is cheaper when the history is
-  long.
+  long. Since Claude Code v2.1.304, Pro and Max plans warn when resuming an inactive conversation
+  would use a noticeable share of the 5-hour limit, and offer a new conversation that can look up
+  the old one instead ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 Before starting fresh, write the handoff where the next session will find it: the state, the
 decisions and the next step, in the repo, the KB or project memory. In Claude Code, `/rename`
@@ -165,6 +183,11 @@ thread with that summary instead of carrying on.
   prefer a CLI (`gh`, `az`) to an MCP server when both exist.
 - Send noisy work (test runs, logs, doc fetches, wide searches) to a subagent so only its summary
   comes back. A hook can filter test or log output to the failures before Claude reads it.
+  Since v2.1.314, in long headless and SDK turns, the parent no longer holds each subagent's tool
+  results until the turn ends, and
+  since v2.1.312 a subagent's `autoCompactWindow` can lower (never raise) the window set by
+  `CLAUDE_CODE_AUTO_COMPACT_WINDOW`. Prompt and agent hooks run at most 24 at a time per session,
+  subagents included, and a `timeout` under 1 second counts as 1 second (v2.1.312) ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 - Ask specific questions that name the file and function, and give a check to pass (a test, an
   expected output). Vague asks make Claude scan widely.
 - Use plan mode for anything complex, and stop early (Escape, then `/rewind`) when it heads the
@@ -193,14 +216,24 @@ thread with that summary instead of carrying on.
   first, and by default re-adds any token the client drops later in a session
   (`HEADROOM_BETA_HEADER_STICKY`), and that it reads Claude Code's `cache_control` TTL. Its
   Unix-socket mode makes Claude Code treat the session as API-key auth, which fails a
-  subscription login, so use `ANTHROPIC_BASE_URL`. *Unverified:* a real run with a claude.ai
-  login.
+  subscription login, so use `ANTHROPIC_BASE_URL`. Anthropic's gateway docs confirm the
+  subscription side (checked 2026-10-29): `ANTHROPIC_BASE_URL` without a gateway credential
+  "doesn't replace the subscription", its limits and billing still apply, and a gateway passing the
+  traffic to Anthropic "must forward the OAuth capability in `anthropic-beta`"
+  ([LLM gateways](https://code.claude.com/docs/en/llm-gateway#subscriptions-and-gateways)). Not
+  yet run end to end with Headroom on a claude.ai login here; on a first run, check the `/usage`
+  cache line before trusting it. Claude Code itself now copes with gateways that reject newer
+  request fields: it resends without `context_management` (v2.1.304), without tool search
+  (v2.1.305) and without the `effort-2025-11-24` beta (v2.1.310), and stopped sending the
+  `prompt-caching-scope` beta behind a custom `ANTHROPIC_BASE_URL`, where it has no effect
+  (v2.1.307) ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 ### Check it's working
 
 - Claude Code `/usage`: session tokens and cost, a prompt-cache line (share of input served from
   cache, misses and their likely cause), and on a plan, what share went to subagents, skills or
-  MCP servers, with flags for long context or cache misses.
+  MCP servers, with flags for long context or cache misses. Since v2.1.305 each warning is a
+  one-line fix naming its source, and `f` applies the fixes ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 - `/insights`: a report on friction such as misunderstood requests.
 - Claude chat: Settings > Usage shows the session and weekly limits.
 - For the pilot, count per project: threads that needed a bump, sessions restarted because
@@ -313,6 +346,20 @@ What a cloud session can't do on GitHub (seen in real runs, 2026-10-19):
   asking the owner to review fails ("Review cannot be requested from pull request author");
   assign the PR instead. The PR itself is still created (checked 2026-10-20).
 
+What changed for cloud sessions in Claude Code v2.1.311 to v2.1.316 (2026-10-26 to 10-31)
+([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)):
+
+- **Scheduled tasks** that run in Anthropic's cloud load the plugins enabled on the claude.ai
+  account (v2.1.314), and a routine's model picker now takes an effort level (v2.1.312).
+- **A failing setup script no longer blocks the session:** sessions from the web, desktop and
+  mobile apps start even when it exits with an error (v2.1.314), so check its output rather than
+  assuming a started session has its tools.
+- **MCP forms:** when an MCP server asks for a form, the session shows a card to fill in or
+  decline, where the request used to be canceled unseen (v2.1.316).
+- **Writes outside the repo:** `permissions.blockWritesOutsideWorkingDirectories` makes Write,
+  Edit and NotebookEdit refuse paths outside the working directories in every permission mode
+  (v2.1.314).
+
 **Check merge state before pushing more to a PR.** Three times in one day a PR merged a moment
 before the next push, and the new commit was stranded on a merged branch and needed its own PR.
 Related traps:
@@ -321,6 +368,31 @@ Related traps:
   ones.
 - Archiving a repo leaves comparison checks that read it silently green. Repoint anything that
   depends on it first.
+
+## Keeping up with the MCP specification
+
+What changed in the spec's process and extensions in late October 2026, read from the spec repo's
+commits:
+
+- **Release cycle** ([SEP-3398](https://modelcontextprotocol.io/seps/3398-release-cycle-updates),
+  accepted 2026-10-14): spec releases come every six months, generally on the last Tuesday of
+  March and September, each with an eight-month cycle and a soft freeze 2.5 months before
+  release. The December 2026 target moves to late March 2027.
+- **Extension lifecycle** ([SEP-3392](https://modelcontextprotocol.io/seps/3392-extension-lifecycle),
+  Final 2026-10-27): an extension goes Experimental, Beta, then Stable or into the core spec, and
+  the folder in its `ext-<area>` repo (`specification/experimental/`, `beta/`, `stable/`) shows the
+  stage. Experimental and Beta may break; a Stable extension changes only with a new core protocol
+  revision.
+- **Tasks extension:** the spec's client matrix lists Claude Code and Claude on the web as
+  supporting [Tasks](https://modelcontextprotocol.io/extensions/tasks/overview) (2026-10-28,
+  [commit](https://github.com/modelcontextprotocol/modelcontextprotocol/commit/f44325dc6718e974b90159df84996f03bf26a3d8)).
+- **Enterprise-managed authorization** (the company's identity provider issues an ID-JAG that the
+  MCP server's authorization server swaps for an access token): the
+  [docs](https://modelcontextprotocol.io/extensions/auth/enterprise-managed-authorization) now list
+  vendor support (2026-10-30). Okta, Ping Identity and Descope list both roles as available;
+  Auth0 and WorkOS accept only in early access; Keycloak only experimentally. Cloudflare's
+  `workers-oauth-provider` has an experimental `enterpriseManagedAuthorization` option since
+  0.7.0. Vendors track different drafts of the IETF ID-JAG spec, so check the revision.
 
 ## Outside review from another company's model
 
@@ -335,6 +407,62 @@ company's assistant through a single file the owner pastes: [decision 0017](../d
 - **Leave out your own red team's findings,** or the second pass anchors on the first.
 - **Paste by hand before building a tool.** xAI's text API costs about two cents a review, but a
   tool means a new connector to red team, and Claude would then choose what the owner sees.
+
+## A sandbox repo for other vendors' agents
+
+To try a coding agent from another vendor on real work without letting it near a private layer,
+the 2ndbrain template has a third setup mode, `setup.py --sandbox`
+([decision 0021](../decisions/0021-sandbox-for-outside-agents.md), [prompt](../prompting/library/sandbox-task.md)):
+a fresh private repo, seeded only with public-safe material, with findings coming back by hand.
+What it rests on (checked 2026-10-22):
+
+- **The agents read the same instruction file.** GitHub Copilot CLI reads `AGENTS.md` (repo root,
+  the working directory and folders on the path), and also `CLAUDE.md`, `GEMINI.md` and
+  `.github/copilot-instructions.md`. Gemini CLI reads `GEMINI.md` by default, and its `contextFileName`
+  setting can name other files; a one-line `GEMINI.md` that imports `AGENTS.md` avoids depending on
+  the setting's exact key.
+- **Gemini CLI is now Antigravity for personal plans** (checked 2026-10-29 against Google's own
+  pages). Google's developer blog (2026-05-19) says Gemini CLI and the Code Assist IDE extensions
+  "will stop serving requests for Google AI Pro and Ultra" on 2026-06-18, and for the free Code
+  Assist for individuals too; paid Gemini API keys and Enterprise licenses keep access
+  ([Google](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/)).
+  The successor is the Antigravity CLI, run as `agy`, next to the Antigravity desktop IDE; Google's
+  Flutter docs say it reads rules files such as `AGENTS.md` in the project, still supports a legacy
+  `GEMINI.md`, and recommend renaming that to `AGENTS.md`
+  ([Flutter docs](https://docs.flutter.cn/ai/antigravity-cli.md)). Third-party guides add rule
+  files in `.agents/rules/` (limit 12,000 characters each); no published order says which wins on a
+  conflict, and whether `@` imports work inside `GEMINI.md` is still open until the sandbox
+  evaluation in `sandbox/ANTIGRAVITY.md` runs ([guide](https://thepromptshelf.dev/blog/google-antigravity-agents-md-rules-guide-2026),
+  [troubleshooting](https://agentpedia.codes/blog/antigravity-agents-md-not-working-fix)). So the
+  sandbox writes its rules in full to `GEMINI.md` and `.agents/rules/sandbox.md`, then imports
+  `AGENTS.md`; canary lines in each file show which ones a given version loads.
+- **Antigravity's guard rails are settings, not instructions** ([settings](https://antigravity.google/docs/settings?tab=ide)):
+  Strict mode (review before terminal commands, browser JavaScript and artifacts, workspace only,
+  terminal sandbox without network), Terminal command auto execution (*Request Review* or *Always
+  Proceed*, with allow and deny lists), Agent non-workspace file access (off by default), and on the
+  CLI `toolPermission` (`request-review` by default). As a desktop app it runs with the computer's
+  files and logins, and its browser can open `file://` addresses, so the sandbox runs it in a
+  separate local computer account with a second Google account, a browser profile signed in to
+  nothing, and no GitHub token: the agent commits and the owner pushes.
+- **Instructions don't stop a token.** A CLI signed in with your GitHub login can read every repo
+  you can. Copilot CLI takes a token from `COPILOT_GITHUB_TOKEN`, then `GH_TOKEN`, then
+  `GITHUB_TOKEN`, then its stored login, then `gh`, and an environment variable silently wins. It
+  accepts a fine-grained personal token with the "Copilot Requests" account permission, so the
+  token can be limited to the sandbox repo.
+- **A Codespace's own token reaches only the repo it was opened on,** unless you authorize more.
+  Running the agents there, with no `gh auth login` inside, is the cheapest real boundary. On your
+  own computer a local agent can read any folder you can.
+- **Treat the sandbox as shared with the vendor.** Keep the repo private so it isn't public on the
+  web, but put nothing in it that you wouldn't hand that vendor.
+- **VS Code attached to a local dev container is not a boundary.** Even with
+  `dev.containers.gitCredentialHelperConfigLocation` set to `none`, it creates a credential-helper
+  socket a process in the container can ask for the host's GitHub credentials, and SSH agent and
+  `BROWSER` forwarding have no off switch; its maintainers say not to rely on it for untrusted code.
+  Run untrusted agents in a plain `docker run` terminal with the repo in a Docker volume, not a
+  bind-mounted folder, whose `.git` hooks and config would run on the host. Docker Desktop before
+  4.44.3 also exposed the engine API to every container (CVE-2025-9074).
+- **Converting a private repo leaks its history.** Deleting notes leaves them in git history, which
+  any agent with a repo token can read, so setup refuses a repo whose history ever held a note.
 
 ## What counts as the owner's yes
 
@@ -493,7 +621,7 @@ theme-factory, canvas-design and web-artifacts-builder. Worth adding on top:
 | webapp-testing | anthropics/skills, Apache-2.0 | Drives a local web app with Python Playwright, with a helper that starts and stops the dev servers. |
 | differential-review, supply-chain-risk-auditor, static-analysis (plugins; static-analysis bundles codeql, semgrep and sarif-parsing) | [trailofbits/skills](https://github.com/trailofbits/skills), CC-BY-SA-4.0 | Security review of a diff, a dependency tree, and CodeQL or Semgrep scans. |
 
-Not yet reviewed, for the next pass: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+Left for the next pass: [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
 (MIT, about 106k stars, 25 engineering-lifecycle skills, installs as a Claude Code plugin
 marketplace; checked 2026-10-20).
 
@@ -521,8 +649,9 @@ What we learned getting them in:
 ### The "Karpathy guidelines"
 
 [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills)
-(MIT per its README; no LICENSE file) is a community distillation of Andrej Karpathy's January
-2026 post on LLM coding mistakes, not something he wrote. It is one CLAUDE.md with four rules:
+(MIT per its README; no LICENSE file) is a community distillation of
+[Andrej Karpathy's post of 2026-01-26](https://x.com/karpathy/status/2015883857489522876) on LLM
+coding mistakes, not something he wrote. It is one CLAUDE.md with four rules:
 think before coding, simplicity first, surgical changes, and goal-driven execution. Its own
 caveat is that the rules trade speed for caution.
 
@@ -533,6 +662,13 @@ out loud, and paired it with the rule threads already follow: pick the reasonabl
 which, and ask only when the answer changes the goal, a visible result or an irreversible step.
 The template's `AGENTS.md` now carries the four rules in that form, in our own words, under "How
 to make a change"; siblings pick it up on their next template sync.
+
+Since [0020](../decisions/0020-agents-md-in-every-repo.md) the rules are a floor for every repo
+the owner works on with Claude, not only the knowledge bases: each repo's `AGENTS.md` carries the
+section and its `CLAUDE.md` imports it (Claude Code reads `AGENTS.md` itself only when there's
+no `CLAUDE.md`, and not in every session: [docs](https://code.claude.com/docs/en/memory#agents-md)),
+and the repo audit flags a repo that lacks either. Repos outside the template start from the
+[Add an AGENTS.md prompt](../prompting/library/add-agents-md.md).
 
 Much of this already lives in Claude Code's own instructions (match the surrounding style, act
 when you have enough to act). Writing it into `AGENTS.md` still pays: other agents that read

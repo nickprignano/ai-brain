@@ -2,7 +2,8 @@ name: privacy
 
 # Keeps the private layer out of public repos (scripts/privacy_check.py). A public repo fails if it
 # has notes/, outbox/ or hub.toml, unless it is the template itself, which fails only if the layer
-# holds a real note or directive. Runs in every copy, private or public.
+# holds a real note or directive. In a sandbox it fails on the private layer, on a public repo, and
+# on any key shape, email address or platform ID in its files. Runs in every copy.
 
 on:
   push:

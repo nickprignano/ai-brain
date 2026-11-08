@@ -2,8 +2,8 @@
 title: "Prompt: Act on a repo conventions audit"
 summary: "Has Claude turn the owner's pasted repo-audit summary into a numbered fix list: settings fixes the owner runs, handoff issues for file drift"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-21
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Act on a repo conventions audit

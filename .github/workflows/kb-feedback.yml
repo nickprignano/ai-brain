@@ -4,7 +4,8 @@ name: kb-feedback
 # "Knowledge base feedback", "Known error" or "Suggest an expert" issue kb-accepted, this turns the
 # issue form into a change to the KB's YAML data (field-reports.yaml,
 # troubleshooting/known-errors.yaml or experts.yaml),
-# validates it, and opens a pull request for review. The label is the review gate: issue text is
+# validates it, and opens a pull request for review. On a kb-digest issue it adds the ticked items
+# to the pages their sources name, in a PR labelled no-auto-merge so they're rewritten before merge. The label is the review gate: issue text is
 # untrusted, is only parsed as data, and nothing merges without a reviewed PR.
 #
 # Opening the PR needs "Allow GitHub Actions to create and approve pull requests" (Settings >
@@ -32,7 +33,8 @@ jobs:
       github.event.label.name == 'kb-accepted' &&
       (contains(github.event.issue.labels.*.name, 'kb-feedback') ||
        contains(github.event.issue.labels.*.name, 'kb-known-error') ||
-       contains(github.event.issue.labels.*.name, 'kb-source'))
+       contains(github.event.issue.labels.*.name, 'kb-source') ||
+       contains(github.event.issue.labels.*.name, 'kb-digest'))
     runs-on: ubuntu-latest
     outputs:
       paused: ${{ steps.gate.outputs.paused }}
@@ -71,6 +73,7 @@ jobs:
         env:
           BRANCH: ${{ steps.change.outputs.branch }}
           TITLE: ${{ steps.change.outputs.title }}
+          LABELS: ${{ steps.change.outputs.labels }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -78,8 +81,13 @@ jobs:
           git add docs/knowledge llms.txt
           git commit -m "$TITLE"
           git push --force-with-lease origin "$BRANCH"
-          if url=$(gh pr create --head "$BRANCH" --title "$TITLE" --body-file "$RUNNER_TEMP/pr-body.md"); then
-            gh issue comment "$ISSUE" --body "Opened $url for review."
+          label_args=()
+          if [ -n "$LABELS" ]; then
+            gh label create "$LABELS" --color ededed 2>/dev/null || true
+            label_args=(--label "$LABELS")
+          fi
+          if url=$(gh pr create --head "$BRANCH" --title "$TITLE" --body-file "$RUNNER_TEMP/pr-body.md" "${label_args[@]}"); then
+            gh issue comment "$ISSUE" --body "Opened $url for review. Close and reopen it once to run the required checks: a PR opened by this workflow's token doesn't start them."
           else
             gh issue comment "$ISSUE" --body "Pushed branch \`$BRANCH\`. Actions can't open PRs in this repo, so open one from that branch."
           fi

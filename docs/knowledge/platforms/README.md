@@ -1,9 +1,9 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: serverless workers, Cloudflare Access, iOS home-screen apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume"
+summary: "Hosting AI apps: serverless workers, Cloudflare Access, installable web apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume"
 topic: platforms
 status: verified
-last_reviewed: 2026-10-21
+last_reviewed: 2026-11-08
 sources:
   - https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api
   - https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
@@ -101,7 +101,7 @@ deploy command has to run the step that applies them first (for example
 preview builds). Keep preview builds strict: a build that skips quietly shows green while a
 setting is missing (2026-10-19).
 
-## iOS home-screen web apps
+## Home-screen web apps (iOS and PWA installs)
 
 Things that differ from Android and desktop when a web app is added to an iPhone home screen
 (2026-10-19; sign-in not yet checked on a real device):
@@ -111,6 +111,30 @@ Things that differ from Android and desktop when a web app is added to an iPhone
   keyboard's mic button rather than telling users to change settings.
 - **Sign-in.** The app keeps its own login, separate from Safari's. Google sign-in and Access
   sign-in leave the app briefly; a PIN form inside the app doesn't.
+
+Learned making a static canvas game installable (2026-11-08; checked in headless Chromium, real
+devices not yet):
+
+- **Storage is separate too.** The home-screen app gets its own `localStorage`, so scores or
+  settings saved in Safari don't carry over.
+- **Status bar.** `apple-mobile-web-app-status-bar-style: black-translucent` forces white status
+  text, which disappears on a light theme. `default` follows `theme-color` (iOS 15+); set that
+  meta from the page's background when the theme toggles.
+- **Sound stops after a lock.** iOS leaves the Web Audio context `interrupted` after the phone
+  locks or the app goes to the background. Call `resume()` on every tap, not only the first.
+- **Double-tap zoom.** Fast taps on a button zoom the page; `touch-action: manipulation` stops it.
+- **No install prompt.** Safari never fires `beforeinstallprompt`; show "Share, then Add to Home
+  Screen" instead. iPadOS reports itself as a Mac, so test for touch points too.
+- **Service worker caching traps.** Cloudflare Workers static assets redirect `/index.html` to
+  `/`, and a redirected response can't answer a navigation, so cache the page as `/`. Fetch the
+  precache with `cache: 'reload'`, or a new version can store old files from the HTTP cache. If
+  the worker calls `clients.claim()`, `controllerchange` fires on the first visit too, so reload
+  only after the player asked for the update.
+- **Checking it.** Lighthouse no longer has a PWA category. Chrome DevTools Protocol
+  `Page.getInstallabilityErrors` gives Chrome's own verdict, and stopping the local server (not
+  `setOffline`, which can miss service worker fetches) proves offline play. Nothing on Linux
+  can test iOS install, so keep a short manual list for a real iPhone.
+  The full recipe is the [installable web app prompt](../prompting/library/installable-web-app.md).
 
 ## Running open image, video and audio models on your own PC
 

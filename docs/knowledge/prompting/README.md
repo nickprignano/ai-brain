@@ -2,8 +2,8 @@
 title: "Prompting"
 summary: "System prompts, audience-specific prompts and structured output that held up in real apps"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-19
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompting

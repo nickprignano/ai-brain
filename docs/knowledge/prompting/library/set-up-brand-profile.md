@@ -2,8 +2,8 @@
 title: "Prompt: Set up a brand profile in a repo"
 summary: "Has a project write brand/profile.json from the brand files its repo already has, with a test that keeps it equal to the stylesheet"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-21
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Set up a brand profile in a repo

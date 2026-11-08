@@ -2,8 +2,8 @@
 title: "Prompt: Outside review request"
 summary: "Has a thread write one self-contained file for another company's assistant to review a high-stakes design, then triage the reply"
 topic: prompting
-status: partial
-last_reviewed: 2026-10-20
+status: verified
+last_reviewed: 2026-10-29
 ---
 
 # Prompt: Outside review request

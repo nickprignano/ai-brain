@@ -2,9 +2,10 @@
 title: "Claude API"
 summary: "Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks"
 topic: claude-api
-status: partial
-last_reviewed: 2026-10-19
+status: verified
+last_reviewed: 2026-11-08
 sources:
+  - https://github.com/CSSLab/maia2
   - https://platform.claude.com/docs/en/about-claude/models/overview
   - https://platform.claude.com/docs/en/about-claude/pricing
   - https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry
@@ -36,16 +37,44 @@ workspace share all three, so keys alone don't stop one app from using up the ot
   `APPNAME_ANTHROPIC_API_KEY`), so a key can't be shared by accident.
 - Checked against Anthropic's [workspaces](https://platform.claude.com/docs/en/build-with-claude/workspaces)
   and [Usage and Cost API](https://platform.claude.com/docs/en/build-with-claude/usage-cost-api)
-  docs on 2026-10-18: spend limits and rate limits are set per workspace (never per key), can't be
-  set on the Default Workspace, and can't exceed the organization's. Token usage can be filtered
-  and grouped by API key, but the cost report groups by workspace, so a workspace per app is still
-  the way to see and cap each app's spend. Prompt caches are also per workspace.
+  docs on 2026-10-29: spend and rate limits are set per workspace (the docs name no per-key
+  limit), can't be higher than the organization's, and a spend limit can't be set on the Default
+  Workspace. Token usage can be filtered and grouped by API key, but the cost report groups only
+  by workspace or description, so a workspace per app is still the way to see and cap each app's
+  spend. Prompt caches are per workspace on the Claude API and Foundry (per organization on
+  Bedrock and Google Cloud).
+- The Python SDK went to 2.0.0 on 2026-10-21 for API version `2026-10-21` (breaking changes
+  below); 2.2.0 added usage and cost reports by dimension
+  ([changelog](https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md)). Pin
+  the SDK's major version and read the changelog before a major bump.
+
+### A hard cap inside the app
+
+A workspace spend limit is the backstop, but it stops every caller at once and only after the
+money is gone. For an app with a small budget (the chess coach spec, `nickprignano/chess`, caps
+Claude at $10 a month), add a budget in the app itself:
+
+- **Reserve, then settle.** Before each call, reserve the worst case (`max_tokens` plus the input
+  size at list price) in one serialized counter, such as a Cloudflare Durable Object. After the
+  call, settle the real cost from the response's `usage`. If you only count after the call,
+  many requests sent at once all pass the check.
+- **Fail closed.** If the counter can't be reached, turn the AI feature off and fall back to
+  something free, rather than calling Claude unmetered.
+- **Size per-user limits from the daily cap**, and work out how many users at their maximum fit.
+  On a stronger model the same cap buys far fewer calls: at 2026-10 list prices, a 6,000-in and
+  1,500-out review costs about $0.0014 on Haiku 5.5 and $0.027 on Sonnet 5.5.
+- **Spend Claude where it adds the most.** In the chess spec, hints during the game come free from
+  the engine and templates, and Claude writes only the post-game review and on-demand
+  explanations.
 
 ## Choosing a model
 
 The family's defaults per kind of job, the override rule and the fallbacks are in
 [decision 0006](../decisions/0006-model-selection-convention.md). This section holds the facts
-they rest on. Checked against Anthropic's docs on 2026-10-18; re-check before relying on a price.
+they rest on. Checked against Anthropic's [models](https://platform.claude.com/docs/en/about-claude/models/overview),
+[pricing](https://platform.claude.com/docs/en/about-claude/pricing) and
+[deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations) pages on
+2026-10-29; re-check before relying on a price.
 
 | Model | ID | Input $/MTok | Output $/MTok | Cache read $/MTok | Default effort | Latency |
 |---|---|---|---|---|---|---|
@@ -67,16 +96,47 @@ they rest on. Checked against Anthropic's docs on 2026-10-18; re-check before re
 - Retirement is "not sooner than" 2027-09-01 (Fable 5.1), 2027-09-22 (Opus 5.5), 2027-09-28
   (Sonnet 5.5) and 2027-10-07 (Haiku 5.5).
 
+### Pair Claude with a specialist engine
+
+For a task a dedicated engine does far better, let the engine decide and let Claude explain.
+Chess is the clear case. An LLM playing alone is weak and inconsistent, and it sometimes tries
+illegal moves. Stockfish (GPL-3) is far stronger and free. [Maia-2](https://github.com/CSSLab/maia2)
+(MIT code; check the weights' license separately) plays like a human at a chosen rating, which
+suits "play at my level". Claude then turns the engine's lines and scores into an explanation at
+the player's level. A Lichess blog post reports running Maia-2 in the browser with ONNX Runtime
+Web. Rating conversions between sites are approximate, and differ for rapid and blitz.
+
+## API version 2026-10-21 and the 2.0 SDKs
+
+Checked against Anthropic's [migration guide](https://platform.claude.com/docs/en/api/migration-2026-10-21)
+on 2026-10-29. An SDK uses the API version that was current when its major version shipped, so
+upgrading `anthropic` to 2.0.0 moves every call to `2026-10-21`; a direct caller sets the
+`anthropic-version` header. Before upgrading:
+
+- **Sampling parameters are gone.** `temperature`, `top_p` or `top_k` returns a 400, even at the
+  default value, and nothing replaces a lower temperature.
+- **Messages API:** a `document` block in an `assistant` message, or a `text` block with
+  `citations` in a `user` message, returns a 400.
+- **The SDK sends the key as `Authorization: Bearer`,** not `X-Api-Key`, so a proxy that reads
+  `X-Api-Key` needs updating. Passing two credentials to one client raises `ValueError`.
+- **Python types:** `MessageParam` is a union by role; write messages as dict literals. `betas` moved
+  off the non-beta Models methods to `client.beta.models`.
+- **Admin API fields are renamed** (`workspace_id` on API keys becomes `scope`, among others), and
+  the SDKs move from MIT to Apache 2.0.
+- On Amazon Bedrock the new version works only with Claude 4.7 and later models.
+
 ## Claude on Microsoft Foundry
 
 Checked against Anthropic's Foundry page and Microsoft's quota page (updated 2026-09-22) on
-2026-10-18.
+2026-10-29.
 
-- **Prices** are Anthropic's standard rates, billed through the Azure Marketplace in Claude
-  Consumption Units (100 CCU is 1 USD), metered hourly and invoiced monthly.
+- **Prices** are Anthropic's standard rates, billed on the Azure bill in Claude Consumption
+  Units, metered hourly and invoiced monthly in arrears; CCUs aren't prepaid credits. The CCU
+  price is on Anthropic's separate Foundry pricing page.
 - **Two hostings.** Hosted on Azure offers Opus 5.5, Opus 5, Opus 4.8, Sonnet 5.5, Sonnet 5,
   Haiku 5.5 and Haiku 4.5, in Global Standard or US Data Zone Standard. Hosted on Anthropic
-  offers every model, Fable 5.1 included, in Global Standard only. Sonnet 5.5 is Global Standard
+  offers every model on Foundry, Fable 5.1 included (Mythos models are limited availability), in
+  Global Standard only. Sonnet 5.5 is Global Standard
   only.
 - **The model parameter is the deployment name.** It defaults to the model ID and can't be
   renamed later; keep it equal to the ID so config is the same on both paths.
@@ -94,13 +154,16 @@ Checked against Anthropic's Foundry page and Microsoft's quota page (updated 202
   Azure Monitor.
 - **Keyless sign-in:** turn on Entra ID for the resource and use a token provider for the scope
   `https://ai.azure.com/.default` with `AnthropicFoundry`. Anthropic's page names Foundry User
-  (formerly Azure AI User) or Cognitive Services User; without one, calls return 403. Use
+  (formerly Azure AI User) or Cognitive Services User. Use
   Foundry User on the Foundry resource: Microsoft's Foundry RBAC page calls it the
   least-privilege role and advises against roles starting with "Cognitive Services" for Foundry
   ([Foundry RBAC](https://learn.microsoft.com/en-us/azure/foundry/concepts/rbac-foundry), checked
-  2026-10-18).
+  2026-10-18). Anthropic's page gives the two roles as examples ("such as") and says a 403 means
+  the account "might lack" permissions.
 - **Claude Code on Foundry:** its `opus`, `sonnet` and `haiku` aliases point at Opus 4.6,
-  Sonnet 4.5 and Haiku 4.5 there. Set `ANTHROPIC_DEFAULT_OPUS_MODEL` and its siblings to full IDs.
+  Sonnet 4.5 and Haiku 4.5 there (Bedrock and Google Cloud: Opus 5.5, Sonnet 4.5, Haiku 4.5;
+  [model config](https://code.claude.com/docs/en/model-config), checked 2026-10-29). Set
+  `ANTHROPIC_DEFAULT_OPUS_MODEL` and its siblings to full IDs.
 
 ## Other model families
 
@@ -110,7 +173,9 @@ the providers' own pages on 2026-10-19; re-check before relying on them.
 
 - **What Claude doesn't do.** It reads images and PDFs but can't create or edit images, takes no
   video or audio, and has no embedding model (Anthropic points to Voyage).
-- **xAI.** Text models `grok-4.7` ($2/$6 per MTok) and `grok-4.3` ($1.25/$2.50); image, video
+- **xAI.** Text models `grok-4.7` ($2/$6 per MTok; also `grok-4.6` and `grok-4.5` at that price)
+  and `grok-4.3` ($1.25/$2.50), each doubling for prompts of 200K tokens or more (checked
+  2026-10-29); image, video
   and speech models on the same API. No training on API data; requests kept 30 days by default,
   with a zero-retention switch. Chat Completions is marked legacy in favour of the Responses API.
 - **Grok on Azure.** Foundry sells `grok-4.3`, `grok-4.6`, `grok-4.7` and `grok-4.20` (Global

@@ -50,4 +50,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh label create rollup --color 5319e7 --description "Weekly roll-up from the hub" 2>/dev/null || true
-          gh issue create --title "Roll-up $(date -u +%F)" --label rollup --body-file rollup.md
+          url=$(gh issue create --title "Roll-up $(date -u +%F)" --label rollup --body-file rollup.md)
+          new="${url##*/}"
+          # Each roll-up lists everything new since the last one, so an older open one is stale.
+          for old in $(gh issue list --label rollup --state open --limit 100 --json number --jq ".[] | select(.number < $new) | .number"); do
+            gh issue comment "$old" --body "Superseded by #$new."
+            gh issue close "$old" --reason "not planned"
+          done
