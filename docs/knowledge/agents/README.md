@@ -631,6 +631,29 @@ What the audit had to get right (red teamed with a second model, 2026-10-21):
 - **Compare file copies by committed blob SHA** (`git rev-parse HEAD:<path>`), not by hashing the
   working tree, or Windows line endings show every file as changed.
 
+### A hub page that lists work from other repos
+
+A personal site's games page lists games that each live in their own repo and subdomain, from
+one hand-edited list where each entry is `live` or `hidden`. Within two weeks, two of three
+launched games were still `hidden`, and one was still under its working name. Agent threads had
+launched each game. None of them flipped the entry, because the step lived in the site repo and
+not in the game repo where the launch happened (2026-11-09). What fixed it:
+
+- **Put the step where the launch happens.** The last step of each game's deploy checklist is
+  now a one-line PR to the site's list. New game repos copy the checklist, so the step travels
+  with them.
+- **Add a cheap check for misses.** The site's weekly link check probes `<id>.<domain>/manifest.webmanifest`
+  for each hidden entry and fails, naming the game, if one answers. This only works because a
+  game's id is its subdomain.
+- **Keep unlaunched entries without a URL.** A planned address that doesn't resolve yet fails the
+  PR link check.
+
+The first design had the site fetch each game's web app manifest at render time, so names and
+descriptions would update themselves. A Fable red team judged it overbuilt: it would fix the rare
+drift (wording) and not the common one (a status never flipped), and it would add network calls
+to a static page. It also caught that the first data fix would have failed the PR link check.
+Both were dropped or fixed before building.
+
 ## A capture skill for a two-layer second brain
 
 [2ndbrain](../../../skills/2ndbrain/README.md) is a Claude skill that closes out a thread: it
