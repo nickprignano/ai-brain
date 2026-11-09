@@ -3,7 +3,7 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: verified
-last_reviewed: 2026-10-29
+last_reviewed: 2026-11-09
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/memory
@@ -503,6 +503,26 @@ What matters when building one (from GitHub's docs, 2026-10-19):
   the default branch.
 - **The agent is often the owner's account.** GitHub can't tell them apart, so "agents never arm
   auto-merge by hand" is a rule the agent keeps, not something GitHub enforces.
+
+## Tuning an agent-built game by simulation
+
+When an agent designs a game's rules, playing it by hand doesn't show whether the rules teach
+what the design says. Learned on a turn-based standoff game whose point is that escalating never
+pays (2026-11-09):
+
+- **Script the obvious strategies and play thousands of seeded games.** Random, always attack,
+  always cooperate, and "check, then answer in kind", 10,000 games each, run in under a second
+  because the engine is pure functions over a seeded random number generator.
+- **The first draft's numbers were wrong in a way nobody would have noticed by playing.** Always
+  cooperating won almost every game, so the "check the facts first" mechanic was pointless.
+  Six small rule changes (a cost for ignoring a real threat, a fair response that doesn't raise
+  tension, no quick win before round 4, an opponent that pushes a weak player) made checking
+  the best strategy on average.
+- **Turn the design's claim into a test.** "Every escalation ending scores below every peaceful
+  ending" and "the careful player averages above both extremes" are assertions over the
+  simulated games, so a later rule change that breaks the lesson fails CI.
+- **A game's reflex half can be checked the same way.** A pure step function at a fixed time
+  step lets tests drive waves, hits and limits directly; only drawing and input need a browser.
 
 ## Keeping all your repos on the same conventions
 
