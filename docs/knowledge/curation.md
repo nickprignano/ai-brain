@@ -3,7 +3,7 @@ title: "Keeping the knowledge base current"
 summary: "How the KB stays current: the weekly digest, the prior-art check, the feedback loop, the freshness check and family alignment"
 topic: curation
 status: verified
-last_reviewed: 2026-10-29
+last_reviewed: 2026-11-09
 ---
 
 # Keeping the knowledge base current
@@ -101,13 +101,20 @@ What it means for how we search:
   search-based summaries for "what changed this week".
 - **Know what a cloud session can't reach.** In a claude.ai cloud session the proxy blocks
   `api.github.com`, so `prior_art.py`'s GitHub sections fail there (checked 2026-10-20); run
-  **Actions > kb-prior-art** instead and read its log. The session's GitHub tools can search all
+  **Actions > kb-prior-art** instead and read its log. On 2026-11-08 the same script's GitHub
+  sections did return results from a cloud session, so try it first and fall back if it fails. The session's GitHub tools can search all
   of GitHub but only read commits and files in attached repos, so a freshness check that needs
   another repo's history has to attach it first.
 - **Batch licence lookups with `repo:` qualifiers.** In a cloud session, GitHub repo search with
   several free-text terms plus a `stars:>N` filter often returned nothing (2026-10-20), while one
   query of 20 `repo:owner/name` qualifiers returned stars, licence and last push for all of them in
   one call. Search broadly first, then batch the finalists that way.
+- **A public-domain dedication may not cover everything in the repo.** On 2026-11-08 a
+  teaching-app prior-art check found an interactive explainer whose author dedicates all their work
+  to the public domain (CC0) on their site, while the repo has no LICENSE file and its README
+  credits a CC BY-NC sound effect and a third-party font among its bundled assets. Read the
+  README's credits list as well as the licence, and take ideas, not files, unless every asset
+  you'd copy is clear.
 - **Copilot is worth a paste before publishing a survey list**, where one or two extra finds
   matter. It isn't worth automating: every item still has to be checked.
 
