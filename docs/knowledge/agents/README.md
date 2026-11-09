@@ -66,6 +66,8 @@ help-center docs on 2026-10-18.
   In Claude Code, set `model: haiku` in the subagent's definition, or `CLAUDE_CODE_SUBAGENT_MODEL`.
   Since v2.1.316, `CLAUDE_CODE_SUBAGENT_EFFORT` sets the effort subagents run at when nothing else
   names one, instead of inheriting the session's ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
+  Since v2.1.317, a subagent or teammate on a different model from the main conversation uses that
+  model's saved effort level, or its default, not the session's ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 ### Scale up or down
 
@@ -360,6 +362,27 @@ What changed for cloud sessions in Claude Code v2.1.311 to v2.1.316 (2026-10-26 
   Edit and NotebookEdit refuse paths outside the working directories in every permission mode
   (v2.1.314).
 
+What changed for unattended and cloud sessions in Claude Code v2.1.317 to v2.1.319 (2026-11-03 to
+11-06) ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)):
+
+- **Deny instead of waiting:** `permissions.denyInsteadOfPrompting` denies a tool call that would
+  wait on a permission prompt and lets the turn continue, in terminal sessions, subagents and
+  teammates (v2.1.319). Useful where no one is there to answer a prompt.
+- **Allow rules can reset:** a cloud session that moves to a new worker drops its session-scoped
+  allow rules when their deny and ask rules can't all be kept, so a prompt may come back
+  (v2.1.319).
+- **`/loop` in a cloud session** now says its timer stops with the container and offers a loop
+  that survives (v2.1.319); use a scheduled task for anything that must outlive the session.
+- **`/schedule` warns** when a new cloud scheduled task gets connectors you didn't ask for, and
+  says how to remove them (v2.1.317).
+- **Your email stays local:** Claude Code asks before a web or shell tool call sends the account
+  email address to the network (v2.1.317).
+- **Skills and hooks:** with the Bash sandbox on, skills in `.claude/skills` folders below the
+  starting folder load only when you start or `/cd` there (v2.1.319). PostToolUse hooks now run,
+  with up to 10 seconds, on tool calls that finish after a new message interrupts the turn
+  (v2.1.319). Agent SDK hook callbacks take `onFailure: "block"` so a failing callback blocks the
+  action instead of letting it run (v2.1.317).
+
 **Check merge state before pushing more to a PR.** Three times in one day a PR merged a moment
 before the next push, and the new commit was stranded on a merged branch and needed its own PR.
 Related traps:
@@ -393,6 +416,21 @@ commits:
   Auth0 and WorkOS accept only in early access; Keycloak only experimentally. Cloudflare's
   `workers-oauth-provider` has an experimental `enterpriseManagedAuthorization` option since
   0.7.0. Vendors track different drafts of the IETF ID-JAG spec, so check the revision.
+
+In early November 2026:
+
+- **Client registration:** the authorization guide was rewritten for the 2026-07-28 spec
+  (2026-11-08, [commit](https://github.com/modelcontextprotocol/modelcontextprotocol/commit/fd502785f2732ae0028de7e9fa34d6ebcd950c65)).
+  Client ID Metadata Documents are the main way a client registers; Dynamic Client Registration
+  is deprecated in that spec and kept only for authorization servers without CIMD support. The
+  draft spec now cites version 03 of the IETF CIMD draft
+  ([commit](https://github.com/modelcontextprotocol/modelcontextprotocol/commit/222640c8e771dd57f41e655d3c3eef6e5dec8b34)).
+- **Skills over MCP is Beta** under SEP-3392, so it may still break (2026-11-08,
+  [commit](https://github.com/modelcontextprotocol/modelcontextprotocol/commit/94f4ebc8ecb3764584bc30d5139d57c03692b734)).
+- **Tasks in Claude Code:** since v2.1.319, when an MCP server runs a tool call as a task, the
+  terminal moves it to the background at once and reports the result when it finishes.
+  `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND` makes it wait inside the tool call instead, and
+  `CLAUDE_CODE_DISABLE_MCP_TASKS=1` turns tasks off ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 ## Outside review from another company's model
 

@@ -124,6 +124,11 @@ upgrading `anthropic` to 2.0.0 moves every call to `2026-10-21`; a direct caller
 - **Admin API fields are renamed** (`workspace_id` on API keys becomes `scope`, among others), and
   the SDKs move from MIT to Apache 2.0.
 - On Amazon Bedrock the new version works only with Claude 4.7 and later models.
+- **Error handling in the Python SDK (2.5.0, 2026-11-04):** each HTTP status and API error code has
+  its own error class, and `APIStatusError` carries `error_code`, `details` and `api_message`.
+  `OverloadedError` and `ServiceUnavailableError` are now subclasses of `InternalServerError`, so
+  an `except InternalServerError` also catches them. 2.6.0 (2026-11-05) raises the same classes on
+  the Bedrock and Vertex clients ([changelog](https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md)).
 
 ## Claude on Microsoft Foundry
 
