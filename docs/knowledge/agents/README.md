@@ -18,6 +18,7 @@ sources:
   - https://claude.com/docs/connectors/building/authentication
   - https://claude.com/docs/connectors/building/lazy-authentication
   - https://github.com/cloudflare/workers-oauth-provider
+  - https://github.com/victorqribeiro/invaderz
   - https://developers.cloudflare.com/cloudflare-one/access-controls/ai-controls/secure-mcp-servers/
   - https://docs.x.ai/developers/management-api-guide.md
   - https://docs.x.ai/console/billing.md
@@ -561,6 +562,26 @@ pays (2026-11-09):
   simulated games, so a later rule change that breaks the lesson fails CI.
 - **A game's reflex half can be checked the same way.** A pure step function at a fixed time
   step lets tests drive waves, hits and limits directly; only drawing and input need a browser.
+
+The same approach keeps an enemy that learns from the player fair. Learned on an arcade shooter
+whose swarm picks up the player's habits between waves (2026-11-09; the adapting idea is credited
+to [invaderz](https://github.com/victorqribeiro/invaderz), MIT, which breeds invaders instead):
+
+- **Fix the difficulty budget and let learning change only the mix.** Each wave gets a set number
+  of trait points. What the swarm learns only changes the weights that spread those points, so
+  learning can make the enemy different but never stronger. A unit test checks that the total is
+  the same with and without lessons.
+- **Test learning on against learning off.** Scripted players with distinct habits (camp in one
+  lane, spray shots, hide under cover, keep to the edges) each play 50 seeded runs twice. The test
+  fails if any player's median wave moves by more than 2. That gave a number for "adapts but
+  doesn't punish" instead of a feel.
+- **Cap what it remembers.** At most two lessons at a time, each fading after two waves unless
+  repeated, and nothing kept between runs. Without the cap, players who repeat a habit get
+  punished more and more.
+- **Bots need tuning before they're useful testers.** The first scripted players lost to the swarm
+  landing, whatever it learned. Their results only meant something after the bots aimed at
+  invaders they could actually hit and the swarm came down more slowly. A habit threshold set too
+  low ("sprays shots" at half misses) fired on ordinary play, so it was raised to three quarters.
 
 ## Keeping all your repos on the same conventions
 
