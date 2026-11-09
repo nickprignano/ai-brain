@@ -3,7 +3,7 @@ title: "Prompt: Red team a design or decision"
 summary: "Has a second model attack a design, spec or decision record, returning numbered findings with severity, a fix and what's acceptable as is"
 topic: prompting
 status: verified
-last_reviewed: 2026-10-19
+last_reviewed: 2026-11-09
 ---
 
 # Prompt: Red team a design or decision
@@ -15,7 +15,8 @@ final or anything is built from it.
 running the second model and keeps the fixing for itself, so the red team never grades its own
 findings.
 
-**Run so far:** yes, on several designs and decisions in this family (2026-10-19).
+**Run so far:** yes, on several designs and decisions in this family (2026-10-19), and on game
+specs (2026-11-08).
 
 ## Placeholders
 
@@ -63,5 +64,10 @@ and tell me what the red team found and what changed.
   design only described.
 - **"Acceptable as is" matters.** It records what was checked and passed, which stops the next
   reviewer from reopening it.
+- **Original work inspired by a film or game:** add "copying the source" to `{{SCOPE}}` and
+  name the source in `{{CONTEXT}}`. On a game inspired by a 1980s film (2026-11-08), the red team
+  found the design's chain of scenes followed the film's plot beat for beat, and that a
+  countdown alert scale copied a well-known convention; neither showed up when checking names
+  and quotes alone. Keep any banned-names test encoded, so the repo never spells them out.
 - When the fixes belong to another project, follow with
   [Apply red-team findings in another project](apply-red-team-fixes.md).

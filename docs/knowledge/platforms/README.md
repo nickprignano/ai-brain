@@ -3,7 +3,7 @@ title: "Platforms for AI apps"
 summary: "Hosting AI apps: serverless workers, Cloudflare Access, installable web apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume"
 topic: platforms
 status: verified
-last_reviewed: 2026-11-08
+last_reviewed: 2026-11-09
 sources:
   - https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api
   - https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
@@ -135,6 +135,21 @@ devices not yet):
   `setOffline`, which can miss service worker fetches) proves offline play. Nothing on Linux
   can test iOS install, so keep a short manual list for a real iPhone.
   The full recipe is the [installable web app prompt](../prompting/library/installable-web-app.md).
+
+Learned on a second canvas game, a terminal plus a reflex game (2026-11-09; headless Chromium at
+phone and desktop sizes):
+
+- **`hidden` loses to CSS.** A rule such as `.prompt { display: flex }` overrides the `hidden`
+  attribute, so add `[hidden] { display: none !important; }`.
+- **Hover sticks on phones.** A tapped button keeps its `:hover` style; put hover rules inside
+  `@media (hover: hover)`.
+- **Glow without `shadowBlur`.** It is slow on iPhones. A wide, faint stroke under a thin, bright
+  one with `globalCompositeOperation = 'lighter'` looks the same and stays fast.
+- **A fixed-shape playfield wastes a portrait phone.** A 1000 × 600 field scaled to fit left a
+  thin strip of sky on an upright phone; choosing a tall field at game start fixed it.
+- **Flash safety as a pure, tested limiter.** For a game with explosions, the game logic asks a
+  limiter for each glow (at most 3 a second, each under a quarter of the playfield, none when
+  reduced motion is on), so the WCAG 2.3.1 limit is checked by unit tests, not by eye.
 
 ## Running open image, video and audio models on your own PC
 
