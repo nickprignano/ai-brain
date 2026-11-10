@@ -224,8 +224,9 @@ and from a terminal without logging in to X each time.
     and `shareNext` appear only in the API reference and in the MCP tool's schema. The MCP tool
     defaults to `addToQueue`.
   - On a new Free account, each MCP response showed three rate-limit windows: 150 requests per
-    15 minutes, 600 per day and 1,000 per 30 days. Buffer says the API key and MCP draw on the same
-    budget.
+    15 minutes, 600 per day, and 1,000 per 30 days for each connected channel (it went to 2,000 when
+    a second channel was added). Buffer documents up to 3,000 a month, and says the API key and MCP
+    draw on the same budget.
   - Buffer also ships an official CLI (`npm install -g @bufferapp/cli`, reads `BUFFER_API_KEY`). It's
     complete but wordy for one-line posts, so a short PowerShell wrapper over the GraphQL
     `createPost` mutation was written instead (not yet run against a real account).
