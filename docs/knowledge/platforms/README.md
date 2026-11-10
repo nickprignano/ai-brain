@@ -8,6 +8,7 @@ sources:
   - https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api
   - https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
   - https://developers.cloudflare.com/workers/ci-cd/builds/
+  - https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html
   - https://willitrunai.com/blog/video-generation-gpu-guide-2026
   - https://rocm.blogs.amd.com/artificial-intelligence/comfyui-windows/README.html
   - https://tomshardware.com/pc-components/ram/ram-price-index-2026-lowest-price-on-ddr5-and-ddr4-memory-of-all-capacities
@@ -154,6 +155,27 @@ phone and desktop sizes):
 - **Flash safety as a pure, tested limiter.** For a game with explosions, the game logic asks a
   limiter for each glow (at most 3 a second, each under a quarter of the playfield, none when
   reduced motion is on), so the WCAG 2.3.1 limit is checked by unit tests, not by eye.
+
+Learned on a generative line-art screensaver with 18 styles (2026-11-10; [Vibes](https://github.com/nickprignano/vibes),
+art and tests in [prignano-theme](https://github.com/nickprignano/prignano-theme) `art/` and `tools/`):
+
+- **Scan the real frames for flashes.** Art that is generated can't be checked by eye or by a
+  limiter in the game logic. Step the page at a fixed 1/60 s in headless Chromium, measure relative
+  luminance in a grid of cells, and count WCAG 2.3.1 general and red flashes: a pair of opposing
+  changes of at least 0.1 within a second, the darker side under 0.8, over more than a quarter of a
+  10° field (about 341 × 256 px at 1024 × 768)
+  ([W3C](https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html)).
+  Measure a quarter-size copy of each frame and run pages in parallel: 18 styles × 3 seeds plus
+  every hand-over took about 75 minutes, too slow for CI, so it gates the pull request instead.
+- **Stripes need their own limits.** Repeating line patterns can trigger seizures without any
+  flash. We set our own limits (repeat at least 4% of the screen height, thin lines, contrast at
+  most 4:1 over the background, motion under half a repeat per second) and test them across 1000
+  seeds and phone to desktop sizes. Measure the gap between parallel lines in the drawn output: a
+  style's declared repeat was wrong at phone size and only the measurement caught it.
+- **Crossfade the right way.** Fading the old picture out while fading the new one in dims the
+  midpoint, a luminance dip on every hand-over. Draw the new picture at full opacity and fade the
+  old one out on top. Between two repeating patterns, fade through the background instead, since
+  two overlaid grids make a moiré.
 
 ## Running open image, video and audio models on your own PC
 
