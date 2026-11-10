@@ -1,6 +1,6 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: Workers, Cloudflare Access, installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, posting to X"
+summary: "Hosting AI apps: Workers, Cloudflare Access, installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound loops, posting to X"
 topic: platforms
 status: verified
 last_reviewed: 2026-11-10
@@ -18,6 +18,7 @@ sources:
   - https://docs.x.com/x-api/getting-started/pricing
   - https://support.buffer.com/article/859-does-buffer-have-an-api
   - https://developers.buffer.com/guides/integrations/claude.md
+  - https://elevenlabs.io/sound-effects-terms
 ---
 
 # Platforms for AI apps
@@ -224,6 +225,44 @@ Checked 2026-10-20 for one person making a few images, short clips and a podcast
 - **Hosted audio cleanup is another data processor.** Free web tools that enhance speech upload the
   recording; keep them off any episode with a child's voice if the data rules forbid that.
 
+
+## Ambient sound loops from a sound-effects model
+
+Learned adding rain, stream, thunderstorm, bonfire and night sounds to an installable screensaver
+(2026-11-10; [Vibes](https://github.com/nickprignano/vibes), PR #5), after rain, stream and
+crickets made in code with Web Audio sounded fake to the owner (noise colors, ocean and wind made
+in code were fine):
+
+- **The ElevenLabs connector can make sound effects even though no tool says so.** The generic
+  flow tool takes node type `sfx` with model `eleven_text_to_sound_v2`, whose parameters include
+  `loop: true` (a seamless loop) and up to 30 seconds. Read the parameters with
+  `creative_get_model_schema`, not by guessing. A 30-second take cost 100 credits, although the
+  estimate said 300 a take.
+- **Prompt one plain sound, and name what to leave out:** "steady heavy rain with soft distant
+  rolling thunder, no sharp cracks" worked first time. Crickets took a second try: "a few
+  distant crickets over quiet grass and room tone" passed where "crickets chirping" sounded fake.
+  Make two takes and let a person pick by ear, because the model can't judge its own output.
+- **The files live on a separate CDN host** (`elevenlabsusercontent.com`). A sandbox with a domain
+  allowlist may not reach it, so the person downloads the picks and uploads them.
+- **Level and limit the loops, or they can startle.** The raw takes ranged from −30 to −44 LUFS,
+  and the fire's pops had about 33 dB of crest. To bring the loops to −20 LUFS with peaks under −7 dBFS
+  (MP3 adds up to a decibel), the limiter cut fire pops by up to 20 dB and rain drops by 15 dB.
+  Lay the take end to end three times before filtering, then keep the middle copy, so the
+  filters and limiter don't break the seam. Check 400 ms and 50 ms loudness against the average
+  to catch sudden sounds.
+- **Make the loop survive MP3 padding.** Store the 30-second loop starting 0.25 seconds in, and
+  repeat its first 0.5 seconds at the end. Then play a looping `AudioBufferSourceNode` from 0.25 to
+  30.25 seconds, so it doesn't matter whether a browser trims the encoder delay.
+- **Guard the async load.** A decode that a newer pick or Off has overtaken must not start. Without
+  a turn counter, two copies play sample-aligned at +6 dB. Keep only one decoded file, since 30
+  seconds of stereo float at 48 kHz is about 11 MB. Cache the files under their own hash, so app
+  updates don't download them again.
+- **License:** paid plans may use the output commercially inside apps and games. But the
+  [sound effects terms](https://elevenlabs.io/sound-effects-terms) bar making it available as
+  isolated audio files, samples or a sound library, and a public repo does that. Mark the files as
+  outside the repo's open license, or keep them out of git. Free-plan output needs attribution
+  and can't be used commercially
+  ([ElevenLabs help](https://elevenlabs.io/docs/help-center/legal/can-i-publish-the-content-i-generate-on-the-platform/llms.txt)).
 
 ## Posting to X from Claude or a script
 
