@@ -1,9 +1,9 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: serverless workers, Cloudflare Access, installable web apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume"
+summary: "Hosting AI apps: Workers, Cloudflare Access, installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, posting to X"
 topic: platforms
 status: verified
-last_reviewed: 2026-11-09
+last_reviewed: 2026-11-10
 sources:
   - https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api
   - https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
@@ -13,6 +13,10 @@ sources:
   - https://tomshardware.com/pc-components/ram/ram-price-index-2026-lowest-price-on-ddr5-and-ddr4-memory-of-all-capacities
   - https://developers.cloudflare.com/workers-ai/platform/pricing/
   - https://docs.x.ai/developers/models
+  - https://docs.x.com/changelog
+  - https://docs.x.com/x-api/getting-started/pricing
+  - https://support.buffer.com/article/859-does-buffer-have-an-api
+  - https://developers.buffer.com/guides/integrations/claude.md
 ---
 
 # Platforms for AI apps
@@ -198,3 +202,45 @@ Checked 2026-10-20 for one person making a few images, short clips and a podcast
 - **Hosted audio cleanup is another data processor.** Free web tools that enhance speech upload the
   recording; keep them off any episode with a child's voice if the data rules forbid that.
 
+
+## Posting to X from Claude or a script
+
+Compared on 2026-11-10 for one person posting by hand at low volume, wanting to post from chat
+and from a terminal without logging in to X each time.
+
+- **X's own API is no longer free to start.** Pay-per-use replaced the free tier on 2026-02-06,
+  and from 2026-04-20 a post costs $0.015, or **$0.20 if it contains a URL**
+  ([X changelog](https://docs.x.com/changelog), [pricing](https://docs.x.com/x-api/getting-started/pricing)).
+  Link posts are the expensive case, which matters for someone sharing their own blog posts. X's
+  official CLI, [xurl](https://docs.x.com/tools/xurl.md), handles the OAuth sign-in once and keeps the
+  tokens locally, but it still needs your own developer app and credits.
+- **Buffer is the free route, and it covers both chat and scripts.** Its API comes with every plan,
+  Free included, through one API key on the GraphQL endpoint, and an official MCP server covers chat
+  ([Buffer help](https://support.buffer.com/article/859-does-buffer-have-an-api),
+  [Claude setup](https://developers.buffer.com/guides/integrations/claude.md)). You don't need an
+  X developer account. The Free plan allows 3 channels and 10 scheduled posts per channel
+  ([pricing](https://buffer.com/pricing)).
+  - The posts guide documents only `addToQueue` and `customScheduled`. `shareNow` (publish right away)
+    and `shareNext` appear only in the API reference and in the MCP tool's schema. The MCP tool
+    defaults to `addToQueue`.
+  - On a new Free account, each MCP response showed three rate-limit windows: 150 requests per
+    15 minutes, 600 per day and 1,000 per 30 days. Buffer says the API key and MCP draw on the same
+    budget.
+  - Buffer also ships an official CLI (`npm install -g @bufferapp/cli`, reads `BUFFER_API_KEY`). It's
+    complete but wordy for one-line posts, so a short PowerShell wrapper over the GraphQL
+    `createPost` mutation was written instead (not yet run against a real account).
+- **A connector added mid-session can reach a running cloud session.** After the owner connected
+  Buffer in claude.ai, its tools appeared through tool search in a Claude cloud session that was
+  already running, with no restart needed. A search of the connector directory earlier in that
+  session hadn't listed Buffer. Buffer's docs give `https://mcp.buffer.com/mcp` for adding it as a
+  custom connector, but the owner didn't need that here.
+- **Zapier and Make are out.** Zapier removed its Twitter integration on 2023-08-31, and Make
+  removed X on 2025-04-03
+  ([Zapier community](https://community.zapier.com/general-discussion-13/make-is-officially-decommissioning-x-formerly-twitter-app-will-it-still-be-supported-by-zapier-48640)).
+  IFTTT wasn't checked, because it's built around triggers rather than posting on demand.
+- **Typefully** also has an API key with a "publish now" option and an MCP server
+  ([API docs](https://typefully.com/docs/api)). A third-party page lists the Free plan at 10 posts a
+  month, *unverified*, since Typefully's own pricing page didn't show plan details.
+- **Most search results on X API pricing are marketing from competing posting tools.** The figures
+  checked out against X's own changelog, but the framing tilts toward their products, so go to
+  docs.x.com first.
