@@ -1,18 +1,24 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: serverless workers, Cloudflare Access, installable web apps, sign-in inside app wrappers, calling GitHub's API, local GPUs for media models, paying for media at low volume"
+summary: "Hosting AI apps: Workers, Cloudflare Access, installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound loops, posting to X"
 topic: platforms
 status: verified
-last_reviewed: 2026-11-09
+last_reviewed: 2026-11-10
 sources:
   - https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api
   - https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
   - https://developers.cloudflare.com/workers/ci-cd/builds/
+  - https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html
   - https://willitrunai.com/blog/video-generation-gpu-guide-2026
   - https://rocm.blogs.amd.com/artificial-intelligence/comfyui-windows/README.html
   - https://tomshardware.com/pc-components/ram/ram-price-index-2026-lowest-price-on-ddr5-and-ddr4-memory-of-all-capacities
   - https://developers.cloudflare.com/workers-ai/platform/pricing/
   - https://docs.x.ai/developers/models
+  - https://docs.x.com/changelog
+  - https://docs.x.com/x-api/getting-started/pricing
+  - https://support.buffer.com/article/859-does-buffer-have-an-api
+  - https://developers.buffer.com/guides/integrations/claude.md
+  - https://elevenlabs.io/sound-effects-terms
 ---
 
 # Platforms for AI apps
@@ -151,6 +157,27 @@ phone and desktop sizes):
   limiter for each glow (at most 3 a second, each under a quarter of the playfield, none when
   reduced motion is on), so the WCAG 2.3.1 limit is checked by unit tests, not by eye.
 
+Learned on a generative line-art screensaver with 18 styles (2026-11-10; [Vibes](https://github.com/nickprignano/vibes),
+art and tests in [prignano-theme](https://github.com/nickprignano/prignano-theme) `art/` and `tools/`):
+
+- **Scan the real frames for flashes.** Art that is generated can't be checked by eye or by a
+  limiter in the game logic. Step the page at a fixed 1/60 s in headless Chromium, measure relative
+  luminance in a grid of cells, and count WCAG 2.3.1 general and red flashes: a pair of opposing
+  changes of at least 0.1 within a second, the darker side under 0.8, over more than a quarter of a
+  10° field (about 341 × 256 px at 1024 × 768)
+  ([W3C](https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html)).
+  Measure a quarter-size copy of each frame and run pages in parallel: 18 styles × 3 seeds plus
+  every hand-over took about 75 minutes, too slow for CI, so it gates the pull request instead.
+- **Stripes need their own limits.** Repeating line patterns can trigger seizures without any
+  flash. We set our own limits (repeat at least 4% of the screen height, thin lines, contrast at
+  most 4:1 over the background, motion under half a repeat per second) and test them across 1000
+  seeds and phone to desktop sizes. Measure the gap between parallel lines in the drawn output: a
+  style's declared repeat was wrong at phone size and only the measurement caught it.
+- **Crossfade the right way.** Fading the old picture out while fading the new one in dims the
+  midpoint, a luminance dip on every hand-over. Draw the new picture at full opacity and fade the
+  old one out on top. Between two repeating patterns, fade through the background instead, since
+  two overlaid grids make a moiré.
+
 ## Running open image, video and audio models on your own PC
 
 Checked 2026-10-20 for a Windows PC (ComfyUI, NVIDIA):
@@ -198,3 +225,84 @@ Checked 2026-10-20 for one person making a few images, short clips and a podcast
 - **Hosted audio cleanup is another data processor.** Free web tools that enhance speech upload the
   recording; keep them off any episode with a child's voice if the data rules forbid that.
 
+
+## Ambient sound loops from a sound-effects model
+
+Learned adding rain, stream, thunderstorm, bonfire and night sounds to an installable screensaver
+(2026-11-10; [Vibes](https://github.com/nickprignano/vibes), PR #5), after rain, stream and
+crickets made in code with Web Audio sounded fake to the owner (noise colors, ocean and wind made
+in code were fine):
+
+- **The ElevenLabs connector can make sound effects even though no tool says so.** The generic
+  flow tool takes node type `sfx` with model `eleven_text_to_sound_v2`, whose parameters include
+  `loop: true` (a seamless loop) and up to 30 seconds. Read the parameters with
+  `creative_get_model_schema`, not by guessing. A 30-second take cost 100 credits, although the
+  estimate said 300 a take.
+- **Prompt one plain sound, and name what to leave out:** "steady heavy rain with soft distant
+  rolling thunder, no sharp cracks" worked first time. Crickets took a second try: "a few
+  distant crickets over quiet grass and room tone" passed where "crickets chirping" sounded fake.
+  Make two takes and let a person pick by ear, because the model can't judge its own output.
+- **The files live on a separate CDN host** (`elevenlabsusercontent.com`). A sandbox with a domain
+  allowlist may not reach it, so the person downloads the picks and uploads them.
+- **Level and limit the loops, or they can startle.** The raw takes ranged from −30 to −44 LUFS,
+  and the fire's pops had about 33 dB of crest. To bring the loops to −20 LUFS with peaks under −7 dBFS
+  (MP3 adds up to a decibel), the limiter cut fire pops by up to 20 dB and rain drops by 15 dB.
+  Lay the take end to end three times before filtering, then keep the middle copy, so the
+  filters and limiter don't break the seam. Check 400 ms and 50 ms loudness against the average
+  to catch sudden sounds.
+- **Make the loop survive MP3 padding.** Store the 30-second loop starting 0.25 seconds in, and
+  repeat its first 0.5 seconds at the end. Then play a looping `AudioBufferSourceNode` from 0.25 to
+  30.25 seconds, so it doesn't matter whether a browser trims the encoder delay.
+- **Guard the async load.** A decode that a newer pick or Off has overtaken must not start. Without
+  a turn counter, two copies play sample-aligned at +6 dB. Keep only one decoded file, since 30
+  seconds of stereo float at 48 kHz is about 11 MB. Cache the files under their own hash, so app
+  updates don't download them again.
+- **License:** paid plans may use the output commercially inside apps and games. But the
+  [sound effects terms](https://elevenlabs.io/sound-effects-terms) bar making it available as
+  isolated audio files, samples or a sound library, and a public repo does that. Mark the files as
+  outside the repo's open license, or keep them out of git. Free-plan output needs attribution
+  and can't be used commercially
+  ([ElevenLabs help](https://elevenlabs.io/docs/help-center/legal/can-i-publish-the-content-i-generate-on-the-platform/llms.txt)).
+
+## Posting to X from Claude or a script
+
+Compared on 2026-11-10 for one person posting by hand at low volume, wanting to post from chat
+and from a terminal without logging in to X each time.
+
+- **X's own API is no longer free to start.** Pay-per-use replaced the free tier on 2026-02-06,
+  and from 2026-04-20 a post costs $0.015, or **$0.20 if it contains a URL**
+  ([X changelog](https://docs.x.com/changelog), [pricing](https://docs.x.com/x-api/getting-started/pricing)).
+  Link posts are the expensive case, which matters for someone sharing their own blog posts. X's
+  official CLI, [xurl](https://docs.x.com/tools/xurl.md), handles the OAuth sign-in once and keeps the
+  tokens locally, but it still needs your own developer app and credits.
+- **Buffer is the free route, and it covers both chat and scripts.** Its API comes with every plan,
+  Free included, through one API key on the GraphQL endpoint, and an official MCP server covers chat
+  ([Buffer help](https://support.buffer.com/article/859-does-buffer-have-an-api),
+  [Claude setup](https://developers.buffer.com/guides/integrations/claude.md)). You don't need an
+  X developer account. The Free plan allows 3 channels and 10 scheduled posts per channel
+  ([pricing](https://buffer.com/pricing)).
+  - The posts guide documents only `addToQueue` and `customScheduled`. `shareNow` (publish right away)
+    and `shareNext` appear only in the API reference and in the MCP tool's schema. The MCP tool
+    defaults to `addToQueue`.
+  - On a new Free account, each MCP response showed three rate-limit windows: 150 requests per
+    15 minutes, 600 per day, and 1,000 per 30 days for each connected channel (it went to 2,000 when
+    a second channel was added). Buffer documents up to 3,000 a month, and says the API key and MCP
+    draw on the same budget.
+  - Buffer also ships an official CLI (`npm install -g @bufferapp/cli`, reads `BUFFER_API_KEY`). It's
+    complete but wordy for one-line posts, so a short PowerShell wrapper over the GraphQL
+    `createPost` mutation was written instead (not yet run against a real account).
+- **A connector added mid-session can reach a running cloud session.** After the owner connected
+  Buffer in claude.ai, its tools appeared through tool search in a Claude cloud session that was
+  already running, with no restart needed. A search of the connector directory earlier in that
+  session hadn't listed Buffer. Buffer's docs give `https://mcp.buffer.com/mcp` for adding it as a
+  custom connector, but the owner didn't need that here.
+- **Zapier and Make are out.** Zapier removed its Twitter integration on 2023-08-31, and Make
+  removed X on 2025-04-03
+  ([Zapier community](https://community.zapier.com/general-discussion-13/make-is-officially-decommissioning-x-formerly-twitter-app-will-it-still-be-supported-by-zapier-48640)).
+  IFTTT wasn't checked, because it's built around triggers rather than posting on demand.
+- **Typefully** also has an API key with a "publish now" option and an MCP server
+  ([API docs](https://typefully.com/docs/api)). A third-party page lists the Free plan at 10 posts a
+  month, *unverified*, since Typefully's own pricing page didn't show plan details.
+- **Most search results on X API pricing are marketing from competing posting tools.** The figures
+  checked out against X's own changelog, but the framing tilts toward their products, so go to
+  docs.x.com first.
