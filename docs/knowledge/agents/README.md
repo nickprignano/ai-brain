@@ -3,7 +3,7 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: verified
-last_reviewed: 2026-11-09
+last_reviewed: 2026-11-11
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/memory
@@ -582,6 +582,35 @@ to [invaderz](https://github.com/victorqribeiro/invaderz), MIT, which breeds inv
   landing, whatever it learned. Their results only meant something after the bots aimed at
   invaders they could actually hit and the swarm came down more slowly. A habit threshold set too
   low ("sprays shots" at half misses) fired on ordinary play, so it was raised to three quarters.
+
+### Levels an agent can't see
+
+An agent writing 3D levels types coordinates it can't look at. Learned while specifying a 3D
+obstacle-course game for phones, before any build (2026-11-10; red-teamed, not yet built):
+
+- **Write each level as a short script, not as coordinates.** A list of moves along a path
+  ("platform 4; gap 3; up 1; mover across 6, period 4; checkpoint") goes through one tool that
+  expands it into the level's parts **and** the test bot's route. One source means the route
+  and the parts can't drift apart. The same tool draws each level top-down and side-on as an
+  SVG, so the agent and the reviewer can look at it in the pull request.
+- **Give each level a fixed frame.** Every level enters at its origin and leaves straight ahead
+  inside a box of set width and height. Levels chained in any order then can't overlap or turn
+  toward the camera, and the checker proves it per level instead of sampling chains.
+- **Put timed hazards on one repeating period, and test every phase.** Moving parts that run on
+  the run clock behave differently depending on when the player arrives, so one bot run per
+  level proves little once levels are chained. With every timetable repeating on 4 or 8 seconds,
+  the bot plays each level from every entry phase in 0.25 s steps, and route waits are
+  conditions on a part ("until mover 2 is within 0.5 m"), never fixed durations.
+- **A perfect bot proves possible, not fair.** A second, sloppy bot (jump timing off by up to
+  ±80 ms, 90% speed, 50 seeds) has to clear the easiest levels without falling 90% of the time.
+  That is the testable form of "a young child can finish it".
+- **One reach rule, not two.** Separate limits on gap width and step height each looked safe
+  and together allowed a jump that can't be made (a 4.2 m gap up 1.6 m, when the real reach at
+  that rise is 4.0 m). The checker uses one function of the height change instead.
+- **Name the integrator in the spec.** The usual one-line physics steps miss a 2.0 m jump peak
+  by 2.3% at 120 steps a second, which fails a 2% test; adding the half-acceleration term hits
+  it exactly. Without the formula written down, a build would loosen the test or fudge gravity,
+  and the level checker's numbers would stop matching the game.
 
 ## Keeping all your repos on the same conventions
 
