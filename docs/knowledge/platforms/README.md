@@ -1,6 +1,6 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: Workers, Access, game rooms (code, real-time), installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound loops, posting to X"
+summary: "Hosting AI apps: Workers, Access, game rooms (code, real-time), installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound (code and loops), posting to X"
 topic: platforms
 status: verified
 last_reviewed: 2026-11-11
@@ -25,6 +25,9 @@ sources:
   - https://support.buffer.com/article/859-does-buffer-have-an-api
   - https://developers.buffer.com/guides/integrations/claude.md
   - https://elevenlabs.io/sound-effects-terms
+  - https://www.itu.int/rec/R-REC-BS.1770
+  - https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode
+  - https://w3c.github.io/audio-session/
 ---
 
 # Platforms for AI apps
@@ -372,6 +375,45 @@ Checked 2026-10-20 for one person making a few images, short clips and a podcast
 - **Hosted audio cleanup is another data processor.** Free web tools that enhance speech upload the
   recording; keep them off any episode with a child's voice if the data rules forbid that.
 
+
+## Ambient sound made in code (Web Audio)
+
+Learned adding white, pink and brown noise, ocean and wind to the same screensaver
+(2026-11-10; [Vibes](https://github.com/nickprignano/vibes), PR #4):
+
+- **Make noise beds in code, and use recordings for anything with events.** Noise colors (pink
+  through Paul Kellet's published filter, brown through a leaky integrator), an ocean (a low-pass
+  swelling on an 8 to 14 second cycle) and wind (a wandering band-pass) passed the owner's ear.
+  Rain drops, stream bubbles and cricket chirps built from decaying sines all sounded fake, so
+  those came from files (next section).
+- **One file for the page, the audio thread and the tests.** Put the pure generators and the
+  processor in one ES module, and register the processor only when `registerProcessor` exists.
+  The page imports the sound list from that file, `audioWorklet.addModule()` loads it, and Node
+  imports it to measure the output. There's no `import` inside the worklet (browser support for
+  it has been uneven), and the service worker caches it like any other file, so it works offline.
+- **Level the sounds in Node with a BS.1770 meter.** Render 30 to 60 seconds of each sound and
+  apply K-weighting with 400 ms gated blocks
+  ([ITU-R BS.1770](https://www.itu.int/rec/R-REC-BS.1770)). Then set each sound to −20 LUFS, or
+  lower where peaks would pass −6 dBFS. K-weighting discounts bass, so brown noise needs the most
+  raw gain and hits the peak limit first. Add 50 ms windows to the 400 ms ones, because a
+  400 ms block averages away a startling tick.
+- **`DynamicsCompressorNode` is not a limiter.** It adds makeup gain, which would undo the
+  levelling ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode)).
+  Clamp the samples in the worklet instead.
+- **Order matters on Safari.** Create the `AudioContext` and call `resume()` synchronously in the
+  tap or key handler, before awaiting `addModule()`, because Safari forgets the tap across an
+  `await`. Drive the button from `ctx.state`, since iOS moves the context to "interrupted" after
+  calls and locks. Set `navigator.audioSession.type = "playback"` where it exists so the silent
+  switch doesn't mute a sound the person picked ([Audio Session](https://w3c.github.io/audio-session/)).
+- **Pin `new AudioContext({ sampleRate: 48000 })`.** Then filters, levels and tests are tuned for
+  one rate rather than every rate a device might run.
+- **A sound panel needs to be a native `<dialog>`** when the page already uses the arrow keys and
+  Space. Otherwise radio buttons and a slider fight the page's key handler. The red team caught
+  this before the build.
+- **Check "silent until a tap" in Playwright.** Wrap `window.AudioContext` in an init script that
+  counts constructions, launch Chromium with `--autoplay-policy=user-gesture-required`, and check
+  that the count is zero after taps on the art. Tap an `AnalyserNode` on the output to confirm a
+  sound actually plays, offline too.
 
 ## Ambient sound loops from a sound-effects model
 
