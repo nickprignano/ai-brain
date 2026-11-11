@@ -614,6 +614,20 @@ next-piece display or per-piece colors. Two more things carried over to any game
 - **Write the takedown plan as steps the owner runs.** A letter reaches the owner, not an agent,
   and a strike lands on the accounts that host the owner's other sites too.
 
+Model a computer opponent's levels before writing their test thresholds. Learned on a
+four-in-a-row game spec (2026-11-10; a red team's throwaway engine, not the game's):
+
+- **An "easy" level that always takes its own win is not easy.** It beat a randomly playing
+  child about 9 games in 10, and a child who always spots their own four but never blocks won a
+  third of the time. Taking a win and blocking only a quarter of the time each let that child
+  win about half. The testable form is a scripted beginner's score over 2,000 seeded games.
+- **Deeper isn't reliably stronger.** A search capped at 20,000 positions scored 32% to 44%
+  against a fixed 4-move search; at 100,000 about 81%. So the hard level's cap is measured on a
+  real phone and tested at the cap that ships, not at a bigger one CI can afford.
+- **Two deterministic engines play only two distinct games** with the first player
+  alternating, so "wins 75% of 200 games" can only come out as 0, 25, 50, 75 or 100%. Break
+  ties between equal moves with a seeded random source.
+
 ### Levels an agent can't see
 
 An agent writing 3D levels types coordinates it can't look at. Learned while specifying a 3D
