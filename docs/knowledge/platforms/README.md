@@ -1,6 +1,6 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: Workers, Cloudflare Access, game rooms by code, installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound loops, posting to X"
+summary: "Hosting AI apps: Workers, Access, game rooms (code, real-time), installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound loops, posting to X"
 topic: platforms
 status: verified
 last_reviewed: 2026-11-11
@@ -12,6 +12,8 @@ sources:
   - https://developers.cloudflare.com/kv/api/read-key-value-pairs/
   - https://developers.cloudflare.com/kv/platform/pricing/
   - https://developers.cloudflare.com/durable-objects/platform/pricing/
+  - https://developers.cloudflare.com/durable-objects/platform/limits/
+  - https://developers.cloudflare.com/durable-objects/concepts/durable-object-lifecycle/
   - https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html
   - https://willitrunai.com/blog/video-generation-gpu-guide-2026
   - https://rocm.blogs.amd.com/artificial-intelligence/comfyui-windows/README.html
@@ -140,6 +142,49 @@ built):
 - **Keep seats fixed when rematches swap who goes first.** If a seat is "white" and turn order
   comes from move count, swapping seats for a rematch leaves each open socket holding the
   other player's color. Record the first mover per game instead.
+
+## Real-time game rooms on Durable Objects
+
+Turn-based rooms (above: one Durable Object per room, the WebSocket Hibernation API, a move every
+few seconds) cost almost nothing. A real-time game, where the room runs the game loop and both players
+send input many times a second, is a different budget. Learned designing a 1v1 action game, with a
+red team by a second model (2026-11-11; designed, not yet built or measured):
+
+- **Check the platform numbers, then which of them stops you.** The Free plan allows 100,000
+  Durable Object requests and 13,000 GB-s of duration a day and fails past them rather than
+  billing. Incoming WebSocket messages count 20 to 1 "for billing", outgoing ones are free, and an
+  awake object is billed at 128 MB. A room with a running timer can't hibernate, so it pays
+  duration for the whole match
+  ([pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)).
+- **The 20-to-1 ratio may not apply to the Free plan's daily stop.** The docs say it is for
+  billing and that metrics show the real message count, so reading the usage page can't tell you.
+  For two players sending 10 messages a second over a 7-minute match, the two readings give about
+  227 or about 11 matches a day. Decide it with a test before building: in the last half hour
+  before 00:00 UTC, send just over 100,000 messages to a throwaway room and see whether it still
+  answers.
+- **Cap the real-time game at a share of the day.** The limits are per account (above), so a busy
+  real-time game can switch off a calm turn-based one. Count match starts (rematches included),
+  room creations and starts per address in one small counter object.
+- **Keep storage out of the loop.** Rows written are a separate daily limit, and a room ported
+  from a turn-based game that reads and writes storage on every message spends one write per
+  input. Keep the match in memory; write at match start, round end and match end, and replay the
+  round if a deploy or crash restarts the object.
+- **Timers don't keep time for you.** Run a fixed step with catch-up (ticks owed from the
+  round's start time, a few per wake at most), put deadlines in storage alarms so they survive a
+  restart, and pin `compatibility_date` at 2026-10-01 or later, where pending timers keep an
+  object in memory for up to 15 minutes each
+  ([lifecycle](https://developers.cloudflare.com/durable-objects/concepts/durable-object-lifecycle/)).
+- **An input queue that only drops at its cap drifts to the cap.** If the server uses one input
+  per tick and the browser sends one per tick, a late message leaves the queue two deeper for the
+  rest of the match; a few hiccups add a third of a second of delay. Let each repeated tick
+  cancel a later sample and trim to two.
+- **Per-second message limits punish lag.** Counted per calendar second and closing the socket,
+  they fire when a stalled TCP connection delivers its backlog at once. Use a token bucket with a
+  burst, drop extra messages, and close only on sustained excess; count per match, not per
+  connection, so rematches don't run into the limit.
+- **Do the dodge arithmetic with the whole delay.** Input sampling, send batching, one-way trip,
+  queue and tick added 170 to 270 ms at a 60 ms round trip, not the 100 ms first assumed. That
+  changed the projectile speed.
 
 ## Home-screen web apps (iOS and PWA installs)
 
