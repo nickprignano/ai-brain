@@ -586,6 +586,25 @@ to [invaderz](https://github.com/victorqribeiro/invaderz), MIT, which breeds inv
   invaders they could actually hit and the swarm came down more slowly. A habit threshold set too
   low ("sprays shots" at half misses) fired on ordinary play, so it was raised to three quarters.
 
+Adding a second, physics-based mode to the same game (ship that turns, thrusts and wraps; pieces
+that split when hit; 2026-11-09) showed the same tests need more when the player is a pilot:
+
+- **A red-teamed number can still be physically impossible.** The spec had a dodging piece slide
+  14 units over 0.75 s. A shot crosses the 70-unit warning range in about 0.2 s, so the piece moved
+  under 4 units and was hit anyway: the trait cost budget and did nothing. Only the first seeded
+  test caught it. For every "react to a threat" number, check that the reaction finishes before the
+  threat arrives (here: slide its own radius plus 4 units in 0.15 s).
+- **A fairness test needs a pilot that can actually play.** A bot that dies on wave 1 or 2 with
+  learning on and off alike passes the on/off test while proving nothing. The first pilots that
+  thrusted or picked targets at random did exactly that, and the one that never moved but aimed
+  perfectly beat every wave. One shared pilot (lead the target, fire when lined up, flee a piece due
+  within 0.7 s, some aim wobble) with habits as parameters, moving pilots capped at a third of top
+  speed, and a band floor of wave 3 put every habit between waves 3 and 6. Tune the pilot with
+  learning off first, then add lessons.
+- **Learning on can come out slightly easier.** Lessons concentrate trait points (all Aim at one
+  zone), which a pilot dodges more easily than spread-out threats. The test bounds the shift both
+  ways, so "never harder" alone is the wrong check.
+
 Win-rate targets need chance to move them. From a design-stage red team of a racing game against
 bots (2026-11-10, not yet built):
 
