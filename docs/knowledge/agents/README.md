@@ -3,7 +3,7 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: verified
-last_reviewed: 2026-11-09
+last_reviewed: 2026-11-11
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/memory
@@ -19,6 +19,7 @@ sources:
   - https://claude.com/docs/connectors/building/lazy-authentication
   - https://github.com/cloudflare/workers-oauth-provider
   - https://github.com/victorqribeiro/invaderz
+  - https://web.mst.edu/canisr/computersandthelaw/cases/tetris.pdf
   - https://developers.cloudflare.com/cloudflare-one/access-controls/ai-controls/secure-mcp-servers/
   - https://docs.x.ai/developers/management-api-guide.md
   - https://docs.x.ai/console/billing.md
@@ -582,6 +583,36 @@ to [invaderz](https://github.com/victorqribeiro/invaderz), MIT, which breeds inv
   landing, whatever it learned. Their results only meant something after the bots aimed at
   invaders they could actually hit and the swarm came down more slowly. A habit threshold set too
   low ("sprays shots" at half misses) fired on ordinary play, so it was raised to three quarters.
+
+Simulate a new mechanic while it is still a spec, before its numbers are written down. Learned on
+a falling-block puzzle game whose twist turns the box (2026-11-10):
+
+- **The first twist looked good on paper and didn't work.** A quarter turn of the box, with every
+  cell then falling to the new floor, was meant to be both a rescue and a planned big clear. A
+  red team's 40-line placement-bot model showed it cleared a row in 8 of 3,574 tips, made tidy
+  stacks taller, and ended the game outright in up to a third of tips taken late. A half turn
+  keeps every column's cell count, so it never makes a column taller and clears whenever every
+  column holds a cell: in the same model it cleared rows in about 98% of uses.
+- **Use a mid-skill bot to tune a helping mechanic.** A sloppy bot dies before it earns any
+  reward, and a careful bot plays forever with or without help, so neither moves when the numbers
+  change. A careful bot with a seeded 30% chance of a sloppy move is where the earn rate and cap
+  show up, and the balance test's band goes on that bot.
+- **Write the bots and the pure game module first in the first build PR,** and write the tuned
+  numbers back into the spec before any drawing code.
+
+When the genre has an owner who enforces it, read the ruling and the takedown notices
+themselves, not summaries of them. The same game's draft paraphrased a summary of *Tetris
+Holding v. Xio Interactive* (D.N.J. 2012) and said the court treated the pieces as rules. The
+opinion says the opposite ("the style, design, shape, and movement of the pieces are
+expression"), and the plaintiff's protected list included the seven four-cell pieces and their
+starting orientation. The fix was a different shape set, a square box, and no ghost piece,
+next-piece display or per-piece colors. Two more things carried over to any game in such a genre:
+
+- **Keep the original's name out of the public repo, docs included.** The legal notes that name
+  it stay in private files, and the banned-words test runs over every tracked file, not only the
+  shipped ones.
+- **Write the takedown plan as steps the owner runs.** A letter reaches the owner, not an agent,
+  and a strike lands on the accounts that host the owner's other sites too.
 
 ## Keeping all your repos on the same conventions
 
