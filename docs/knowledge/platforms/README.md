@@ -299,6 +299,32 @@ art and tests in [prignano-theme](https://github.com/nickprignano/prignano-theme
   old one out on top. Between two repeating patterns, fade through the background instead, since
   two overlaid grids make a moiré.
 
+From design-stage red teams of a 3D racing game for kids (2026-11-10 and 11, not yet built; two
+passes with a second model):
+
+- **Measure road patterns by distance along the road, at the highest reachable speed.** In
+  perspective, near marks move faster on screen but are longer by the same factor, so a fixed
+  screen point sees speed ÷ period cycles a second at every depth. A 20 m period at 60 m/s is
+  3 flashes a second, WCAG's limit, not half of it; we use 40 m at the 66 m/s a car can reach
+  downhill or pushed. The first 20 m of road fills about half the screen, so nothing periodic
+  should span the road's width.
+- **A luminance cap alone is weak on dark scenes.** A 0.08 step is 1.14:1 between mid greys and
+  over 2:1 between near-blacks, so a night track can flicker hard while staying "under" a fixed
+  cap. Cap the ratio too ((lighter + 0.05) / (darker + 0.05) at most 1.25, our own default) and
+  keep alternating colors in one hue family.
+- **Scenery passing the screen edges flashes more than the road.** Trees spaced so 6 passed a
+  second per side would fail, since one near tree covers enough of a 16 × 9 cell grid to count.
+  Space low obstacles 40 m apart, set tall thin things well back from where a car can drive, and
+  check by projecting each object's box through the real camera in a Node test.
+- **In 3D, check rendered luminance, not the palette.** Sun-lit flat-shaded hills render
+  neighboring facets about 0.15 apart (a 15° tilt each way, sun at 45°), sweeping past several
+  times a second, while every palette color passes. Bake the ground's shading into vertex colors
+  where a test can hold neighbors within the cap, light only cars and objects, and skip tone
+  mapping so the tested colors are the shown ones.
+- **Shimmer is invisible to a flash scan.** Cell averages can't see a sub-pixel lane line
+  crawling or a night window twinkling. Make lines wide, low-contrast and mipmapped, and put "no
+  shimmer" on the real-phone checklist.
+
 ## Running open image, video and audio models on your own PC
 
 Checked 2026-10-20 for a Windows PC (ComfyUI, NVIDIA):
