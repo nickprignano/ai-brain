@@ -172,6 +172,30 @@ reaches the model. The chess coach spec (`nickprignano/chess`) does it this way:
   child whose Google account can't sign in to other sites). A hashed account ID is still a
   persistent identifier, so it counts as personal data and must be deletable.
 
+### When one free-text box can't be avoided
+
+A learn-anything app (`nickprignano/tangent` spec, 2026-11-10) needs a topic box, so structured-only
+input isn't possible. What the red team and outside review settled on for teenagers:
+
+- **Screen before any model call.** The server refuses text that looks like an email, a phone
+  number, "my name is" or an age, and checks a short list of self-harm phrases so those get a
+  support line without being sent anywhere. A model-side refusal can't show that line, because a
+  safety classifier may stop the call before the app's own refusal code comes back.
+- **Show the support line on an unexplained refusal too**, so a self-harm topic the list missed
+  still gets it.
+- **Sign the state the server hands out.** If the server keeps nothing, the browser must send the
+  checked topic back, so the server signs it (with its verdict, the outline and an expiry) and
+  refuses anything unsigned. Otherwise a user can skip the topic check.
+- **Wrap model-written strings as data** in later prompts, and strip `<`, `>` and control
+  characters before signing them.
+- **Retention isn't one number.** Anthropic keeps API inputs and outputs about 30 days, but data its
+  safety classifiers flag can be kept up to 2 years
+  ([Anthropic privacy center](https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data),
+  checked 2026-11-11). A privacy page should say both.
+- **Reports can identify a teen in a small group.** In an invite-only app, a report on a puberty or
+  mental-health question plus the sign-in log could point to one person, so reports on sensitive
+  topics carry only the reason.
+
 ### Games with simulated gambling for teenagers
 
 Learned specifying a play-money poker app for 13 and up with a Claude coach (`nickprignano/cards`,
