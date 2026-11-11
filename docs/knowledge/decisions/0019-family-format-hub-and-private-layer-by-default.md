@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-10-21
 decision-makers: [maintainer]
 ---
@@ -65,3 +65,5 @@ current, and [0002](0002-public-kb-separate-from-personal-notes.md) and
 
 Revisit by 2027-04-21, or when the hub carries a third non-AI domain. Checkable assumption: the
 hub's validate and digest runs stay fast with every domain's pages in them.
+
+Accepted by the owner on 2026-11-10.
