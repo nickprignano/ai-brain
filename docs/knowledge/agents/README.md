@@ -20,6 +20,7 @@ sources:
   - https://github.com/cloudflare/workers-oauth-provider
   - https://github.com/victorqribeiro/invaderz
   - https://github.com/ssusnic/Machine-Learning-Flappy-Bird
+  - https://abagames.itch.io/blasnake
   - https://web.mst.edu/canisr/computersandthelaw/cases/tetris.pdf
   - https://developers.cloudflare.com/cloudflare-one/access-controls/ai-controls/secure-mcp-servers/
   - https://docs.x.ai/developers/management-api-guide.md
@@ -696,6 +697,26 @@ red-teamed twice, not yet built; the learning-swarm idea is credited to
 - **A fast-forward mode shouldn't draw the world.** At 16× speed, obstacles crossed the screen
   about 10 times a second, a strobe. The fast mode shows only the counter, the chart and the best
   network.
+
+A red team should also simulate the laziest way to win, not only the strategy the design
+intends. Learned on a snake-style game spec whose twist is catching fleeing targets by looping
+the snake's body around them (2026-11-10; red-teamed, not yet built; the loop-capture idea is
+credited to [Blasnake](https://abagames.itch.io/blasnake) by abagames, MIT):
+
+- **The design's own simulation only tested the intended play.** A ring-tracing bot caught a
+  fleeing target in 20 to 30 moves, which looked balanced. The red team's bot simply chased
+  head-on and caught every target, median 14 moves, safer and faster than looping, so the twist
+  was optional. Head-on contact now scores nothing and the target jumps away.
+- **Run the escape rule against the scoring rule.** "Flee to the cell farthest from the head"
+  pushed targets to the wall, and "the wall doesn't count as part of a loop" made those cells
+  uncatchable. Keeping targets off the edge ring removes the clash.
+- **Write the capture rule as one algorithm.** "The smallest loop is 7 cells" holds only for a
+  4-connected flood fill, and a test line about diagonal gaps implied an 8-connected one, so two
+  builders would have built different games. The spec now names the fill, says corner-touching
+  cells seal, and moves targets in 4 directions only.
+- **Put both bots in the balance test.** The test asserts that the looping bot earns more points
+  per 100 moves than a bot that ignores the twist, and the catch rate has an upper bound (85%)
+  as well as a lower one, so "trivially catchable" fails too.
 
 ### Levels an agent can't see
 
