@@ -584,6 +584,25 @@ to [invaderz](https://github.com/victorqribeiro/invaderz), MIT, which breeds inv
   invaders they could actually hit and the swarm came down more slowly. A habit threshold set too
   low ("sprays shots" at half misses) fired on ordinary play, so it was raised to three quarters.
 
+Win-rate targets need chance to move them. From a design-stage red team of a racing game against
+bots (2026-11-10, not yet built):
+
+- **With nothing random, a win-rate band is a step function.** The draft promised "a competent
+  driver wins 10 to 50% on Hard" against rivals with no mistakes, so 100 seeded races were 100
+  copies of one race, won 0% or 100% depending on a small tuning change. Give each rival a small
+  per-race form from the seed (±2% on speed and cornering), never read from the player, and the
+  rate moves smoothly as the numbers are tuned. Aim at the middle of the band: with 100 races the
+  sampling error near 50% is 5 points.
+- **Pin the scripted drivers outside the tuning file.** If the test's "kid" or "competent"
+  driver lives with the game's numbers, whoever tunes can make the band pass by making the tester
+  better. Fix their numbers in the test (reaction delay, steering error, corner factor), and add
+  a floor: an expert at the physics limit must win Hard at least 90%, so Hard is always winnable.
+- **Test "no rubber-banding" exactly, not by distance.** "Rival lap times match while the player
+  stays 20 segments away" never holds: the grid and every lap put the player near them. Check
+  instead that the rival's speed function ignores the player's position, and that rivals' paths
+  match frame for frame when the player's collisions are off or the player is swapped for a
+  scripted car.
+
 Simulate a new mechanic while it is still a spec, before its numbers are written down. Learned on
 a falling-block puzzle game whose twist turns the box (2026-11-10):
 
