@@ -647,6 +647,28 @@ four-in-a-row game spec (2026-11-10; a red team's throwaway engine, not the game
   alternating, so "wins 75% of 200 games" can only come out as 0, 25, 50, 75 or 100%. Break
   ties between equal moves with a seeded random source.
 
+Touch games need their input rules written as numbers, because a red team can only check
+numbers. Learned on a swipe-to-slice game spec (2026-11-10; red-teamed twice, not yet built):
+
+- **Gate a repeatable scoring action on the object's state.** Tapping a juggled item raised a
+  multiplier, so five quick taps at the top of its arc gave the maximum at once and the
+  "juggle or slice?" choice vanished. Counting a toss only while the item falls makes the maximum
+  take about 4 seconds, and the choice comes back every couple of seconds.
+- **Hit-test a moving tap target where it was, not where it is.** An item falling at about 760
+  units a second moves about 53 units during 70 ms of touch and display lag, its whole tap radius.
+  Checking the touch against the item's positions over the last 100 ms fixes it without making
+  the target bigger.
+- **Measure swipe speed over a window, not per pointer event.** Coalesced events a few
+  milliseconds apart make a 2-unit jitter look like 500 units a second, so a resting finger
+  "slices". Speed over the last 50 ms plus a minimum travel since pointer-down (12 units) fixes it.
+- **Check spacing over the whole flight, not at the top.** Keeping a hazard's highest point 80
+  units across from each target's still let their arcs cross mid-flight, leaving no safe swipe.
+  The thrower steps both arcs and needs a clearance at every step, tries a few seeded launches,
+  and skips the hazard if none passes, which the fair-throws test checks.
+- **Make a hit circle smaller than the drawing for things the player must avoid,** and larger
+  than it (or the drawing inside it) for things they must hit, so a near miss is safe and any
+  visible part counts.
+
 ### Levels an agent can't see
 
 An agent writing 3D levels types coordinates it can't look at. Learned while specifying a 3D
