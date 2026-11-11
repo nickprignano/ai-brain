@@ -132,6 +132,13 @@ built):
   requests. Past a limit, calls fail until 00:00 UTC rather than charging. The limits are per
   account, so one script hammering one game can switch off every other app's rooms, and any
   budget counter on the same account, for the rest of the day.
+- **Rows written run out before requests in a turn-based room.** Durable Objects' SQLite storage
+  allows 100,000 rows written a day on the Free plan, while incoming WebSocket messages count only
+  one request per 20. A room that saves after every move spends a row a move, so in a
+  hidden-fleet guessing game (about 100 shots a game) writes cap online play at a few hundred
+  games a day long before requests do. Write only when state changes, call `setAlarm` only when
+  the alarm time changes, and give each room a lifetime write cap so one player can't spend the
+  account's day (2026-11-10, spec; pricing page checked that day).
 - **Rate-limit by IPv6 /64, not by full address.** One home connection has a whole /64, so a
   per-address limit gives a guesser billions of fresh keys. The rate-limiting binding is also
   approximate and counted per location, so treat it as a brake and the daily cap (or, on a paid
@@ -139,6 +146,14 @@ built):
 - **Don't award a win for disconnecting when there are no clocks.** A phone drops its socket
   when it locks, so "claim the win after 3 minutes away" lets the player who is waiting beat a
   friend whose screen turned off. Show "your friend is away" and let the waiting player leave.
+- **In a hidden-information game the room keeps the secrets.** When each player hides something
+  (a fleet, a hand of cards), the room holds both secrets and answers every move itself, so
+  neither browser ever has the other's. Build every outgoing message with one `view(room, seat)`
+  function and test it over thousands of random games for anything of the other seat's that
+  isn't revealed yet (unhit squares, its seat token). Accept each secret once per game and no
+  moves until both are in, or a player can move a ship after it's hit; and never hand a left
+  seat to the next tokenless connection, or a stranger with the link inherits that secret
+  (red team of a hidden-fleet game spec, 2026-11-10).
 - **Keep seats fixed when rematches swap who goes first.** If a seat is "white" and turn order
   comes from move count, swapping seats for a rematch leaves each open socket holding the
   other player's color. Record the first mover per game instead.
