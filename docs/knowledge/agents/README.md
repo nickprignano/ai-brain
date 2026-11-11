@@ -19,6 +19,7 @@ sources:
   - https://claude.com/docs/connectors/building/lazy-authentication
   - https://github.com/cloudflare/workers-oauth-provider
   - https://github.com/victorqribeiro/invaderz
+  - https://github.com/ssusnic/Machine-Learning-Flappy-Bird
   - https://web.mst.edu/canisr/computersandthelaw/cases/tetris.pdf
   - https://developers.cloudflare.com/cloudflare-one/access-controls/ai-controls/secure-mcp-servers/
   - https://docs.x.ai/developers/management-api-guide.md
@@ -668,6 +669,33 @@ numbers. Learned on a swipe-to-slice game spec (2026-11-10; red-teamed twice, no
 - **Make a hit circle smaller than the drawing for things the player must avoid,** and larger
   than it (or the drawing inside it) for things they must hit, so a near miss is safe and any
   visible part counts.
+
+An opponent that learns while you play needs its training kept apart from how well you play.
+Learned on a one-button flyer spec whose rival swarm of tiny neural networks (43 weights each) is
+evolved by a genetic algorithm, one generation per player run (2026-11-10; simulated and
+red-teamed twice, not yet built; the learning-swarm idea is credited to
+[ssusnic's machine-learning flyer](https://github.com/ssusnic/Machine-Learning-Flappy-Bird), MIT):
+
+- **Never let the player's run length cut a generation short.** Ending the swarm's generation
+  when the player crashed (plus a short "flies on" wait) starved it for weak players: for a
+  player who lasts 3 seconds, the median went from 21 to 46 generations to reach 20 gaps, and 5
+  of 20 swarms never got there. Finishing every generation headless to a fixed horizon (in
+  milliseconds) kept the median at 21 with none stuck, and made "the swarm beat you" mean
+  something, since its distance no longer depended on yours.
+- **Expect a step, not a curve.** The swarm went from useless to flying 100 gaps or more within
+  a few generations, then often slipped back for a while. So the design treats it as a clock
+  (the record is the generation it first beat you), pre-trains a few generations so the first run
+  isn't 48 drones falling, and charts a 3-generation rolling best.
+- **Population size beat clever fixes.** With 24 networks, 1 swarm in 10 to 20 was still stuck
+  past generation 60, and adding fresh random networks when progress stalled didn't help. With 48,
+  every one of 40 seeded swarms got there within 50 generations.
+- **Tally what kills a random tapper.** In 4,000 random tappers, 44% died on a 4-unit cable
+  above the gap, the hardest thing on screen to see, because button-mashers ride the ceiling. The
+  fix was a minimum width for every colliding shape, drawn exactly as it collides, and the tally
+  became a test so later shape changes stay honest.
+- **A fast-forward mode shouldn't draw the world.** At 16× speed, obstacles crossed the screen
+  about 10 times a second, a strobe. The fast mode shows only the counter, the chart and the best
+  network.
 
 ### Levels an agent can't see
 
