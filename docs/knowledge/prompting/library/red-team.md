@@ -3,7 +3,7 @@ title: "Prompt: Red team a design or decision"
 summary: "Has a second model attack a design, spec or decision record, returning numbered findings with severity, a fix and what's acceptable as is"
 topic: prompting
 status: verified
-last_reviewed: 2026-11-09
+last_reviewed: 2026-11-11
 ---
 
 # Prompt: Red team a design or decision
@@ -16,7 +16,7 @@ running the second model and keeps the fixing for itself, so the red team never 
 findings.
 
 **Run so far:** yes, on several designs and decisions in this family (2026-10-19), and on game
-specs (2026-11-08).
+specs (2026-11-08 and 2026-11-10).
 
 ## Placeholders
 
@@ -69,5 +69,12 @@ and tell me what the red team found and what changed.
   found the design's chain of scenes followed the film's plot beat for beat, and that a
   countdown alert scale copied a well-known convention; neither showed up when checking names
   and quotes alone. Keep any banned-names test encoded, so the repo never spells them out.
+- **A genre with an owner who enforces it:** point the red team at the court opinion and
+  takedown notices themselves. On a falling-block game (2026-11-10) the red team read the opinion
+  and found the draft had the court's view of the pieces backwards; the summary the draft relied
+  on didn't say it.
+- **A new game mechanic:** let the red team write and run a small simulation. On the same game,
+  a 40-line bot model showed the twist almost never did what the spec said, which no reading of
+  the spec would have shown.
 - When the fixes belong to another project, follow with
   [Apply red-team findings in another project](apply-red-team-fixes.md).
