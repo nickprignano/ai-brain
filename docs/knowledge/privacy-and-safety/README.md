@@ -1,9 +1,9 @@
 ---
 title: "Privacy and safety"
-summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, and open-source AI tools for fighting bad actors"
+summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, play-money games for teens, and open-source AI tools for fighting bad actors"
 topic: privacy-and-safety
 status: verified
-last_reviewed: 2026-11-08
+last_reviewed: 2026-11-11
 sources:
   - https://github.com/microsoft/PyRIT
   - https://github.com/promptfoo/promptfoo
@@ -23,6 +23,8 @@ sources:
   - https://github.com/beelzebub-labs/beelzebub
   - https://docs.canarytokens.org/guide/entraid-token
   - https://archive.aicyberchallenge.com/
+  - https://www.askaboutgames.com/news/pegi-rating-for-gambling-is-now-always-18
+  - https://www.classification.gov.au/classification-ratings/new-classifications-for-gambling-content-video-games
 ---
 
 # Privacy and safety
@@ -169,6 +171,30 @@ reaches the model. The chess coach spec (`nickprignano/chess`) does it this way:
 - Sign-in sits behind a closed allowlist (Cloudflare Access with an email-code fallback for a
   child whose Google account can't sign in to other sites). A hashed account ID is still a
   persistent identifier, so it counts as personal data and must be deletable.
+
+### Games with simulated gambling for teenagers
+
+Learned specifying a play-money poker app for 13 and up with a Claude coach (`nickprignano/cards`,
+2026-11-10; spec only, red-teamed by Fable and reviewed by Gemini):
+
+- **Gambling needs a stake, chance and a prize.** Keep the stake and the prize out entirely: no
+  chips to buy, win, keep, transfer or cash out, every match starting even, and no daily bonuses,
+  wheels, streaks or "near miss" effects. That is what separates a card game from a social casino.
+- **Formal raters are stricter than US norms.** PEGI rates realistic simulated gambling 18 (its
+  2025 revision after the Balatro appeal relaxed only fantastical presentation), and Australia
+  has classified games with simulated gambling R18+ since 2024. A web app in no store needs no
+  rating, but 13+ is then the owner's knowing choice, so say it on first launch.
+- **Keep the AI coach for adults.** A word filter on the output catches "casino" and "bankroll"
+  but not paraphrased bankroll advice, and knowingly adding a child brings the model provider's
+  safeguards for minors and, if the app were ever commercial, children's-privacy law. Teens get
+  the on-device odds helper instead.
+- **Match whole phrases in an output filter.** Fragments trip on poker's own words ("even money",
+  "dead money", "opposite" for "site"); keep a test of the known false positives.
+- **Score house games on decisions, not chips.** Against a house edge, chips won reward wild
+  betting over good play, so a blackjack mode would use one-unit hands scored against basic
+  strategy.
+- **Family and school web filters judge domains.** A poker subdomain can be filed under gambling
+  and, with some filters, block the whole domain and the other games on it.
 
 ### Agents in security operations
 
