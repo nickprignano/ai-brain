@@ -154,6 +154,33 @@ built):
   moves until both are in, or a player can move a ship after it's hit; and never hand a left
   seat to the next tokenless connection, or a stranger with the link inherits that secret
   (red team of a hidden-fleet game spec, 2026-11-10).
+- **A hidden-card leak isn't only card codes.** Scanning messages for the other player's cards
+  misses a leak as a hand name ("pair of eights"), an early winner, a win chance or a deck index.
+  Test non-interference instead: play the same seat's actions over two deals that differ only in
+  what that seat can't see, and require its messages to be byte-for-byte identical until the
+  reveal. Run the same check on what a computer opponent and an odds helper are given. Node tests
+  of the room logic don't see the Durable Object's own WebSocket code, so run a smaller version
+  through the real object under `wrangler dev` too. Reveal only once no betting decision is left:
+  an all-in that isn't called yet, a resignation or a claim reveals nothing (card-game spec, Fable
+  red team and Gemini review, 2026-11-10).
+- **A Durable Object has one alarm.** Setting a turn clock with `setAlarm()` replaces the room's
+  expiry alarm, so a paused or reset clock can leave a room, and its secrets, stored for good.
+  Store every deadline (turn clock, disconnect grace, idle expiry, a hard expiry) and always set
+  the alarm to the earliest; when it fires, handle what's due and set the next. The chess app's
+  rooms already do this with one `nextAlarm(state)` function.
+- **With clocks, pause them while a seat is disconnected.** In a game where timeouts auto-act
+  (check or fold), a locked phone loses dozens of hands in a minute while the other player
+  clicks through. Pause the clock and start no new round while a seat has no socket, against a
+  total grace budget per match (3 minutes), then allow a claim. A total, not a per-disconnect
+  allowance, stops disconnecting from buying thinking time. Without a timer, still give each
+  decision a ceiling (5 minutes), or a losing player who keeps the app open traps the other.
+- **Put the room code in the link's `#`, and make joining a tap.** `/#room=CODE` is never sent to
+  a server, so it can't leak to a CDN in a `Referer`; add `Referrer-Policy: no-referrer` anyway.
+  A link that connects on open lets a chat app's link preview take the second seat.
+- **Hard daily caps live in a Durable Object, not the rate-limit binding.** One small counter
+  object (one write per room made) caps new rooms per day for the whole app, plus a lifetime
+  action budget per room, so the worst case one person can cause is a known share of the
+  account's rows written (outside review of the card-game spec, 2026-11-10).
 - **Keep seats fixed when rematches swap who goes first.** If a seat is "white" and turn order
   comes from move count, swapping seats for a rematch leaves each open socket holding the
   other player's color. Record the first mover per game instead.

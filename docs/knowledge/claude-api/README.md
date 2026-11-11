@@ -3,7 +3,7 @@ title: "Claude API"
 summary: "Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks"
 topic: claude-api
 status: verified
-last_reviewed: 2026-11-08
+last_reviewed: 2026-11-11
 sources:
   - https://github.com/CSSLab/maia2
   - https://platform.claude.com/docs/en/about-claude/models/overview
@@ -63,6 +63,20 @@ Claude at $10 a month), add a budget in the app itself:
 - **Size per-user limits from the daily cap**, and work out how many users at their maximum fit.
   On a stronger model the same cap buys far fewer calls: at 2026-10 list prices, a 6,000-in and
   1,500-out review costs about $0.0014 on Haiku 5.5 and $0.027 on Sonnet 5.5.
+- **Reserve the way the code does, and leave room for thinking.** Work the capacity numbers
+  from the reservation, not the typical cost: each call has to fit its whole reservation under
+  the cap, so the last calls of the day are refused early. Sonnet 5.5 thinks by default and
+  thinking counts against `max_tokens`, so a tight `max_tokens` cuts replies off; run at low
+  effort with room for it (a poker coach spec settled on 4,000 for a review, 2026-11-10).
+- **Don't let failures become free retries.** A reply cut off at `max_tokens` or stopped by an
+  output filter still counts against the user's daily limit, and "delete my data" must not reset
+  today's counters (let them expire), or both become ways around the per-user limit.
+- **Don't strand reservations.** Run the call and the settle inside `ctx.waitUntil()` so a user
+  closing the app mid-call doesn't skip the settle, and count a reservation still unsettled after
+  a few minutes as spent at its reserved amount (an alarm on the counter), never release it.
+  Treat the workspace's own spend-limit error as a stop for the month; reports differ on whether
+  it arrives as a 400 or a 429, so match on the error, not only the status (Gemini review of the
+  poker coach spec, 2026-11-10).
 - **Spend Claude where it adds the most.** In the chess spec, hints during the game come free from
   the engine and templates, and Claude writes only the post-game review and on-demand
   explanations.

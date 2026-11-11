@@ -3,7 +3,7 @@ title: "Prompt: Outside review request"
 summary: "Has a thread write one self-contained file for another company's assistant to review a high-stakes design, then triage the reply"
 topic: prompting
 status: verified
-last_reviewed: 2026-10-29
+last_reviewed: 2026-11-11
 ---
 
 # Prompt: Outside review request
@@ -15,7 +15,7 @@ the [red team](red-team.md) has already run.
 **Paste into** the thread that did the work. It writes the file; the owner pastes that file into
 another company's assistant and pastes the reply back.
 
-**Run so far:** once, on a secrets-handling decision (2026-10-20), with a fresh-Claude control: both reviewers found a gap the red team had missed, and the outside reviewer found one point the control missed. Second run, on putting that decision into practice (2026-10-20): the fresh-Claude control alone found the most serious gap (branch builds running branch code with an account-wide deploy token), which the red team missed; the owner merged before the outside reviewer's turn, so run the control as soon as the file exists rather than waiting on the paste.
+**Run so far:** once, on a secrets-handling decision (2026-10-20), with a fresh-Claude control: both reviewers found a gap the red team had missed, and the outside reviewer found one point the control missed. Second run, on putting that decision into practice (2026-10-20): the fresh-Claude control alone found the most serious gap (branch builds running branch code with an account-wide deploy token), which the red team missed; the owner merged before the outside reviewer's turn, so run the control as soon as the file exists rather than waiting on the paste. Third run, on a play-money poker app with a paid coach and teen players (2026-11-10, Gemini): 19 points, 17 taken, most of them missed by the red team (a Durable Object's single alarm overwriting room expiry, reservations stranded when a user closes the app mid-call, free retries through cut-off replies and data deletion, link previews taking a seat). The red team was strongest on rules and test design, the outside reviewer on platform mechanics and abuse paths.
 
 ## Placeholders
 
