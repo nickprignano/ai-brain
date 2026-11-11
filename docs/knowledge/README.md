@@ -27,7 +27,7 @@ belongs to instead of starting a new file.
 | [prompting/](prompting/README.md) | System prompts, audience-specific prompts and structured output that held up in real apps | verified |
 | [prompting/library/](prompting/library/README.md) | Reusable, generalized prompts for the work and research we do: paste one, fill its placeholders, run it | verified |
 | [evals/](evals/README.md) | Testing features built on LLMs: unit tests for guardrails, LLM-as-judge and regression checks | plan |
-| [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs, building AI features for kids, play-money games for teens, and open-source AI tools for fighting bad actors | verified |
+| [privacy-and-safety/](privacy-and-safety/README.md) | Keys and secrets, prompt injection, local-only designs, building AI features for kids, teen games (gambling, brain-training claims), and AI safety tools | verified |
 | [platforms/](platforms/README.md) | Hosting AI apps: Workers, Access, game rooms (code, real-time), installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound loops, posting to X | verified |
 | [learning/](learning/README.md) | Courses, docs, cookbooks and people worth following to learn how to build with AI | verified |
 | [troubleshooting/](troubleshooting/README.md) | Errors hit with the Claude API, SDKs, agents and AI tooling: symptom, cause, fix and source | verified |

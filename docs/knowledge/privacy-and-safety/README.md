@@ -1,6 +1,6 @@
 ---
 title: "Privacy and safety"
-summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, play-money games for teens, and open-source AI tools for fighting bad actors"
+summary: "Keys and secrets, prompt injection, local-only designs, building AI features for kids, teen games (gambling, brain-training claims), and AI safety tools"
 topic: privacy-and-safety
 status: verified
 last_reviewed: 2026-11-11
@@ -25,6 +25,9 @@ sources:
   - https://archive.aicyberchallenge.com/
   - https://www.askaboutgames.com/news/pegi-rating-for-gambling-is-now-always-18
   - https://www.classification.gov.au/classification-ratings/new-classifications-for-gambling-content-video-games
+  - https://link.springer.com/content/pdf/10.3758/s13423-024-02466-8.pdf
+  - https://www.eurekalert.org/news-releases/1115744
+  - https://ftc.gov/news-events/press-releases/2016/01/lumosity-pay-2-million-settle-ftc-deceptive-advertising-charges
 ---
 
 # Privacy and safety
@@ -219,6 +222,34 @@ Learned specifying a play-money poker app for 13 and up with a Claude coach (`ni
   strategy.
 - **Family and school web filters judge domains.** A poker subdomain can be filed under gambling
   and, with some filters, block the whole domain and the other games on it.
+
+### Claims in a brain-training-style game
+
+Learned specifying a puzzle game the owner asked to "help improve cognitive function"
+(`nickprignano/standup`, 2026-11-11; spec only, red-teamed twice by Fable):
+
+- **Tell the owner the honest premise first.** A 2024 meta-analysis of computerized
+  working-memory training (52 comparisons, 3,737 adults) found large gains on the practised
+  tasks and none on fluid intelligence (SMD 0.007), switching or processing speed. The defensible
+  promise is "you'll get better at these puzzles". In 2016 a large brain-training company paid
+  $2M to settle US FTC charges over its ads.
+- **A banned-words list is the wrong main control.** Substring matching trips on code
+  (`preventDefault`, `unique`, `secure`), the obvious fix of whole-word matching misses
+  "prevents" and "treatment", and the list never covers "sharper", "brain training" or "stay
+  sharp". Claims also travel without words: skill labels on each puzzle, a rising chart next to
+  a skill name.
+- **Put every player-facing word in one file the owner approves**, with a test that fails if a
+  view contains a display string from anywhere else. Keep a deny-list of word-start stems as a
+  second net, and check citation URLs against an allow-list instead of exempting them.
+- **Don't ship a self-test that can't measure.** A 20-trial check has a ±25-point band between
+  two sittings, wider than the room left to improve, and with one person, no comparison group
+  and retest effects it can't separate practice from noise. A tracked "reasoning" score for a
+  teenager also reads as an IQ test. The spec cut it.
+- **Keep health outcomes out of the app.** A 20-year trial linked one speed-training program
+  with booster sessions to fewer dementia diagnoses in adults 65+; memory and reasoning
+  training weren't linked. One trial, one program, one age group: a puzzle that looks like that
+  task invites the claim by resemblance, so the app never mentions it and the speed puzzle waits
+  for a patent and trademark check.
 
 ### Agents in security operations
 
