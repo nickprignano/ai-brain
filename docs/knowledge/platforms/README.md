@@ -1,6 +1,6 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: Workers, Access, real-time Durable Object rooms, installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound loops, posting to X"
+summary: "Hosting AI apps: Workers, Access, game rooms (code, real-time), installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound loops, posting to X"
 topic: platforms
 status: verified
 last_reviewed: 2026-11-11
@@ -8,6 +8,9 @@ sources:
   - https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api
   - https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
   - https://developers.cloudflare.com/workers/ci-cd/builds/
+  - https://developers.cloudflare.com/kv/api/write-key-value-pairs/
+  - https://developers.cloudflare.com/kv/api/read-key-value-pairs/
+  - https://developers.cloudflare.com/kv/platform/pricing/
   - https://developers.cloudflare.com/durable-objects/platform/pricing/
   - https://developers.cloudflare.com/durable-objects/platform/limits/
   - https://developers.cloudflare.com/durable-objects/concepts/durable-object-lifecycle/
@@ -110,10 +113,40 @@ deploy command has to run the step that applies them first (for example
 preview builds). Keep preview builds strict: a build that skips quietly shows green while a
 setting is missing (2026-10-19).
 
+## Room codes for two-player web games
+
+A browser game where a friend joins by a short code runs well on one Durable Object per room with
+the WebSocket Hibernation API. A red team of a four-in-a-row game built on an earlier chess app's
+rooms found the parts that don't show up when testing locally (2026-11-10; spec only, not yet
+built):
+
+- **Don't put a KV lookup in front of a brand-new room.** A write is visible at once where it was
+  made, but can take up to 60 seconds elsewhere, and a miss is cached too (negative lookups are
+  cached at the edge, 60 seconds by default). A friend on another network who types the code
+  seconds after it was made can be told it doesn't exist, and keeps being told for a minute.
+  `wrangler dev` uses a local KV that is consistent at once, so tests never see it. Ask the
+  room's Durable Object directly: it is consistent, and an empty one answers "no such room"
+  without storing anything.
+- **Count every free-plan limit, not just requests.** On the Workers Free plan KV allows only
+  1,000 key writes a day (one per room made), next to 100,000 Worker and 100,000 Durable Object
+  requests. Past a limit, calls fail until 00:00 UTC rather than charging. The limits are per
+  account, so one script hammering one game can switch off every other app's rooms, and any
+  budget counter on the same account, for the rest of the day.
+- **Rate-limit by IPv6 /64, not by full address.** One home connection has a whole /64, so a
+  per-address limit gives a guesser billions of fresh keys. The rate-limiting binding is also
+  approximate and counted per location, so treat it as a brake and the daily cap (or, on a paid
+  plan, a rate-limiting rule) as the backstop.
+- **Don't award a win for disconnecting when there are no clocks.** A phone drops its socket
+  when it locks, so "claim the win after 3 minutes away" lets the player who is waiting beat a
+  friend whose screen turned off. Show "your friend is away" and let the waiting player leave.
+- **Keep seats fixed when rematches swap who goes first.** If a seat is "white" and turn order
+  comes from move count, swapping seats for a rematch leaves each open socket holding the
+  other player's color. Record the first mover per game instead.
+
 ## Real-time game rooms on Durable Objects
 
-Turn-based rooms (one Durable Object per room, the WebSocket Hibernation API, a move every few
-seconds) cost almost nothing. A real-time game, where the room runs the game loop and both players
+Turn-based rooms (above: one Durable Object per room, the WebSocket Hibernation API, a move every
+few seconds) cost almost nothing. A real-time game, where the room runs the game loop and both players
 send input many times a second, is a different budget. Learned designing a 1v1 action game, with a
 red team by a second model (2026-11-11; designed, not yet built or measured):
 
@@ -129,10 +162,9 @@ red team by a second model (2026-11-11; designed, not yet built or measured):
   227 or about 11 matches a day. Decide it with a test before building: in the last half hour
   before 00:00 UTC, send just over 100,000 messages to a throwaway room and see whether it still
   answers.
-- **The allowance is account-wide.** Every game's rooms on the account share it, so a busy
+- **Cap the real-time game at a share of the day.** The limits are per account (above), so a busy
   real-time game can switch off a calm turn-based one. Count match starts (rematches included),
-  room creations and starts per address in one small counter object, and cap the real-time game
-  at a share of the day.
+  room creations and starts per address in one small counter object.
 - **Keep storage out of the loop.** Rows written are a separate daily limit, and a room ported
   from a turn-based game that reads and writes storage on every message spends one write per
   input. Keep the match in memory; write at match start, round end and match end, and replay the
