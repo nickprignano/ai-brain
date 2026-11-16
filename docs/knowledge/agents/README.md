@@ -3,7 +3,7 @@ title: "Agents and Claude Code"
 summary: "Claude Code, cloud sessions, MCP servers, skills, sub-agents and guardrails for agents that act"
 topic: agents
 status: verified
-last_reviewed: 2026-11-11
+last_reviewed: 2026-11-16
 sources:
   - https://code.claude.com/docs/en/costs
   - https://code.claude.com/docs/en/memory
@@ -387,6 +387,35 @@ What changed for unattended and cloud sessions in Claude Code v2.1.317 to v2.1.3
   (v2.1.319). Agent SDK hook callbacks take `onFailure: "block"` so a failing callback blocks the
   action instead of letting it run (v2.1.317).
 
+What changed for unattended and cloud sessions in Claude Code v2.1.321 to v2.1.325 (2026-11-09 to
+11-13) ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)):
+
+- **Scheduled tasks and `/loop` ask before running a skill** that declares `allowed-tools` or
+  hooks (v2.1.325). To keep such a skill running unattended, add `Skill(name)` to
+  `permissions.allow`. "Always allow" in Desktop, IDE and SDK hosts now offers a rule only when
+  saving it would allow that command again, so a scheduled task that relied on one can now wait
+  for an answer (v2.1.325).
+- **Sandboxed Bash no longer skips prompts by default** (v2.1.325): sandboxed commands follow the
+  normal permission flow. Set `sandbox.autoAllowBashIfSandboxed: true` to keep running them
+  without prompts. Cloud sessions and cloud scheduled tasks start despite
+  `sandbox.failIfUnavailable`, because the hosted container has no command sandbox.
+- **Read-only git commands ask first** in a repository that isn't the project's or one you
+  trusted; name it with `--add-dir` to run them without prompts (v2.1.325).
+- **MCP tool descriptions in new cloud sessions** loaded through tool search were cut at 4,096
+  characters; the limit is now 16,384, as elsewhere (v2.1.325). MCP OAuth requests no longer send
+  refresh tokens to another host when a server redirects them (v2.1.321).
+- **Subagents:** one cut off at the output token limit is asked for the whole answer again, more
+  briefly, instead of returning only its end; a subagent on its own model keeps it under
+  `opusplan` or `haiku` model settings (v2.1.325). A restarted cloud session no longer leaves a
+  subagent's message unanswered, and background agents are no longer reported as stopped by the
+  user when the service interrupted the session (v2.1.321).
+- **Plugins:** `plugin.json` takes `engines["claude-code"]`, a version range outside which the
+  plugin isn't installed, updated or loaded (v2.1.323). Code Mode, an experimental opt-in where
+  Claude writes JavaScript to call its tools, arrived in v2.1.323.
+- **Fable 5.2** (`claude-fable-5-2`) is the default Fable model since v2.1.321, and saved Fable 5.1
+  picks move to `fable`; `/model claude-fable-5-1` switches back. Prices are on the
+  [Claude API page](../claude-api/README.md#choosing-a-model).
+
 **Check merge state before pushing more to a PR.** Three times in one day a PR merged a moment
 before the next push, and the new commit was stranded on a merged branch and needed its own PR.
 Related traps:
@@ -435,6 +464,18 @@ In early November 2026:
   terminal moves it to the background at once and reports the result when it finishes.
   `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND` makes it wait inside the tool call instead, and
   `CLAUDE_CODE_DISABLE_MCP_TASKS=1` turns tasks off ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
+
+In mid November 2026:
+
+- **Next spec release:** the release-cycle announcement (2026-11-11,
+  [commit](https://github.com/modelcontextprotocol/modelcontextprotocol/commit/9a67316897f90f97bcd2ee939ca8e7e1532a27d3))
+  sets the next specification target for 2027-03-30, under the six-month cadence of SEP-3398.
+- **File uploads and downloads** is a work-in-progress extension, not yet approved; the
+  announcement post asks for early prototypes (2026-11-11,
+  [commit](https://github.com/modelcontextprotocol/modelcontextprotocol/commit/5324218639be4a6c696902d70f98f225326bbe4b)).
+- **Claude Code waits for MCP task questions:** Esc on a background MCP task's question means
+  "answer later" (nothing goes to the server, the question stays in `/tasks`), and Claude is told
+  when a task is waiting on you (v2.1.325, [changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
 
 ## Outside review from another company's model
 
