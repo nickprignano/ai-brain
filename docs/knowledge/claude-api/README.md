@@ -3,7 +3,7 @@ title: "Claude API"
 summary: "Models and model choice, prompt caching, rate limits, spend and keys per app, refusals and fallbacks"
 topic: claude-api
 status: verified
-last_reviewed: 2026-11-11
+last_reviewed: 2026-11-16
 sources:
   - https://github.com/CSSLab/maia2
   - https://platform.claude.com/docs/en/about-claude/models/overview
@@ -109,6 +109,11 @@ they rest on. Checked against Anthropic's [models](https://platform.claude.com/d
 - Fable 5.1 needs 30-day data retention, so it isn't available under zero data retention.
 - Retirement is "not sooner than" 2027-09-01 (Fable 5.1), 2027-09-22 (Opus 5.5), 2027-09-28
   (Sonnet 5.5) and 2027-10-07 (Haiku 5.5).
+- **Claude Fable 5.2** (`claude-fable-5-2`) arrived on 2026-11-09: 1M-token context, $8 input and
+  $40 output per MTok, $0.20 cache reads, so cheaper than Fable 5.1. It is Claude Code's default
+  Fable model from v2.1.321 ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)),
+  and the Python SDK knows its ID from 2.7.0, which also adds `claude-mythos-5-2`
+  ([SDK changelog](https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md)).
 
 ### Pair Claude with a specialist engine
 
@@ -143,6 +148,10 @@ upgrading `anthropic` to 2.0.0 moves every call to `2026-10-21`; a direct caller
   `OverloadedError` and `ServiceUnavailableError` are now subclasses of `InternalServerError`, so
   an `except InternalServerError` also catches them. 2.6.0 (2026-11-05) raises the same classes on
   the Bedrock and Vertex clients ([changelog](https://github.com/anthropics/anthropic-sdk-python/blob/main/CHANGELOG.md)).
+- **Python SDK 2.7.0 and 2.8.0 (2026-11-09 and 11-10):** the Bedrock, Bedrock Mantle and Vertex
+  clients read `ANTHROPIC_CUSTOM_HEADERS`, API errors can be pickled and copied, structured
+  output schemas keep `const`, and the Vertex and Google Cloud clients refuse an empty model,
+  project, region or workspace ID instead of writing it into the request path.
 
 ## Claude on Microsoft Foundry
 
