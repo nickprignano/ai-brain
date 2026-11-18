@@ -28,11 +28,10 @@ dollars a month at most.
 - No writes. The skill can't change the knowledge base, open issues or call any tool.
 - No account linking, no web UI, no memory across questions.
 
-**A simpler way exists for most uses.** The Claude app's voice mode, in a Claude project with this
-repo attached, already answers from these notes on the owner's existing subscription with no API
-bill and no code. Earshot earns its place only for hands-free, far-field use (kitchen, desk, car)
-where picking up a phone is the friction. If that isn't worth the build and a small API bill, stop
-here.
+**Why not the Claude app's voice mode.** It already answers from these notes on the owner's
+existing subscription, but only on a phone or computer. The owner wants to talk to Claude from an
+Echo with this context available, without another device in hand (owner, 2026-11-18), so the
+API bill and the build are worth it.
 
 ## 2. How it works
 
@@ -411,8 +410,7 @@ Each build is one PR the owner merges and releases.
 
 ## 10. Open questions for the owner (defaults in bold)
 
-1. Build it at all, given the Claude app's voice mode does most of this for free (section 1)?
-   **Yes, for hands-free use.**
+1. Build it at all? **Answered 2026-11-18: yes, the Echo is the point** (section 1).
 2. Names: **Earshot** for the repo, **"brain notes"** to say.
 3. Session: **end after each one-shot answer**, one follow-up only after "open brain notes".
 4. Household or recognized voices only? **Household** (voice-profile option off).
