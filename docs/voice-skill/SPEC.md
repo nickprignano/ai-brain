@@ -7,16 +7,18 @@ Alexa app.
 > "Alexa, ask brain notes what decision sixteen says about deploy tokens."
 > "Your notes say a deploy token is worth more than any model key, so ..."
 
-Status: **draft spec, not built.** Red-teamed with Fable on 2026-11-18 (section 11); the feedback
-loop (2.6, build 4) added the same day at the owner's request. The working
+Status: **draft spec, not built.** Red-teamed with Fable and reviewed by Gemini on 2026-11-18
+(section 11); the feedback
+loop (2.6, build 4) and the Home Assistant front end (2.7) added the same day at the owner's
+request. The working
 name "Earshot" and the invocation name "brain notes" are placeholders for the owner to change. The
 code goes in its own repo when its build turn comes, and this file moves there as `docs/SPEC.md`.
 
 ## 1. Goal and non-goals
 
-**Goal.** One person asks a question about AI research by voice on an Echo and hears a short,
-correct answer drawn only from this public knowledge base, inside Alexa's eight seconds, for a few
-dollars a month at most.
+**Goal.** One person asks a question about AI research by voice on an Echo, or on a Home
+Assistant voice speaker (2.7), and hears a short, correct answer drawn only from this public
+knowledge base, inside Alexa's eight seconds, for a few dollars a month at most in API spend.
 
 **Non-goals.**
 
@@ -65,10 +67,15 @@ Echo ──speech──▶ Alexa (Amazon: speech to text, one intent per questio
   be the only slot in the utterance, and sits best at the end
   ([built-in slot tips](https://developer.amazon.com/en-US/docs/alexa/interaction-model-design/tips-for-using-built-in-slots-for-your-skill.html)).
   The carrier words aren't part of the slot value, so one intent per question word keeps them:
-  `WhatIntent` ("what {query}"), `HowIntent`, `WhyIntent`, `WhetherIntent` ("whether / is / does
-  {query}"), `AboutIntent` ("about {query}", "what my notes say about {query}"),
-  `TellMeIntent`. The Worker puts the word back ("why" + "decision sixteen prefers OIDC") before
-  search, the Claude call and the card.
+  `WhatIntent` ("what {query}", "what's {query}", "what my notes say about {query}"),
+  `HowIntent` ("how {query}", "how's {query}"), `WhyIntent`, `YesNoIntent` ("is / are / does / do
+  / can / should {query}"), `WhichIntent` ("which / when / where / who {query}") and `TellMeIntent`
+  ("tell me about {query}", "check {query}"). The Worker puts the word back ("why" + "decision
+  sixteen prefers OIDC") before search, the Claude call and the card. No intent starts with
+  "whether", "about", "if", "that", "for", "to" or "with": Amazon lists these as connecting words
+  ("Alexa, ask brain notes whether ..."), and Alexa likely consumes them before the skill sees the
+  utterance, leaving a bare slot that `AMAZON.SearchQuery` can't match. Build 1 checks this on the
+  Echo with one "whether" and one "about" question.
 - **Eight seconds.** The skill has eight seconds to return its full response. Up to five
   progressive responses (each ≤ 600 characters) can play while it works, but they don't extend
   the eight seconds ([progressive response API](https://developer.amazon.com/en-US/docs/alexa/custom-skills/progressive-response-api-reference.html)).
@@ -99,11 +106,18 @@ Per request, in order, failing closed at every step:
 
 1. **Cheap checks before any fetch.** POST only, body under 64 KB, both signature headers present,
    `SignatureCertChainUrl` valid after `new URL()` normalization (protocol, hostname, port and
-   pathname compared, so `/echo.api/../other-bucket/` fails).
+   pathname compared, so `/echo.api/../other-bucket/` fails; `new URL` turns port 443 into an
+   empty port). Reject any query string, fragment, user name or password, and `//` in the path, so
+   `?x=1`, `?x=2` ... can't churn the chain cache.
 2. **Signature.** Fetch the chain with redirects refused, at most 5 certificates and 20 KB. The
    chain is valid only if the leaf is in date, has `echo-api.amazon.com` in its SANs, and each
    certificate is signed by the next until one is signed by, or is, a **pinned trust anchor**
-   kept in the repo by public key: Amazon Root CA 1 and Starfield Services Root G2. (Amazon's
+   kept in the repo by public key: Amazon Root CA 1 to 4 and Starfield Services Root G2, the five
+   roots Amazon Trust Services says to trust, so a move to an ECDSA chain isn't an outage. Every
+   certificate that signs another must be in date, have `CA:TRUE` in Basic Constraints, and have
+   `keyCertSign` if it carries Key Usage: neither `node:crypto` nor WebCrypto checks these, and
+   without them any ordinary certificate issued under those public roots could sign a forged
+   `echo-api.amazon.com` leaf, leaving the URL check as the only barrier. (Amazon's
    real chain ends in cross-signed certificates, not self-signed roots, so "ends in a self-signed
    root" rejects real traffic and "each signs the next" alone accepts a forged chain.) Verify
    `Signature-256` over the raw body and the 150-second timestamp. Validated chains are cached in
@@ -112,20 +126,31 @@ Per request, in order, failing closed at every step:
 3. **Allowlist.** `context.System.application.applicationId` must equal `ALEXA_SKILL_ID` and
    `context.System.user.userId` must be in `ALLOWED_USER_IDS`. A missing or empty value in either
    rejects everything (tested). An unknown user hears "This skill isn't set up for this account"
-   and its user ID goes to the Worker log once, so the owner can add it (the ID changes if the
+   and its user ID goes to the Worker log once per isolate, so the owner can add it (the ID changes if the
    skill is disabled and re-enabled).
-4. **In parallel:** read the day counter, load the index (2.3), and send one progressive response
-   ("Checking your notes.") to `apiEndpoint`, only if that host is one of Amazon's documented
-   API hosts, inside `ctx.waitUntil` with a catch, never logging the token.
-5. **Cap.** Stop at `DAILY_CAP` Claude calls a day (default 15, retries count) with "That's the
-   daily limit; ask me tomorrow." Write the counter before calling Claude; if the write fails, no
-   call. Question text over 300 characters is cut.
+4. **Dispatch before any work.** `SessionEndedRequest` gets an empty response. `LaunchRequest`,
+   help, stop, cancel, no and fallback answer at once, and from build 4 `SaveIntent` and
+   `WrongIntent` do too: none of them loads the index, sends a progressive response or calls
+   Claude. Only the question intents go on.
+5. **Cap.** Read the day counter; at `DAILY_CAP` Claude calls a day (default 15, retries count)
+   answer "That's the daily limit; ask me tomorrow." with no progressive response. Write the
+   counter before calling Claude; if the write fails, no call. Question text over 300 characters
+   is cut. **Then in parallel:** load the index (2.3) and send one progressive response
+   ("Checking your notes.") to `apiEndpoint`, only if its origin is exactly one of the hosts in
+   Amazon's progressive response reference (`https://api.amazonalexa.com` for `en-US`), inside
+   `ctx.waitUntil` with a catch, never logging the token. A 401 because the full answer got there
+   first is expected and ignored.
 6. **Retrieve** (2.3), then **answer** (2.4) against a deadline 6.5 s after the request arrived.
 7. **Reply** with SSML-escaped speech and the card. End the session after a one-shot question
    ("Alexa, ask brain notes what ..."). Keep it open for one follow-up only when the owner opened
-   the skill by name first ("Alexa, open brain notes"), with the reprompt "Anything else?".
+   the skill by name first ("Alexa, open brain notes"), with the reprompt "Anything else?". The
+   Worker is stateless, so the session attributes carry the turn (`followUp: true`) and the
+   previous heard question, which goes into the follow-up's user turn so "what about Haiku?"
+   makes sense; the reply after the follow-up ends the session. `shouldEndSession` is always an
+   explicit boolean, never left out, since a missing value with a card can hold an Echo Show's
+   screen session open.
 
-Intents: the six question intents, `AMAZON.HelpIntent` ("Ask me what, how or why about a topic in
+Intents: the six question intents, `AMAZON.HelpIntent` ("Ask me a what, how or why question about
 your AI notes."), `AMAZON.StopIntent`, `AMAZON.CancelIntent` and `AMAZON.NoIntent` (plus "that's
 all"; end silently), `AMAZON.FallbackIntent` ("Try starting with what, how or why."),
 `LaunchRequest` ("What do you want to know?"), `SessionEndedRequest` (no speech), and from build 4
@@ -150,25 +175,31 @@ So the Worker sends only the best sections.
 - **Index build (daily GitHub Action in the Earshot repo, no secrets).** Download this repo's
   `main` as one tarball, read `docs/knowledge/**/*.md` except `schema/`, and split each page at
   `##` and `###` headings into sections. Merge any section under 200 characters into the next;
-  split any over 4,000 characters at paragraph breaks, never inside a table, and repeat a table's
-  header row in each part. Keep for each section: id, page title, page `summary`, `status` and
+  split any over 4,000 characters at paragraph breaks, never inside a table or a fenced code block,
+  and repeat a table's header row in each part. The splitter tracks code fences, so a `#` comment
+  in a bash or YAML block isn't taken for a heading. Keep for each section: id, page title, page `summary`, `status` and
   `last_reviewed`, heading path, text, and token estimate (characters ÷ 3.0, which errs high).
-  Term counts for BM25 are computed in the Worker at load, not stored, to keep the file near the
-  KB's own size. Write `index.json` with the source commit SHA to an orphan `index` branch as a
-  single force-pushed commit, and skip the push when the source SHA hasn't changed. The workflow
+  Term counts for BM25 are computed in the Action and stored per section, so a cold Worker only
+  parses JSON instead of tokenizing 100,000 words inside the 10 ms CPU limit (still under the 2 MB
+  guard). Write `index.json` with the source commit SHA and a `built_at` time to an orphan `index`
+  branch as a single force-pushed commit, every day even when the source hasn't changed, so the
+  repo shows activity and GitHub doesn't turn the schedule off after 60 quiet days. The workflow
   uses only its own `GITHUB_TOKEN` with `contents: write`. This keeps index refreshes out of the
   Worker's deploys, so decision 0016's release step isn't needed every day.
 - **Index in the Worker.** The index lives in Workers KV (the Cache API does nothing on
-  `workers.dev`). The Worker reads it with a long `cacheTtl`. When it's more than 24 hours old,
-  the Worker fetches the raw `index.json` from the `index` branch inside `ctx.waitUntil`, checks
+  `workers.dev`). The Worker reads it with a long `cacheTtl`. When it fetched it more than 24
+  hours ago (a `fetched_at` time kept in the KV metadata), the Worker fetches the raw `index.json` from the `index` branch inside `ctx.waitUntil`, checks
   it (under 2 MB, expected shape, 150 to 2,000 sections, source SHA present), and only then
   replaces the stored copy: one KV write a day at most. A failed fetch keeps the old copy, so
-  GitHub being down never stops an answer. An index older than 7 days logs `stale-index` and the
+  GitHub being down never stops an answer. An index whose `built_at` is older than 7 days, which
+  only happens when the Action has stopped, logs `stale-index` and the
   card says "notes as of <date>". GitHub turns off scheduled workflows in a public repo after 60
   days without activity, so `stale-index` is also how a lapsed schedule shows up.
 - **Query time.** BM25 over the sections, after a small alias table fixes what speech-to-text does
-  to this field's words: "cloud" also searches "claude", "m c p" → "mcp", "a p i" → "api", "rag",
-  "fable", "opus", "sonnet", "haiku", spelled-out decision numbers ("decision sixteen" → "0016").
+  to this field's words: "cloud" also searches "claude" (added at a lower weight, never replacing
+  it, so Cloudflare questions still work), "m c p" → "mcp", "a p i" → "api", "rag", "fable",
+  "opus", "sonnet", "haiku", and decision numbers spelled out or in digits ("decision sixteen"
+  and "decision 16" → "0016").
   Take the top sections up to the token budget (7,000 for Sonnet; the eval also tries whole top
   pages up to 30,000 on Haiku), each with its page's summary line.
 - **No embeddings in v1.** Lexical search with aliases fits a curated, jargon-heavy KB where the
@@ -180,9 +211,10 @@ So the Worker sends only the best sections.
 
 - **Models, two request shapes.** The eval (section 7) picks one of:
   - Claude Sonnet 5.5 (`claude-sonnet-5-5`): thinking off with `thinking: {type:
-    "between_tools"}`, `effort: "low"`, top sections up to 7,000 tokens.
+    "between_tools"}`, `output_config.effort: "low"`, top sections up to 7,000 tokens.
   - Claude Haiku 5.5 (`claude-haiku-5-5`): `thinking: {type: "disabled"}` (allowed at effort high
-    or below), `effort: "low"`, either the same 7,000 tokens or whole top pages up to 30,000.
+    or below), `output_config.effort: "low"`, either the same 7,000 tokens or whole top pages up
+    to 30,000.
 
   Both: non-streaming, `max_tokens: 400`, structured output (`output_config.format`), SDK retries
   set to 1 and used only if the deadline leaves room, no server-side refusal fallback (a refusal
@@ -200,6 +232,10 @@ So the Worker sends only the best sections.
   }
   ```
 
+  Every field is `required` and the object has `additionalProperties: false`; length limits live
+  in the prompt and the Worker's trim, since structured outputs don't support `maxLength`. Build
+  4's two fields go in as required in the same release. The Worker keeps only `sources` that were
+  among the section ids it sent, so a made-up or injected id never reaches a card or KV.
   `stop_reason` of `max_tokens` or `refusal`, or JSON that doesn't parse, takes the
   "I can't answer that one" path.
 - **System prompt (stable, versioned in the repo), in substance:** You answer one spoken question
@@ -258,20 +294,29 @@ No heard question and no answer to an uncovered question is ever stored. A house
 with it (2.2 step 7), so the Worker keeps the last exchange in KV for 10 minutes under a hash of
 the user ID: `topic`, section ids, `covered`, the answer if covered, and the write time. It's read
 with `cacheTtl: 30` so a cached copy can't outlive the next question for long. The reply names
-what it saved ("Saved: prompt caching costs"), so a missed or wrong save is heard at once, and the
-exchange is marked used so a second "save that" doesn't make a second item. After 10 minutes, or
-on a miss: "I don't have a recent answer to save." KV can, on rare paths, serve the previous
-exchange; build 4 tests 20 question-then-save pairs on the Echo, half with short answers, logging
-`cf.colo`, and if any save misses or names the wrong topic, the last exchange moves to a Durable
-Object, which is consistent.
+what it saved ("Saved: prompt caching costs"), so a missed or wrong save is heard at once. Each
+exchange has an id, and its item is written under `fb:<date>:<exchange id>`, so a second "save
+that" overwrites the same item instead of making another, with no second write to the last
+exchange (KV allows one write a second to a key). `cacheTtl` stays at 30, the minimum; leaving it
+out means the default of 60. After 10 minutes, or on a miss: "I don't have a recent answer to
+save." KV can, on rare paths, serve the previous exchange; build 4 tests 20 question-then-save
+pairs on the Echo, half with short answers, logging `cf.colo`, and if any save misses or names the
+wrong topic, the last exchange moves to a Durable Object, which is consistent. Adding a Durable
+Object class can't go out through `wrangler versions upload`, so that one release is a
+`wrangler deploy` the owner runs or approves, after which deploys go back to uploads.
 
-**Writes and limits.** Feedback writes run in `ctx.waitUntil` after the reply, with a catch: a
-failed write never fails the answer, and "save that" then says "I couldn't save that". `SaveIntent`
+**Writes and limits.** Automatic gap writes and the last exchange run in `ctx.waitUntil` after
+the reply, with a catch, so a failed write never fails the answer. `SaveIntent` and `WrongIntent`
+instead wait for their write before replying (no Claude call, so well inside the time limit),
+because a reply already sent can't be changed: "Saved: ..." on success, "I couldn't save that" on
+failure. `SaveIntent`
 and `WrongIntent` don't call Claude and skip the cap and counter. At most 10 items a day, of which
 gaps take at most 5, so the owner's own saves are never crowded out. Items expire after 14 days.
 
 **How it gets back to the repo.** A weekly routine, Monday morning, in a Claude project of its
-own that has only GitHub and a read-only Cloudflare connector (no mail, drive or calendar). Its
+own that has only a read-only Cloudflare connector: no GitHub (it reads this public repo
+anonymously), no mail, drive or calendar. It reads web pages that anyone could have written, so
+it must not hold a way to publish. Its
 prompt is pasted into the routine, not read from the repo, so a merged change to the library copy
 can't change what runs.
 
@@ -287,7 +332,8 @@ can't change what runs.
    the project and waits. The owner answers in chat ("go", "go except 3"), decision 0014's
    owner-acts-from-chat; opening a public PR can't be undone, so this is where AGENTS.md says to
    ask.
-5. On "go", opens one ai-brain PR with a fixed branch name and title, general facts only, no item
+5. On "go", a separate session with GitHub write, which never sees the fetched pages, gets only
+   the approved list and the drafted text and opens one ai-brain PR with a fixed branch name and title, general facts only, no item
    text in commit messages, and the label `no-auto-merge`: a spoken "that was wrong" from anyone
    in the house must not rewrite a fact unread, and the knowledge base's usual after-the-fact
    safety net is this very loop. If last week's feedback PR is still open, it adds to that one.
@@ -295,6 +341,129 @@ can't change what runs.
    quoted phrase, and reports "misheard" or dropped items by count only, in the project.
 
 The routine's prompt goes into the prompt library in generalized form (AGENTS.md).
+
+### 2.7 Home Assistant front end (an alternative to Alexa)
+
+The same Worker, retrieval, Claude call, cap and feedback loop, reached from a Home Assistant
+voice speaker instead of an Echo. Checked 2026-11-18 against Home Assistant's and Nabu Casa's
+pages; what couldn't be checked is marked *unverified*. Red-teamed by Fable the same day (section
+11).
+
+```text
+Voice speaker ──wake word on the device, audio over the LAN──▶ Home Assistant server (at home)
+                                       speech to text: local Whisper │
+                                                                     ▼
+                  Earshot conversation agent ──HTTPS POST /assist {query}, bearer token──▶ Worker
+                                       text to speech: local Piper ◀── {"speech": ...}
+```
+
+**What it gains over Alexa.** A wake word instead of "Alexa, ask brain notes", the whole sentence
+as the question (no question-word intents, no carrier phrases, no `AMAZON.SearchQuery` limits),
+no Amazon in the path, and with local speech to text the audio never leaves the house. **What it
+costs.** New hardware, a Home Assistant server to keep running and updated, a small integration
+of our own, a second credential, and no Alexa app card.
+
+**Step H0, before buying anything (free).** The make-or-break question is whether local Whisper
+hears this field's jargon ("Claude", "Haiku", "MCP", "decision sixteen"). The owner records at
+least 60 of the retrieval eval's questions on his phone; a session runs faster-whisper Base and
+Small on the laptop over them, with and without an initial prompt listing the jargon, plus any
+other local engine Home Assistant's speech add-ons offer by then. Go if the retrieval eval, run on
+the heard text, finds the right section for no more than 3 fewer questions than on the typed text.
+No-go means stay on Alexa; Home Assistant Cloud is not the fallback (see Speech).
+
+**Hardware.**
+
+| Part | What | Price (checked 2026-11-18) |
+|---|---|---|
+| Speaker | Home Assistant Voice Preview Edition: on-device wake word (microWakeWord: "Okay Nabu", "Hey Jarvis" or "Hey Mycroft"; custom wake words not yet available), two mics with echo and noise cancellation, a hardware mic mute switch, a small speaker and a 3.5 mm jack. "Preview": Nabu Casa says it doesn't do everything big-tech assistants do. | $69 MSRP |
+| Server | An N100- or N150-class mini PC running Home Assistant OS: Home Assistant names N100 as the minimum for the Whisper Base model, and Small needs more. If H0 picks Small, buy for it. | about $150 to $250, *unverified* (memory prices moved in 2026) |
+| Not chosen | Home Assistant Green: too slow for Whisper ("possible but generally not the responsive choice"), so it would need Home Assistant Cloud for speech | $199 (raised from $99 in 2026) |
+
+Not the owner's laptop: the server has to stay on, and a sleeping laptop is a dead speaker.
+
+**Speech.** **Local Whisper** (the model H0 picks) for speech to text and **local Piper** for text
+to speech, both Home Assistant add-ons on the mini PC, so audio stays on the LAN and only the text
+of the question leaves the house. Home Assistant's "Speech-to-Phrase" engine is out: it only
+understands fixed home-control sentences. If Whisper mishears in use, the fix is a larger local
+model or faster hardware. **Home Assistant Cloud** (now Home Assistant Link, $6.50 a month or $65
+a year) processes speech on Microsoft Azure, which Nabu Casa says doesn't retain it; it would send
+household and kids' audio to a third company, against the rule that kids' data stays with Claude
+and Cloudflare, so it is only ever an explicit exception the owner makes, never a default or a
+fallback.
+
+**The conversation agent: a small integration of our own.** About 150 lines of Python in the
+Earshot repo (`ha/custom_components/earshot/`), copied onto the server by the owner: a
+conversation entity with a two-field setup screen (Worker URL, token) that posts only
+`{"query": ..., "id": ...}` with `Authorization: Bearer <token>` and speaks back `speech`. Nothing
+about the house, the conversation history or Home Assistant users ever leaves the server, and no
+third-party code runs on a machine that holds the token, hears the microphones and sits on the
+LAN (custom integrations aren't sandboxed). It never asks Home Assistant to keep listening after
+an answer. Two existing options are not used (section 9): Home Assistant's own Anthropic
+integration and the Webhook Conversation integration.
+
+**Home Assistant setup** (`docs/HOME-ASSISTANT.md`, owner's steps, with a placeholder Worker URL):
+one Assist pipeline with the Earshot agent, local Whisper and Piper, set as the speaker's pipeline;
+**no entities exposed to Assist and "expose new entities" off**, in case the house gets devices
+later; debug audio recording and the integration's debug logging off; "Prefer handling commands
+locally" can stay on so "turn off the lights" never reaches the Worker. Backups encrypted, with the
+backup key in the vault, because they contain the token and the Worker URL. Diagnostics and logs
+are never posted to a public issue tracker; if one is shared by mistake, change the token. No
+remote access to Home Assistant is needed or turned on: the server calls out to the Worker,
+nothing calls in.
+
+**The Worker's `/assist` route.** In order, failing closed:
+
+1. POST only, body under 4 KB, an `Authorization: Bearer` header present.
+2. **Auth:** hash the presented token and `ASSIST_TOKEN` with SHA-256 and compare the hashes with
+   `crypto.subtle.timingSafeEqual`, which needs equal lengths and would otherwise throw. Any
+   mismatch, a malformed header or an empty secret gets a 401 with no body, logged
+   `rejected:auth`, before any KV read.
+3. **Normalize** the query: lower case, punctuation stripped, so Whisper's "Save that." and
+   "M.C.P." match like Alexa's plain words.
+4. A query under two words or over 300 characters skips Claude: "I didn't catch a question."
+5. **Gate before the cap.** Search the index first; if no section scores above a floor set from
+   the retrieval eval, answer "Your notes don't cover that" with no Claude call and nothing
+   counted. Whisper invents fluent sentences from noise, and a TV says real ones, so a false wake
+   will often pass step 4 (*unverified* how often; build H measures it).
+6. **Cap.** `/assist` may use at most 10 of the day's 15 calls, so a talkative TV can't use up the
+   Echo's share. Then the same counter, retrieval and Claude call as 2.2, against an **8 s**
+   deadline. No progressive response; the speaker's light ring shows it's working. The speech
+   never ends in a question mark (prompt and Worker), in case the speaker treats a question as a
+   cue to listen again (*unverified*).
+7. Reply `{"speech": ...}`. No card; the heard question and the answer show in Home Assistant's
+   pipeline debug view, on the server at home.
+
+From build 4, "save that" and "that was wrong" on this route are matched as whole phrases in the
+normalized query (with "was wrong" and "wasn't right"), since there are no intents, and the last
+exchange is keyed by the route, since the integration sends no speaker identity.
+
+**Time budget** (from the end of the question to the first spoken word; estimates until build H
+measures p50 and p90):
+
+| Step | Estimate |
+|---|---|
+| End-of-speech detection on the speaker | ~0.5 to 1 s, *unverified* |
+| Whisper on the mini PC | under 1 s for Base, *unverified* for Small |
+| Worker, search and Claude call | as in 2.5, at most 8 s |
+| Piper and playback start | ~0.5 s, *unverified* |
+
+The integration's own timeout is 12 s, so a slow Worker is reported by the speaker rather than
+heard as silence.
+
+**What each front end means for the owner**
+
+| | Alexa (2.1) | Home Assistant (2.7) |
+|---|---|---|
+| Asking | "Alexa, ask brain notes what ..." | "Okay Nabu, what ..." (any sentence) |
+| Hardware | The Echo he has | About $220 to $320, *unverified* (speaker plus mini PC), bought only after H0 says go |
+| Audio goes to | Amazon | Nowhere: transcribed at home |
+| Who can use it | Anyone at the Echo; optional voice-profile gate | Anyone at the speaker; no voice profiles |
+| Answer time limit | 8 s, hard, Amazon's | 8 s in the Worker, ours |
+| Upkeep | None | A home server, its updates, our integration |
+| Calls a day | Up to 15 | Up to 10 of the same 15 |
+| Shared | Worker, retrieval, Claude call, workspace limit, feedback loop | |
+
+Both can run at once against the same Worker.
 
 ## 3. Secrets, identifiers and deploys (decision 0016)
 
@@ -304,6 +473,7 @@ The routine's prompt goes into the prompt library in generalized form (AGENTS.md
 | `ALEXA_SKILL_ID` | The skill's ID | Worker secret: not a credential, but an account identifier kept out of the repo, and secrets survive deploys while dashboard variables don't | Owner |
 | `ALLOWED_USER_IDS` | The owner's Alexa user ID(s) | Worker secret, same reason | Owner, from the log line in 2.2 step 3 |
 | `ALLOWED_PERSON_IDS` | Voice profiles, only if the option in section 4 is on | Worker secret | Owner |
+| `ASSIST_TOKEN` | Bearer token for the Home Assistant route (2.7): 32 random bytes as 43 characters of base64url | Worker secret, and in the Earshot integration's setup on the owner's Home Assistant server; master copy in the vault | Owner generates it in the vault and pastes it in both places |
 | `DAILY_CAP` | Claude calls a day | `vars` in the Wrangler config in the repo (not an identifier), default 15 | Pull request |
 | KV binding | Day counter, index, and from build 4 the last exchange and feedback items | Binding without a namespace ID (Wrangler provisions it), so no resource ID in the public repo; if Workers Builds can't provision it, the owner decides | Build 1 |
 
@@ -317,7 +487,8 @@ The routine's prompt goes into the prompt library in generalized form (AGENTS.md
   build 1 checks that a version URL gets no Worker response. This applies to every Worker that
   holds a production key, which is a lesson for decision 0016 (section 11).
 - **A workspace of its own.** The key lives in its own Anthropic workspace with a monthly spend
-  limit of $10 and access to Claude Sonnet 5.5 and Haiku 5.5 only. Decision 0016 notes it's
+  limit of $10 and access to Claude Sonnet 5.5 and Haiku 5.5 only (the Default Workspace can't
+  have a spend limit, which is one more reason for its own). Decision 0016 notes it's
   *unverified* whether a workspace spend limit blocks requests or only alerts. Build 2 settles
   that: set the limit to the lowest value the console allows, run the eval past it, record what
   happens, then set it back. If it only alerts, use prepaid credit with auto-reload off
@@ -340,12 +511,22 @@ The routine's prompt goes into the prompt library in generalized form (AGENTS.md
   grant is cut at the consent screen to one account and Workers KV read only; the routine runs in
   a project with nothing else attached; it never writes or deletes. A read-only grant still lets
   any session in that project read the KV namespace, which is why KV holds topics, not speech.
-  *Unverified:* that KV read can be granted alone and whether per account or per namespace, and
+  *Unverified:* that KV read can be granted alone (the outside review reports the grant is per
+  account, covering every KV namespace on it, not per namespace), and
   that a scheduled routine can call the connector without an approval prompt. Build 4 checks
   these first; if they fail, the owner runs the same prompt by hand in a thread.
+- **`ASSIST_TOKEN` is a second credential, on a home device.** Unlike the API key it can only
+  spend through the Worker, so a leak costs at most the daily cap until the owner changes it (15
+  calls, about 27 cents on Sonnet). It isn't a key to any account, so decision 0016's one-home
+  rule for keys doesn't apply, but its handling does: generated in the vault, pasted by the owner,
+  never in a repo, chat or session. Changing it means a minute where the speaker gets 401s, which
+  is fine for one household; no second token. Home Assistant backups and diagnostics contain it
+  and the Worker URL, so backups are encrypted with the key in the vault, and diagnostics are
+  never posted publicly (2.7).
 - **The endpoint is public, the spend isn't.** Anyone can send a request to the Worker URL. Cheap
   checks drop junk before any fetch; only Amazon can produce a signature that chains to the
-  pinned roots; only this skill's ID and the owner's user ID reach the Claude call. Junk still
+  pinned roots; only this skill's ID and the owner's user ID reach the Claude call. On `/assist`,
+  only a request with the token does, and guessing 32 random bytes isn't a real attack. Junk still
   counts against the account's shared 100,000 Worker requests a day, which is the platform's
   problem to rate-limit, not a spend risk.
 
@@ -375,6 +556,14 @@ The routine's prompt goes into the prompt library in generalized form (AGENTS.md
   only a topic label, so a guest's or child's words aren't stored. A private-but-on-topic question
   ("Claude for a resignation letter") can still yield a topic; it reaches the public repo only as a
   general fact, after the owner says go on the list in chat (2.6 step 4).
+- **Home Assistant (2.7).** Local Whisper keeps the audio on the LAN; only the question text goes
+  to Cloudflare and Anthropic as above, and the integration sends nothing else. Home Assistant keeps recent pipeline runs (the heard text
+  and the answer) in its debug view on the server; debug audio recording stays off. Anyone near
+  the speaker can ask after the wake word, and Home Assistant can't tell voices apart, so there's
+  no voice-profile option; the mute switch cuts the mics. A false wake can send a stray household
+  sentence (the TV, a child) to the Worker as text; the search gate stops most before Claude, and
+  the rest are treated like any off-topic question (no feedback item). Home Assistant Cloud would
+  send the audio to Azure, which breaks the kids'-data rule; it's an owner exception only.
 - **Don't ask private things out loud.** The skill can't answer them, but the question still
   reaches Amazon and Anthropic. The help prompt says it answers from the public AI notes.
 
@@ -402,6 +591,11 @@ day for the index, and from build 4 one more per question for the last exchange,
 count: at the cap 15 + 15 + 10 + 10 + 1 = 51 a day, about 5% of the shared 1,000). The earlier estimate of $2 to $10 a month assumed the whole KB in every
 prompt; section search brings it under $2 for casual use even on Sonnet.
 
+**Home Assistant (2.7)** adds one-time hardware, about $220 to $320 (*unverified* for the mini
+PC), bought only after step H0 says go, a few watts of power, and nothing a month with local
+speech. API cost per question is the same; Whisper's full sentences may run a little longer
+than Alexa's slot values.
+
 **Workers Free CPU.** The free plan allows 10 ms of CPU per request, with tolerance only for rare
 overruns, and on a cold request the Worker parses the index, builds term counts and checks a
 certificate chain. Whether that fits is *unverified*, so build 1 measures it with a realistic
@@ -427,6 +621,12 @@ If it doesn't fit, Workers Paid ($5 a month) is the fix and the owner's call.
 | Deploy drops a setting | Every request rejected | Identifiers are secrets; empty means reject, logged `rejected:config` |
 | Alexa+ device doesn't route to the skill | Alexa answers itself | Build 1 tests this first; if it can't work, stop the build |
 | Key leaked | Unexpected usage | Workspace limit or prepaid credit; decision 0016 step 9 |
+| Home Assistant server down or asleep | The speaker can't reach Home Assistant | Mini PC on wired power; not the laptop |
+| Whisper mishears jargon | A wrong or "not covered" answer | Step H0 before buying; alias table on normalized text; a larger local model, never Home Assistant Cloud by default |
+| Wrong or missing `ASSIST_TOKEN` after a change | The speaker reports an error | 401, logged `rejected:auth` |
+| Home Assistant update breaks our integration | No answers | A spoken check after each update; fix in the Earshot repo |
+| False wake word (TV, room talk) | "I didn't catch a question," "not covered", or rarely an answer | Short-query rule, search gate before the cap, 10-call share; mute switch |
+| Worker slower than 8 s | "That one took too long." | Worker deadline; the integration's 12 s timeout reports anything worse |
 | "Save that" more than 10 minutes later, or a KV miss | "I don't have a recent answer to save." | Last exchange expires; build 4 tests the miss rate |
 | "Save that" when the day's KV writes are used up | "I couldn't save that." | Feedback writes never fail the answer |
 | Routine broken (connector expired, routine off) | No Monday line in the project | It always posts, "0 items" included |
@@ -452,15 +652,27 @@ If it doesn't fit, Workers Paid ($5 a month) is the fix and the owner's call.
   30,000. Graded by the owner or by a Claude grader with the answering section beside it: correct
   and grounded, correct "not covered", any invented claim. Haiku wins if it is no more than 2
   answers behind Sonnet on the 60 and never invents a claim; the cheaper Haiku arm wins a tie.
-- **Timing.** 100 timed calls on the chosen arm from the deployed Worker, cold starts included.
-  Bar: none over 6.5 s.
+- **Timing.** 100 timed calls on the chosen arm from the deployed Worker, cold starts included,
+  at least 1.5 s apart (KV allows one write a second to the day counter's key). A new schema is
+  compiled on its first request and cached for 24 hours, so after a few quiet days the first
+  question pays for that too: at least 3 of the calls go out with a schema not used in the last
+  24 hours (a changed field description is enough). Bar: none over 6.5 s.
 - **Cost of all of it:** about $1.20 for Sonnet's 75 calls, about $0.30 for both Haiku arms,
   under $2 for 100 timed calls, and a few dollars at most for a Claude grader. Under $6 in all.
 - **Feedback (build 4).** Unit tests for the three kinds, off-topic items saving nothing, the
-  topic trim, the 10-minute window and `used` mark, the 10-a-day and 5-gap limits, failed writes;
+  topic trim, the 10-minute window and a repeated "save that" making one item, a failed save
+  heard as "I couldn't save that", the 10-a-day and 5-gap limits, failed writes;
   about 10 household lines added to the answer eval, with the bar that none is stored; the
   routine's pre-push check on every run; and on the Echo, both phrasings of "that was wrong" and
   "about" questions, since "that" and "about" can be eaten as connecting words.
+- **Home Assistant route (build H).** Unit tests: missing, wrong, shorter, longer and right
+  tokens, a malformed header and an empty secret all give 401 except the right one; extra payload
+  fields are ignored and never logged; Whisper-style strings ("Save that.", "M.C.P.") normalize;
+  the short-query rule, the search gate (no count, no call), the 10-call share and the 8 s
+  deadline. On the device: the 60 H0 questions read to the speaker, scored the same way, with time
+  from the end of the question to the first spoken word, p50 and p90 (bar: p90 under 8 s). A week
+  with the TV on in the room: every wake is logged by outcome, and the bar is at most one Claude
+  call a day from a false wake.
 - **On the device.** The owner asks ten real questions on the Echo and reports what was misheard.
 
 ## 8. Build plan (waits its turn in the single-threaded queue)
@@ -488,6 +700,15 @@ only, and says which Workers plan the account is on.
    the routine in its own project after checking the connector's grant and unattended calls. Done
    when one week's real items come back as a list in chat and, on "go", a PR the owner can skim.
 
+- **Build H: the Home Assistant front end** (2.7), instead of or after build 1, whichever front
+  end the owner picks (question 9). First step H0 (free, no hardware): Whisper on recorded
+  questions, with a go or no-go. On go, the owner buys the speaker and server and installs Home
+  Assistant OS, Whisper and Piper. The build: the `/assist` route with its tests, the Earshot
+  integration, `docs/HOME-ASSISTANT.md`. Until build 2 the route repeats the heard question back
+  ("You asked: ..."), like build 1. Done when the speaker repeats a question after the wake word, a
+  wrong token gets a 401, and the timing and false-wake numbers are recorded. Builds 2 to 4 then
+  serve both front ends.
+
 Each build is one PR the owner merges and releases.
 
 ## 9. Considered and not chosen
@@ -508,6 +729,32 @@ Each build is one PR the owner merges and releases.
   anyone's words.
 - **Cloudflare's managed search or Vectorize embeddings now.** More moving parts before the eval
   shows lexical search falls short.
+- **An iPad (or iPhone) in Guided Access running the Claude app's voice mode.** The only option
+  that uses the owner's subscription instead of the API, with Claude's own voice and probably his
+  projects. Not chosen for two reasons. No wake word: voice mode starts with a tap, and no
+  documented Siri phrase or Shortcut starts it (checked 2026-11-18). And an open microphone: left
+  running hands-free, it listens until someone taps Stop, so all household and kids' talk would
+  reach a consumer chat. The app's "Ask Claude" Siri intent already works by voice ("Hey Siri, ask
+  Claude"): it prompts for a message and answers outside voice mode; whether it speaks the answer
+  hands-free and can use a project is *unverified*, and a ten-minute test by the owner settles it
+  (question 12). **Revisit if a wake word becomes an option:** a Siri phrase or Shortcut action
+  that starts voice mode in a chosen project hands-free, or a spoken, project-scoped answer from
+  the Siri intent. Checked at each knowledge-base freshness pass, and no later than 2027-05-18.
+- **A Siri Shortcut on the owner's iPhone or iPad calling the Worker.** "Hey Siri, brain notes",
+  then Dictate Text, a POST to `/assist` with the token, and Speak Text: a wake word with no new
+  hardware, server or integration. Not chosen yet because it's untested: whether it runs
+  hands-free while the device is locked is *unverified*, it asks in two steps, and the token would
+  sit in a Shortcut that syncs through iCloud. It's a 15-minute spike worth doing before buying
+  anything for build H (question 12).
+- **The Webhook Conversation integration (MIT, HACS).** It works, but it would put third-party
+  code on the server that holds the token and hears the microphones, its HACS install pins a tag
+  rather than reviewed code, and it sends the conversation history, exposed entities and user ID
+  to the Worker, which could only discard them. Our own integration sends only the question.
+- **Home Assistant's own Anthropic integration.** It would put a second copy of the API key on the
+  home server and doesn't search these notes; 2.7 calls the Worker instead.
+- **A Siri Shortcut on a HomePod calling the Worker.** Cheap, but there are reports (Apple
+  developer forums, audioOS 26.4) of HomePods no longer running user Shortcuts, with no fix.
+  Revisit only if the owner has a HomePod and that changes.
 - **Account linking.** Nothing to link: the skill has no per-user data, and the allowlist already
   restricts it.
 - **Answering from general knowledge when the notes are silent.** It would sound equally confident
@@ -526,6 +773,14 @@ Each build is one PR the owner merges and releases.
    for your go**, a PR that **always waits for you**, items kept **14 days**.
 8. The routine's read-only Cloudflare connector on the production account: **yes, with a 0016
    amendment in its own PR**, or run the routine by hand.
+9. Front end: **Alexa first (build 1), Home Assistant later as build H**, or Home Assistant
+   instead of Alexa, or both from the start.
+10. Home Assistant speech: **local Whisper on a mini PC**, chosen by step H0. Home Assistant
+    Cloud (audio to Azure) only as an exception you make knowingly.
+11. The calls the Home Assistant route may use: **10 of the 15 a day.**
+12. Two quick phone tests, yours to run whenever: does "Hey Siri, ask Claude" speak its answer
+    hands-free and can it use a project; and does a Siri Shortcut calling the Worker run
+    hands-free on a locked iPhone. Either could change question 9.
 
 ## 11. Red team (Fable, 2026-11-18)
 
@@ -560,9 +815,52 @@ Nine findings on 2.6; all taken.
 | FB-2 | Opening a public PR is the publication; only a prompt kept speech out | High | Fixed (2.6 steps 4 and 5: list in chat first, fixed names, pre-push check) |
 | FB-3 | The weekly PR would merge itself unread under decision 0014 | High | Fixed (2.6 step 5: always `no-auto-merge`) |
 | FB-4 | Raw speech stored for weeks, with more readers and copies than stated | Medium | Fixed (2.4, 2.6, 4: topic labels only, `on_topic`, household lines in the eval) |
-| FB-5 | The last exchange in KV can miss or save the wrong one silently | Medium | Fixed (2.6: `cacheTtl` 30, reply names the save, `used` mark, 20-pair test, Durable Object fallback) |
+| FB-5 | The last exchange in KV can miss or save the wrong one silently | Medium | Fixed (2.6: `cacheTtl` 30, reply names the save, one key per exchange, 20-pair test, Durable Object fallback) |
 | FB-6 | A dead routine looks like a quiet week; delete-after-PR duplicates work | Medium | Fixed (2.6: always posts, never deletes, 14-day expiry, adds to an open PR; side signal dropped) |
 | FB-7 | KV write count short; no rule for failed feedback writes | Low | Fixed (5: 51 a day at worst; 2.6: `waitUntil`, 5-gap limit) |
 | FB-8 | "That" and "about" can be eaten as connecting words | Low | Fixed (2.6 utterances, 7: test on the Echo) |
 | FB-9 | Simpler shapes exist | Low | Taken as question 7's option: gaps only on "save that" |
+
+### Home Assistant red team (Fable, 2026-11-18)
+
+Ten findings on 2.7 and the iPad write-up; all taken.
+
+| ID | Finding | Severity | Status |
+|---|---|---|---|
+| HA-1 | Whisper invents sentences from noise and the TV speaks real ones, so false wakes spend the shared cap | High | Fixed (2.7: search gate before the cap, 10-call share; 7: a week with the TV on) |
+| HA-2 | A third-party integration runs unsandboxed with the token and mics, and sends entities, history and user ID out | High | Fixed (2.7: our own integration sends only the question; "expose new entities" off; 9) |
+| HA-3 | `timingSafeEqual` throws on unequal lengths; 32 raw bytes isn't pasteable | Medium | Fixed (2.7: hash both sides; 3: 43-character base64url; 7: tests) |
+| HA-4 | Home Assistant Cloud as the Whisper fallback breaks the kids'-data rule | Medium | Fixed (2.7, 4, 6, question 10: owner exception only) |
+| HA-5 | Hardware bought before the make-or-break measurement; 30 questions can't resolve the bar | Medium | Fixed (2.7: free step H0 on recordings, 60 questions, a count bar) |
+| HA-6 | Timing numbers disagreed and the bar included the time spent asking | Medium | Fixed (2.7: 8 s Worker deadline, 12 s integration timeout, budget table; 7: end of question to first word) |
+| HA-7 | A Siri Shortcut on the iPhone or iPad gives a wake word with no hardware | Medium | Taken (9; question 12: a 15-minute spike before build H) |
+| HA-8 | The iPad write-up left out the open-mic objection and had no checker for its trigger | Medium | Fixed (9: open mic, wider trigger, freshness pass and a date; question 12) |
+| HA-9 | Token and Worker URL at rest in backups, diagnostics and logs | Low | Fixed (2.7, 3: encrypted backups, logs never posted, placeholder URL in docs) |
+| HA-10 | Whisper's punctuation and capitals break phrase matching; a closing "?" may reopen the mic | Low | Fixed (2.7: normalize, never end with "?") |
+
+### Outside review (Gemini, 2026-11-18)
+
+Gemini read the whole spec, including the Fable findings above, and raised twelve points. Each was
+checked against the spec and, where possible, against Amazon's, Cloudflare's and Anthropic's
+docs. Nine were new and three overlapped earlier findings in part; all twelve were taken, two of
+them only in part.
+
+| ID | Finding | Severity | New? | Status |
+|---|---|---|---|---|
+| RT2-1 | "Whether" and "about" are connecting words, so those intents get a bare slot; common openers had no intent | High | Partly (FB-8 covered only the feedback phrases) | Fixed (2.1: new carriers, none starting with a connecting word; build 1 test) |
+| RT2-2 | A reply already sent can't say "I couldn't save that" | High | New | Fixed (2.6: saves wait for their write) |
+| RT2-3 | The chain check skipped `CA:TRUE`, Key Usage and issuer dates; two roots instead of five; query strings allowed | High | New | Fixed (2.2: all three checks, five roots, URL parts rejected) |
+| RT2-4 | Index load and "Checking your notes" ran before dispatch and the cap | High | New | Fixed (2.2: dispatch first, cap before the progressive response, exact host list, which Amazon's reference confirms includes `api.fe.amazon.com`) |
+| RT2-5 | A Durable Object can't go out through `wrangler versions upload` | Medium | New | Fixed (2.6: one `wrangler deploy` release; confirmed in Cloudflare's docs) |
+| RT2-6 | KV allows one write a second per key; `cacheTtl` 30 makes saves stale | Medium | New | Partly: one key per exchange and paced timing runs taken (write limit confirmed). Dropping `cacheTtl` rejected: Cloudflare's default is 60 s and the minimum 30, so leaving it out makes reads staler |
+| RT2-7 | Structured outputs compile a new schema on first use and cache it 24 hours; schema and `effort` details | Medium | New | Partly: cold-schema timing calls, `output_config.effort`, all fields required, no `maxLength` taken (all confirmed). "Enum case isn't guaranteed" rejected: the docs say output is constrained to the schema |
+| RT2-8 | The routine reads untrusted pages while holding GitHub write; `sources` not checked | Medium | Overlaps FB-2 | Fixed (2.6: no GitHub in the routine, a separate session opens the PR; 2.4: sources kept only if sent) |
+| RT2-9 | Skipping unchanged pushes lets GitHub turn the schedule off and confuses index age | Low | New (RT-12's own fix caused it) | Fixed (2.3: daily push, `fetched_at` for refresh, `built_at` for `stale-index`) |
+| RT2-10 | The stateless Worker can't tell the follow-up from the first question; `shouldEndSession` left out | Low | New | Fixed (2.2 step 7: session attributes, previous question carried once, explicit boolean) |
+| RT2-11 | Tokenizing the index on a cold start risks the 10 ms CPU limit | Low | Overlaps build 1's CPU measurement | Fixed (2.3: term counts precomputed in the Action) |
+| RT2-12 | Code fences split as headings; digits for decision numbers; "cloud" alias weight; "log once" | Low | New | Fixed (2.3, 2.2) |
+
+Its table of "settled" facts: the per-account KV grant is recorded as reported (3). Its claim that
+a workspace spend limit stops requests isn't stated on Anthropic's workspaces page, which says
+only that a limit caps monthly spend, so build 2's test stays. The other rows matched the spec.
 
