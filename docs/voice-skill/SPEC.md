@@ -700,8 +700,8 @@ only, and says which Workers plan the account is on.
    the routine in its own project after checking the connector's grant and unattended calls. Done
    when one week's real items come back as a list in chat and, on "go", a PR the owner can skim.
 
-- **Build H: the Home Assistant front end** (2.7), instead of or after build 1, whichever front
-  end the owner picks (question 9). First step H0 (free, no hardware): Whisper on recorded
+- **Build H: the Home Assistant front end** (2.7), after build 1 (owner, 2026-11-18), once the
+  owner has sourced the hardware; step H0 needs none and can run any time before that. First step H0 (free, no hardware): Whisper on recorded
   questions, with a go or no-go. On go, the owner buys the speaker and server and installs Home
   Assistant OS, Whisper and Piper. The build: the `/assist` route with its tests, the Earshot
   integration, `docs/HOME-ASSISTANT.md`. Until build 2 the route repeats the heard question back
@@ -773,8 +773,8 @@ Each build is one PR the owner merges and releases.
    for your go**, a PR that **always waits for you**, items kept **14 days**.
 8. The routine's read-only Cloudflare connector on the production account: **yes, with a 0016
    amendment in its own PR**, or run the routine by hand.
-9. Front end: **Alexa first (build 1), Home Assistant later as build H**, or Home Assistant
-   instead of Alexa, or both from the start.
+9. Front end: **Answered 2026-11-18: Alexa first (build 1); Home Assistant (build H) waits until
+   the owner has sourced its hardware.**
 10. Home Assistant speech: **local Whisper on a mini PC**, chosen by step H0. Home Assistant
     Cloud (audio to Azure) only as an exception you make knowingly.
 11. The calls the Home Assistant route may use: **10 of the 15 a day.**
