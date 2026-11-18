@@ -1,9 +1,9 @@
 ---
 title: "Platforms for AI apps"
-summary: "Hosting AI apps: Workers, Access, game rooms (code, real-time), installable web apps, app-wrapper sign-in, GitHub API, local media GPUs, paying for media, ambient sound (code and loops), posting to X"
+summary: "Hosting AI apps: Workers (Access, key-holding deploys), Alexa skills, game rooms, installable web apps, app-wrapper sign-in, GitHub API, media GPUs and costs, ambient sound, posting to X"
 topic: platforms
 status: verified
-last_reviewed: 2026-11-11
+last_reviewed: 2026-11-18
 sources:
   - https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api
   - https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
@@ -28,6 +28,14 @@ sources:
   - https://www.itu.int/rec/R-REC-BS.1770
   - https://developer.mozilla.org/en-US/docs/Web/API/DynamicsCompressorNode
   - https://w3c.github.io/audio-session/
+  - https://developers.cloudflare.com/workers/configuration/previews/
+  - https://developers.cloudflare.com/workers/wrangler/commands/
+  - https://developers.cloudflare.com/workers/runtime-apis/cache/
+  - https://developers.cloudflare.com/workers/platform/limits/
+  - https://developer.amazon.com/en-US/docs/alexa/custom-skills/progressive-response-api-reference.html
+  - https://developer.amazon.com/en-US/docs/alexa/interaction-model-design/tips-for-using-built-in-slots-for-your-skill.html
+  - https://developer.amazon.com/es/docs/custom-skills/host-a-custom-skill-as-a-web-service.html
+  - https://developer.amazon.com/en-US/docs/alexa/test/test-your-skill-overview.html
 ---
 
 # Platforms for AI apps
@@ -115,6 +123,59 @@ deploy command has to run the step that applies them first (for example
 `npm run configure && npx wrangler deploy`, and the same before `wrangler versions upload` for
 preview builds). Keep preview builds strict: a build that skips quietly shows green while a
 setting is missing (2026-10-19).
+
+## Workers that hold a production key
+
+Three Cloudflare defaults that undo a careful deploy, found red-teaming a voice-skill spec
+(2026-11-18; Cloudflare's docs, not yet tested on a live Worker):
+
+- **Version URLs are public by default on `workers.dev`.** With `workers_dev` on and no setting,
+  every uploaded version gets its own URL (`<version-prefix>-<worker>.<subdomain>.workers.dev`)
+  that anyone can call. An upload-only build with a manual release
+  ([decision 0016](../decisions/0016-secrets-handling.md), step 6) then guards nothing: the
+  uploaded version already answers requests, and versions carry the Worker's bindings, so assume
+  its secrets too. Set `preview_urls = false` in the Wrangler config and confirm in the dashboard
+  (Settings, Domains & Routes) that version URLs show as disabled.
+- **`wrangler versions upload` (and `deploy`) delete dashboard variables** that aren't in the
+  Wrangler config, unless `--keep-vars` or `keep_vars = true`. Secrets survive. An allowlist or
+  ID typed into the dashboard vanishes on the next build, so keep identifiers that mustn't be in a
+  public repo as secrets, and make an empty allowlist reject everything rather than allow all.
+- **The Cache API does nothing on `workers.dev`.** Its calls succeed and store nothing; it needs
+  a custom domain or route. On `workers.dev`, cache in KV (one write per refresh) or in memory,
+  and don't build a stale-copy fallback on the Cache API.
+- **Workers Free CPU is 10 ms a request**, with tolerance only for rare overruns; a low-traffic
+  Worker is cold on almost every request, so measure the cold path (parsing, crypto) before
+  counting on the free plan.
+
+## Voice assistants: Alexa custom skills
+
+Facts for a private Alexa skill that calls an AI backend (checked against Amazon's docs
+2026-11-18):
+
+- **Eight seconds, including your model call.** A skill has eight seconds to return its full
+  response. Up to five progressive responses (each at most 600 characters of speech) can play
+  meanwhile, but they don't extend the eight seconds. A progressive response posts to the
+  request's `apiEndpoint` with its `apiAccessToken` and `requestId`. Keep the model's output short
+  (a spoken answer of about 75 words is ~150 tokens) and build anything longer, like the app card,
+  in code.
+- **Free-form questions lose their first word.** `AMAZON.SearchQuery` needs a carrier phrase and
+  must be the only slot in the utterance, and the carrier isn't in the slot value: "why does X"
+  arrives as "does X". Use one intent per question word and put the word back in code.
+- **A self-hosted endpoint verifies every request itself:** the `SignatureCertChainUrl` (https,
+  `s3.amazonaws.com`, path under `/echo.api/` after normalizing, port 443), the signing
+  certificate (dates, `echo-api.amazon.com` in its SANs, chain to a trusted root), the
+  `Signature-256` header over the raw body, and a timestamp within 150 seconds; answer 400 on any
+  failure. On a serverless platform with no trust store, pin the roots: Amazon's chain ended in
+  cross-signed certificates for Amazon Root CA 1 and Starfield Services Root G2, not self-signed
+  roots (seen 2026-11-18), so "ends in a self-signed root" rejects real traffic, and "each
+  certificate signs the next" alone accepts a forged chain.
+- **A developer-stage skill needs no certification** for the developer's own account: it works on
+  Echo devices registered to that account and in the console simulator. *Unverified:* how
+  devices on Alexa+ treat developer-stage custom skills; test it first.
+- **Speech-to-text mangles AI jargon** ("cloud" for Claude, spelled-out acronyms); map the usual
+  mishearings before searching, and show the heard question somewhere the user can check it.
+- **Keep the session short.** An open session after an answer sends any speech that starts with a
+  carrier word ("what's for dinner") to the backend as a question.
 
 ## Room codes for two-player web games
 

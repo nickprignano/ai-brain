@@ -64,7 +64,10 @@ is copied is another place it can leak.
      step 4, never production ones.
    - For an app that holds production keys, the build from `main` only uploads a version
      (`wrangler versions upload` as the Workers Builds deploy command) and the owner releases it
-     in the platform dashboard, so a merge alone puts nothing live. Branch builds stay off: they
+     in the platform dashboard, so a merge alone puts nothing live. On `workers.dev`, turn
+     version URLs off (`preview_urls = false`): they're public by default, so an uploaded version
+     would already serve requests with the production key before the release, and the gate would
+     guard nothing. Branch builds stay off: they
      run the branch's own build scripts with the build token, which by default can edit every
      Worker on the account. The build still runs merged scripts with that token, so a change to
      dependencies or build scripts in such an app is read before merging.
@@ -145,4 +148,7 @@ is copied is another place it can leak.
   run branch code with an account-wide token and that a read-only connector still reads logs and
   storage; the owner chose the deploy gate over a separate GitHub account for now. *Unverified:* whether an
   Anthropic workspace spend limit blocks requests or only alerts.
+- Amended 2026-11-18 (owner's yes): version URLs off for key-holding Workers on `workers.dev`,
+  found by a Fable red team of a voice-skill spec, which also found that uploads wipe dashboard
+  variables ([platforms](../platforms/README.md#workers-that-hold-a-production-key)).
 - Revisit when a provider the owner uses offers keyless access, or on 2027-04-19.
