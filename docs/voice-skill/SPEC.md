@@ -21,7 +21,8 @@ dollars a month at most.
 
 - No private notes. The skill reads this public repo only, never the owner's private layer, and
   never employer or customer material. Nothing private is in what it can reach, so nothing private
-  can come out.
+  can come out. The owner chose this on 2026-11-18; the private layer may come later as its own
+  phase with its own red team, since its answers would be spoken aloud and pass through Amazon.
 - No general chat assistant. If the notes don't cover a question, it says so.
 - No publishing. The skill stays in the developer stage on the owner's Amazon account. No
   certification, no store listing.
