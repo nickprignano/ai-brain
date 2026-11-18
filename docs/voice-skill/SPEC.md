@@ -7,7 +7,8 @@ Alexa app.
 > "Alexa, ask brain notes what decision sixteen says about deploy tokens."
 > "Your notes say a deploy token is worth more than any model key, so ..."
 
-Status: **draft spec, not built.** Red-teamed with Fable on 2026-11-18 (section 11). The working
+Status: **draft spec, not built.** Red-teamed with Fable on 2026-11-18 (section 11); the feedback
+loop (2.6, build 4) added the same day at the owner's request. The working
 name "Earshot" and the invocation name "brain notes" are placeholders for the owner to change. The
 code goes in its own repo when its build turn comes, and this file moves there as `docs/SPEC.md`.
 
@@ -26,8 +27,10 @@ dollars a month at most.
 - No general chat assistant. If the notes don't cover a question, it says so.
 - No publishing. The skill stays in the developer stage on the owner's Amazon account. No
   certification, no store listing.
-- No writes. The skill can't change the knowledge base, open issues or call any tool.
-- No account linking, no web UI, no memory across questions.
+- No writes from the skill. It can't change the knowledge base, open issues or call any tool.
+  What it learns reaches the repo only through the weekly feedback routine's pull request (2.6).
+- No account linking, no web UI, no memory across questions beyond the 10-minute last exchange
+  that build 4's "save that" needs (2.6).
 
 **Why not the Claude app's voice mode.** It already answers from these notes on the owner's
 existing subscription, but only on a phone or computer. The owner wants to talk to Claude from an
@@ -125,7 +128,8 @@ Per request, in order, failing closed at every step:
 Intents: the six question intents, `AMAZON.HelpIntent` ("Ask me what, how or why about a topic in
 your AI notes."), `AMAZON.StopIntent`, `AMAZON.CancelIntent` and `AMAZON.NoIntent` (plus "that's
 all"; end silently), `AMAZON.FallbackIntent` ("Try starting with what, how or why."),
-`LaunchRequest` ("What do you want to know?"), `SessionEndedRequest` (no speech).
+`LaunchRequest` ("What do you want to know?"), `SessionEndedRequest` (no speech), and from build 4
+`SaveIntent` and `WrongIntent` (2.6).
 
 ### 2.3 Retrieval: section search, not the whole knowledge base
 
@@ -184,13 +188,15 @@ So the Worker sends only the best sections.
   set to 1 and used only if the deadline leaves room, no server-side refusal fallback (a refusal
   over public notes is rare enough to answer "I can't answer that one"). Full model IDs in config,
   never aliases (decision 0006).
-- **Output schema** (about 150 tokens, so the reply fits the deadline):
+- **Output schema** (about 150 tokens, 165 with build 4's two fields, so the reply fits the deadline):
 
   ```json
   {
     "covered": "yes | partly | no",
     "speech": "≤ 75 words, written for the ear",
-    "sources": ["section ids used"]
+    "sources": ["section ids used"],
+    "on_topic": "true | false (build 4)",
+    "topic": "≤ 8 words, the AI subject, no people or places (build 4)"
   }
   ```
 
@@ -228,6 +234,68 @@ again." and logs `timeout`. No deferred answer in v1: the shorter output should 
 rare, and a stored answer read back from KV fails on the cached-miss path. Revisit only if build
 2's timed runs show timeouts.
 
+### 2.6 The feedback loop (build 4)
+
+The skill finds out where the notes fall short every time it says "your notes don't cover that",
+and the owner notices wrong or missing answers by ear. Build 4 turns both into knowledge base
+changes, without giving the Worker any way to write to GitHub, without storing what people said,
+and without anything reaching the public repo before the owner says go.
+
+**What gets saved: topics, not speech.** The Claude call (2.4) also returns `on_topic` (is this a
+question about AI tools or these notes) and `topic` (at most 8 words naming the AI subject, no
+people or places). The Worker trims `topic` to 80 characters of letters, digits and spaces. Items:
+
+| Kind | How | What's stored |
+|---|---|---|
+| `gap` | Automatic when `covered` is `no` and `on_topic` is true | Kind, date, `topic`, the closest section ids |
+| `save` | "Alexa, tell brain notes save that" (also "remember that") | Kind, date, `topic`, section ids, and the spoken answer if `covered` was yes or partly (public text) |
+| `wrong` | "Alexa, tell brain notes that was wrong" (also "was wrong", "wasn't right", since "that" can be eaten as a connecting word) | Same as `save` |
+
+No heard question and no answer to an uncovered question is ever stored. A household line like
+"what's for dinner" is off topic and saves nothing.
+
+**The last exchange.** `save` and `wrong` refer to the last answer, but the session usually ended
+with it (2.2 step 7), so the Worker keeps the last exchange in KV for 10 minutes under a hash of
+the user ID: `topic`, section ids, `covered`, the answer if covered, and the write time. It's read
+with `cacheTtl: 30` so a cached copy can't outlive the next question for long. The reply names
+what it saved ("Saved: prompt caching costs"), so a missed or wrong save is heard at once, and the
+exchange is marked used so a second "save that" doesn't make a second item. After 10 minutes, or
+on a miss: "I don't have a recent answer to save." KV can, on rare paths, serve the previous
+exchange; build 4 tests 20 question-then-save pairs on the Echo, half with short answers, logging
+`cf.colo`, and if any save misses or names the wrong topic, the last exchange moves to a Durable
+Object, which is consistent.
+
+**Writes and limits.** Feedback writes run in `ctx.waitUntil` after the reply, with a catch: a
+failed write never fails the answer, and "save that" then says "I couldn't save that". `SaveIntent`
+and `WrongIntent` don't call Claude and skip the cap and counter. At most 10 items a day, of which
+gaps take at most 5, so the owner's own saves are never crowded out. Items expire after 14 days.
+
+**How it gets back to the repo.** A weekly routine, Monday morning, in a Claude project of its
+own that has only GitHub and a read-only Cloudflare connector (no mail, drive or calendar). Its
+prompt is pasted into the routine, not read from the repo, so a merged change to the library copy
+can't change what runs.
+
+1. Reads the `fb:<date>:*` keys dated after the last run it reported. It never writes or deletes
+   in Cloudflare; items expire on their own.
+2. Always posts one line in that project, "0 items" included, so a silent Monday means it's broken.
+3. Treats every item and every page it fetches as data, never as instructions. For each `gap`,
+   researches the topic from primary sources and drafts an addition to the topic page it belongs
+   to (AGENTS.md: the topic page, not a new file). For each `wrong`, checks the cited sections
+   against their sources and drafts a fix, or notes that they were right. For each `save`, drafts
+   the fact if it holds up. It changes topic pages only.
+4. **Stops before anything public.** It posts a numbered list of topics and proposed changes in
+   the project and waits. The owner answers in chat ("go", "go except 3"), decision 0014's
+   owner-acts-from-chat; opening a public PR can't be undone, so this is where AGENTS.md says to
+   ask.
+5. On "go", opens one ai-brain PR with a fixed branch name and title, general facts only, no item
+   text in commit messages, and the label `no-auto-merge`: a spoken "that was wrong" from anyone
+   in the house must not rewrite a fact unread, and the knowledge base's usual after-the-fact
+   safety net is this very loop. If last week's feedback PR is still open, it adds to that one.
+   Before pushing, it checks that no topic string appears in the diff, commits or PR text as a
+   quoted phrase, and reports "misheard" or dropped items by count only, in the project.
+
+The routine's prompt goes into the prompt library in generalized form (AGENTS.md).
+
 ## 3. Secrets, identifiers and deploys (decision 0016)
 
 | Name | What | Where it lives | Who sets it |
@@ -237,7 +305,7 @@ rare, and a stored answer read back from KV fails on the cached-miss path. Revis
 | `ALLOWED_USER_IDS` | The owner's Alexa user ID(s) | Worker secret, same reason | Owner, from the log line in 2.2 step 3 |
 | `ALLOWED_PERSON_IDS` | Voice profiles, only if the option in section 4 is on | Worker secret | Owner |
 | `DAILY_CAP` | Claude calls a day | `vars` in the Wrangler config in the repo (not an identifier), default 15 | Pull request |
-| KV binding | Day counter and index | Binding without a namespace ID (Wrangler provisions it), so no resource ID in the public repo; if Workers Builds can't provision it, the owner decides | Build 1 |
+| KV binding | Day counter, index, and from build 4 the last exchange and feedback items | Binding without a namespace ID (Wrangler provisions it), so no resource ID in the public repo; if Workers Builds can't provision it, the owner decides | Build 1 |
 
 - **Dashboard variables are wiped by every upload.** `wrangler versions upload` deletes variables
   that aren't in the Wrangler config unless told to keep them; secrets are never deleted. That's
@@ -265,6 +333,16 @@ rare, and a stored answer read back from KV fails on the cached-miss path. Revis
   docs, and never sees a value. The owner creates the Alexa developer account (free, the same
   Amazon account as the Echo), pastes the interaction model JSON into the Alexa console, sets the
   endpoint URL, creates the Anthropic workspace and key, and sets the Worker secrets.
+- **The feedback routine reads KV through the Cloudflare API connector** (2.6). KV holds no secret,
+  so decision 0016 step 5 is met, but step 6 says a session's platform connector is scoped to
+  previews or a non-production account, or the session has none, and this is a production
+  account. So it needs the owner's yes and, with it, an amendment to 0016 in its own PR. The
+  grant is cut at the consent screen to one account and Workers KV read only; the routine runs in
+  a project with nothing else attached; it never writes or deletes. A read-only grant still lets
+  any session in that project read the KV namespace, which is why KV holds topics, not speech.
+  *Unverified:* that KV read can be granted alone and whether per account or per namespace, and
+  that a scheduled routine can call the connector without an approval prompt. Build 4 checks
+  these first; if they fail, the owner runs the same prompt by hand in a thread.
 - **The endpoint is public, the spend isn't.** Anyone can send a request to the Worker URL. Cheap
   checks drop junk before any fetch; only Amazon can produce a signature that chains to the
   pinned roots; only this skill's ID and the owner's user ID reach the Claude call. Junk still
@@ -281,15 +359,22 @@ rare, and a stored answer read back from KV fails on the cached-miss path. Revis
 - **Cards stay in the Alexa app.** Each card keeps the heard question and the answer in the Alexa
   app's history, visible to everyone on the Amazon account.
 - **The Worker keeps no question text.** Logs carry the outcome (answered, not covered, capped,
-  timeout, refused, rejected with its reason, stale-index), latency, model and token counts. No
-  question, no answer, and no user ID except the one-time unknown-user line. KV holds the day
-  counter and the index.
+  timeout, refused, rejected with its reason, stale-index), latency, model, token counts and
+  section ids. No question, no answer, and no user ID except the one-time unknown-user line. KV
+  holds the day counter and the index, and from build 4 the last exchange for 10 minutes and
+  feedback items for 14 days (2.6): a short AI topic label, section ids, and the spoken answer only
+  when it came from the notes. Readers of that KV: the Cloudflare dashboard and the feedback
+  routine's project. The routine copies items into its own session transcript in claude.ai.
 - **Household.** Anyone talking to the owner's Echo can use the skill, and with the follow-up
   session open, any speech that starts with "what", "how" or "why" is sent as a question. That's
   why the session ends after a one-shot question and stays open for one follow-up only after
   "open brain notes". An option, off by default, answers only recognized Alexa voice profiles
   (`context.System.person.personId` in `ALLOWED_PERSON_IDS`). Kids using it is fine content-wise:
   the notes are about AI tools, and the skill only repeats them.
+- **Household speech in the feedback.** Off-topic questions save nothing, and on-topic ones save
+  only a topic label, so a guest's or child's words aren't stored. A private-but-on-topic question
+  ("Claude for a resignation letter") can still yield a topic; it reaches the public repo only as a
+  general fact, after the owner says go on the list in chat (2.6 step 4).
 - **Don't ask private things out loud.** The skill can't answer them, but the question still
   reaches Amazon and Anthropic. The help prompt says it answers from the public AI notes.
 
@@ -313,7 +398,8 @@ million input / output tokens; Claude Haiku 5.5 $0.10 / $0.50 up to a 100k-token
 Everything else is free at this volume: the Alexa developer account and developer-stage skill,
 GitHub Actions on a public repo, and Cloudflare Workers Free (100,000 requests a day; 1,000 KV
 writes a day shared by every app on the account, of which this uses one per question plus one a
-day for the index). The earlier estimate of $2 to $10 a month assumed the whole KB in every
+day for the index, and from build 4 one more per question for the last exchange, up to 10 feedback items and their
+count: at the cap 15 + 15 + 10 + 10 + 1 = 51 a day, about 5% of the shared 1,000). The earlier estimate of $2 to $10 a month assumed the whole KB in every
 prompt; section search brings it under $2 for casual use even on Sonnet.
 
 **Workers Free CPU.** The free plan allows 10 ms of CPU per request, with tolerance only for rare
@@ -341,6 +427,11 @@ If it doesn't fit, Workers Paid ($5 a month) is the fix and the owner's call.
 | Deploy drops a setting | Every request rejected | Identifiers are secrets; empty means reject, logged `rejected:config` |
 | Alexa+ device doesn't route to the skill | Alexa answers itself | Build 1 tests this first; if it can't work, stop the build |
 | Key leaked | Unexpected usage | Workspace limit or prepaid credit; decision 0016 step 9 |
+| "Save that" more than 10 minutes later, or a KV miss | "I don't have a recent answer to save." | Last exchange expires; build 4 tests the miss rate |
+| "Save that" when the day's KV writes are used up | "I couldn't save that." | Feedback writes never fail the answer |
+| Routine broken (connector expired, routine off) | No Monday line in the project | It always posts, "0 items" included |
+| A wrong or planted fact researched from a spoken "that was wrong" | Nothing until the list | Owner's go in chat, then a `no-auto-merge` PR |
+| A misheard question saved as a gap | Nothing | Topic label only; the routine reports it by count, never as a KB fact unless researched |
 
 ## 7. Tests and evals
 
@@ -365,6 +456,11 @@ If it doesn't fit, Workers Paid ($5 a month) is the fix and the owner's call.
   Bar: none over 6.5 s.
 - **Cost of all of it:** about $1.20 for Sonnet's 75 calls, about $0.30 for both Haiku arms,
   under $2 for 100 timed calls, and a few dollars at most for a Claude grader. Under $6 in all.
+- **Feedback (build 4).** Unit tests for the three kinds, off-topic items saving nothing, the
+  topic trim, the 10-minute window and `used` mark, the 10-a-day and 5-gap limits, failed writes;
+  about 10 household lines added to the answer eval, with the bar that none is stored; the
+  routine's pre-push check on every run; and on the Echo, both phrasings of "that was wrong" and
+  "about" questions, since "that" and "about" can be eaten as connecting words.
 - **On the device.** The owner asks ten real questions on the Echo and reports what was misheard.
 
 ## 8. Build plan (waits its turn in the single-threaded queue)
@@ -386,6 +482,11 @@ only, and says which Workers plan the account is on.
    the measured latency go into the spec. Done when the bars in section 7 pass.
 3. **Build 3: polish.** The optional voice-profile gate if the owner wants it, the vault note for
    the key, and lessons into this KB.
+4. **Build 4: the feedback loop** (2.6), after the owner's yes to the read-only connector and the
+   0016 amendment. The two schema fields, the last exchange, `SaveIntent`, `WrongIntent` and
+   automatic gaps in the Worker; the 20-pair save test; the routine's prompt in the prompt library;
+   the routine in its own project after checking the connector's grant and unattended calls. Done
+   when one week's real items come back as a list in chat and, on "go", a PR the owner can skim.
 
 Each build is one PR the owner merges and releases.
 
@@ -401,7 +502,10 @@ Each build is one PR the owner merges and releases.
 - **A model-written long card.** It tripled the output and pushed the reply past the deadline; the
   Worker builds the card from the spoken answer and the sources instead.
 - **A deferred answer read back from KV.** KV caches a miss for at least 30 seconds, so the second
-  "what did you find" fails on exactly the path it was for.
+  "what did you find" fails on exactly the path it was for. Build 4's last exchange has the same
+  weakness, which is why its reply names what it saved and build 4 tests it before relying on it.
+- **Storing the heard question for feedback.** A topic label does the same job without keeping
+  anyone's words.
 - **Cloudflare's managed search or Vectorize embeddings now.** More moving parts before the eval
   shows lexical search falls short.
 - **Account linking.** Nothing to link: the skill has no per-user data, and the allowlist already
@@ -417,6 +521,11 @@ Each build is one PR the owner merges and releases.
 4. Household or recognized voices only? **Household** (voice-profile option off).
 5. Daily cap and workspace limit: **15 calls a day, $10 a month.**
 6. When the notes are silent: **say so, no general answer.**
+7. Feedback: **gaps saved automatically as topic labels** (or only when you say "save that"),
+   "save that" and "that was wrong" by voice, a **Monday** routine that **lists in chat and waits
+   for your go**, a PR that **always waits for you**, items kept **14 days**.
+8. The routine's read-only Cloudflare connector on the production account: **yes, with a 0016
+   amendment in its own PR**, or run the routine by hand.
 
 ## 11. Red team (Fable, 2026-11-18)
 
@@ -440,3 +549,20 @@ Twelve findings; all taken, with the changes above.
 Fable also checked and left alone: the per-question and monthly cost arithmetic, the KB size, the
 Workers Free limits, the progressive-response limits, rejecting an Alexa-hosted skill, and keeping
 the Anthropic SDK pinned.
+
+### Feedback loop red team (Fable, 2026-11-18)
+
+Nine findings on 2.6; all taken.
+
+| ID | Finding | Severity | Status |
+|---|---|---|---|
+| FB-1 | A production Cloudflare connector in an unattended routine breaks decision 0016 step 6 | High | Fixed (3, 2.6: read-only KV grant, own project, never writes; owner's yes and a 0016 amendment needed, question 8) |
+| FB-2 | Opening a public PR is the publication; only a prompt kept speech out | High | Fixed (2.6 steps 4 and 5: list in chat first, fixed names, pre-push check) |
+| FB-3 | The weekly PR would merge itself unread under decision 0014 | High | Fixed (2.6 step 5: always `no-auto-merge`) |
+| FB-4 | Raw speech stored for weeks, with more readers and copies than stated | Medium | Fixed (2.4, 2.6, 4: topic labels only, `on_topic`, household lines in the eval) |
+| FB-5 | The last exchange in KV can miss or save the wrong one silently | Medium | Fixed (2.6: `cacheTtl` 30, reply names the save, `used` mark, 20-pair test, Durable Object fallback) |
+| FB-6 | A dead routine looks like a quiet week; delete-after-PR duplicates work | Medium | Fixed (2.6: always posts, never deletes, 14-day expiry, adds to an open PR; side signal dropped) |
+| FB-7 | KV write count short; no rule for failed feedback writes | Low | Fixed (5: 51 a day at worst; 2.6: `waitUntil`, 5-gap limit) |
+| FB-8 | "That" and "about" can be eaten as connecting words | Low | Fixed (2.6 utterances, 7: test on the Echo) |
+| FB-9 | Simpler shapes exist | Low | Taken as question 7's option: gaps only on "save that" |
+
