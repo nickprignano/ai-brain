@@ -207,18 +207,6 @@ in `llms.txt`. The schema and the family code in `scripts/kb/` are the same in e
 - **Cross-project decisions.** A decision that affects more than one project is recorded in each
   affected KB, and each copy says "Also recorded in ..." with links.
 
-Where the siblings stand, from the digests of 2026-10-19 and 2026-10-26:
-
-- **Liquidware** adopted enforced capture in warn mode and handoff issues from the export
-  ([commit](https://github.com/nickprignano/avd-liquidware/commit/41f4edfac45c705a0ceda836905ee36476437ec1)),
-  and the GitHub work conventions with auto-merge off for now
-  ([commit](https://github.com/nickprignano/avd-liquidware/commit/0dda99eb9d6bbb5e5b01addb0cc559d730f91a09)).
-- **Nerdio HCL kit** proposed keeping its GitHub settings in Terraform with a daily read-only drift
-  check ([commit](https://github.com/nickprignano/nerdio-hcl/commit/7e881b283dffd5deb35e64f780ba18ddbfa34c6a)).
-  This KB has no settings-as-code; [repo_audit.py](../../scripts/kb/repo_audit.py) covers the
-  same settings by hand. A scheduled drift check that needs a token or App ID nobody has set up
-  should skip with a setup note in the job summary and close its failure issue, not fail daily.
-
 ## Upstream: link out, check against, give back
 
 This KB is not a second copy of anyone's documentation. Vendor docs and product or SDK repos are

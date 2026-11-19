@@ -3,7 +3,7 @@
 
 name = "ai-brain"
 title = "AI research knowledge base"
-tagline = "A living knowledge base of findings, gotchas and decisions about the Claude API, agents and AI tooling, shared by a family of sibling knowledge bases that use the same format."
+tagline = "A living knowledge base of findings, gotchas and decisions about the Claude API, agents and AI tooling."
 user_agent = "ai-brain-kb-curator"
 topic_order = ["overview", "claude-api", "agents", "prompting", "evals", "privacy-and-safety", "platforms",
                "learning", "troubleshooting", "roadmap", "curation"]

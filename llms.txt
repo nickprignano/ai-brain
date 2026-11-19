@@ -1,7 +1,7 @@
 # ai-brain: AI research knowledge base
 
 > A living knowledge base of findings, gotchas and decisions about the Claude API, agents and AI
-> tooling, shared by a family of sibling knowledge bases that use the same format.
+> tooling.
 
 The knowledge base is in docs/knowledge/. Every page starts with YAML front matter (title, summary,
 topic, status, last_reviewed) validated against docs/knowledge/schema/. Pages with status `plan`
@@ -77,13 +77,11 @@ contribute, open a KB feedback or known-error issue; changes land only through r
 - [0019. Family format: this hub and the private layer are the default home for every domain](docs/knowledge/decisions/0019-family-format-hub-and-private-layer-by-default.md): accepted
 - [0020. Every repo Claude works in has an AGENTS.md with the four change rules](docs/knowledge/decisions/0020-agents-md-in-every-repo.md): accepted
 - [0021. A sandbox mode in the 2ndbrain template, for agents from other vendors](docs/knowledge/decisions/0021-sandbox-for-outside-agents.md): accepted
+- [0022. Unlink sibling repositories from ai-brain](docs/knowledge/decisions/0022-unlink-sibling-repos.md): proposed
 
 ## Related knowledge bases
 
-- [Nerdio HCL kit](https://github.com/nickprignano/nerdio-hcl/tree/main/docs/knowledge): Nerdio Manager on Azure Virtual Desktop, deployed with Terraform and Packer. Source of truth for: Nerdio Manager; the nerdio/nme provider; this kit's Terraform and Packer
-- [AVD](https://github.com/avd-ops/avd-second-brain/tree/main/docs/knowledge): Azure Virtual Desktop itself. Source of truth for: Azure Virtual Desktop platform; FSLogix; session host images in general
-- [Liquidware](https://github.com/nickprignano/liquidware-ninja/tree/main/docs/knowledge): Liquidware products on virtual desktops. Source of truth for: Liquidware products
-- Private layer (repo not linked yet): The maintainer's private wisdom layer. It reads the family through this hub and sends directives here as pull requests; its contents stay private. Source of truth for: Directives to the family; through docs/knowledge/directives.yaml
+- Private layer (repo not linked yet): The maintainer's private wisdom layer. It reads this KB and sends directives here as pull requests; its contents stay private. Source of truth for: Directives to this KB; through docs/knowledge/directives.yaml
 
 ## Optional
 

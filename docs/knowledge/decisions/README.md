@@ -30,4 +30,5 @@ the family numbers its own decisions; refer to a sibling's as `<project> 0012`, 
 | [0019](0019-family-format-hub-and-private-layer-by-default.md) | Family format: this hub and the private layer are the default home for every domain | Accepted |
 | [0020](0020-agents-md-in-every-repo.md) | Every repo Claude works in has an AGENTS.md with the four change rules | Accepted |
 | [0021](0021-sandbox-for-outside-agents.md) | A sandbox mode in the 2ndbrain template, for agents from other vendors | Accepted |
+| [0022](0022-unlink-sibling-repos.md) | Unlink sibling repositories from ai-brain | Proposed |
 <!-- END GENERATED: decision-index -->
