@@ -416,6 +416,40 @@ What changed for unattended and cloud sessions in Claude Code v2.1.321 to v2.1.3
   picks move to `fable`; `/model claude-fable-5-1` switches back. Prices are on the
   [Claude API page](../claude-api/README.md#choosing-a-model).
 
+What changed for unattended and cloud sessions in Claude Code v2.1.326 to v2.1.330 (2026-11-16 to
+11-20) ([changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)):
+
+- **Scheduled tasks last longer, but old ones may need redoing.** Recurring scheduled tasks and
+  `/loop` run up to 30 days instead of 7 while their session keeps running, and say when they end;
+  tasks made before v2.1.330 still end at 7 days (v2.1.330). In new signed-in sessions, most
+  scheduled tasks saved by earlier versions need scheduling again, though `--resume` of their own
+  session still runs them. "Exit and stop tasks" now ends the session's scheduled tasks so they
+  don't run again on resume, and `/tasks` lists scheduled tasks, `/loop` wakeups and forks
+  (v2.1.329).
+- **Hooks:** `mcp_tool` hooks take `"onFailure": "block"`, as command and HTTP hooks do, so a hook
+  whose call fails blocks the action (v2.1.328). Managed `PostToolUse` hooks no longer fire for
+  calls refused before they ran (v2.1.328). A hook's `"decision": "block"` holds in more cases, so
+  a hook that always prints one may start blocking calls (v2.1.326). Prompt hooks accept model
+  aliases such as `haiku` in their `model` field (v2.1.330). `/status` lists broken agent, skill
+  and command files and hook matchers that never match (v2.1.327).
+- **Skills and subagents keep the session's model.** A skill with a `model` setting, other than a
+  `context: fork` skill, no longer moves subagents, forks, compaction or `/recap` off the
+  session's model, and a subagent's model fallback carries over to the agents and forks it starts
+  (v2.1.330). A subagent started without a model stays on the model it started on when resumed,
+  even after `/model` (v2.1.327).
+- **Cloud sessions:** Anthropic-hosted cloud sessions ignore more of a repository's flag and
+  plugin delivery settings, and a repo's `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` acts at most
+  as `DISABLE_TELEMETRY` (v2.1.327). A `deniedMcpServers` entry `claude.ai <name>` now applies to
+  that connector in cloud sessions too (v2.1.328), and hides only the named connector, not others
+  at its URL (v2.1.330). A cloud session says so when a plugin marketplace can't be fetched
+  because its repository isn't one of the session's (v2.1.330).
+- **MCP and plugin setup:** `claude mcp add-json <name> -` reads the server's JSON from stdin so
+  tokens stay off the command line; it isn't available inside a session (v2.1.327). Plugins
+  refused for a malformed `plugin.json` display field now load, with their hooks and MCP servers
+  (v2.1.326).
+- **`/code-review`** reports only bugs and CLAUDE.md violations on most models; `/simplify` does
+  the reuse and simplification cleanups (v2.1.328).
+
 **Check merge state before pushing more to a PR.** Three times in one day a PR merged a moment
 before the next push, and the new commit was stranded on a merged branch and needed its own PR.
 Related traps:
@@ -476,6 +510,21 @@ In mid November 2026:
 - **Claude Code waits for MCP task questions:** Esc on a background MCP task's question means
   "answer later" (nothing goes to the server, the question stays in `/tasks`), and Claude is told
   when a task is waiting on you (v2.1.325, [changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
+
+In late November 2026:
+
+- **Events extension** ([SEP-3415](https://modelcontextprotocol.io/seps/3415-events-extension),
+  Final, merged 2026-11-19,
+  [commit](https://github.com/modelcontextprotocol/modelcontextprotocol/commit/8a18b4b3292b9f9b3aee73f6325f9f62f19a89f9);
+  identifier `io.modelcontextprotocol/events`): a client subscribes to things that happen
+  upstream, such as a chat message, a repository push or an incident, so an agent can act with
+  nobody asking. A server lists event types with `events/list`, each with an `inputSchema` for
+  subscription arguments and a `payloadSchema`. Delivery is poll (`events/poll`), push
+  (`events/stream`) or webhook (`events/subscribe`: signed POSTs to an `https` callback under a
+  TTL the client refreshes), advertised per event type, none mandatory. A server-defined cursor
+  resumes after a disconnect, and `truncated: true` says events were skipped. Payloads are
+  untrusted data, like tool results. It needs protocol revision 2026-07-28 or later, and the
+  Triggers & Events Working Group owns it.
 
 ## Outside review from another company's model
 

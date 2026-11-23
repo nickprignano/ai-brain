@@ -152,6 +152,14 @@ upgrading `anthropic` to 2.0.0 moves every call to `2026-10-21`; a direct caller
   clients read `ANTHROPIC_CUSTOM_HEADERS`, API errors can be pickled and copied, structured
   output schemas keep `const`, and the Vertex and Google Cloud clients refuse an empty model,
   project, region or workspace ID instead of writing it into the request path.
+- **Python SDK 2.9.0 to 2.12.0 (2026-11-16 to 11-20):** old beta header values are deprecated and
+  will leave the SDKs in a later release (remove `prompt-caching-2024-07-31`, `pdfs-2024-09-25`,
+  `token-counting-2024-11-01` and others; the API still accepts them), and batch requests stop
+  sending `message-batches-2024-09-24` (2.9.0). The agent toolset's grep tool looks for ripgrep
+  only in absolute `PATH` entries and passes over one inside the folders its file tools can write
+  (2.9.0). 2.11.0 adds Claude Code managed settings to the Admin API. On Bedrock, a user profile ID
+  now goes in the request body, so it applies; a model there without user-profile support now
+  returns a 400 for it (2.12.0).
 
 ## Claude on Microsoft Foundry
 
